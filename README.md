@@ -38,13 +38,13 @@ The high-level routines are fairly system-independent and could be adapted to an
 
 The emulation layer presents itself as an IBM PC with a MDA graphics card, one serial and one parallel port. It provides the following services:
 
-* INT 10 - functions 00, 01, 02, ...
+* INT 10 - functions 00, 02, 03, 06, 07, 09, 0A, 0E, 0F
 * INT 11
 * INT 12
-* INT 13 - functions
-* INT 14 -
-* INT 16 -
-* INT 17
+* INT 13 - functions 00, 01, 02, 03, 04, 08, 15, 16
+* INT 14 - functions 00, 01, 02, 03
+* INT 16 - functions 00, 01, 02
+* INT 17 - functions 00, 01, 02
 * INT 18 and INT 19
 * INT 1A - function 00 only
 
