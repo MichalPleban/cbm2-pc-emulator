@@ -20,6 +20,34 @@ IPCData		equ 000Ah				; Offset of the data trasfer area (16 bytes)
 			pop cx
 %endmacro
 
+%macro		IPC_Disable_IRQ	0
+			pushf
+			cli
+			push ax
+			mov al, 0FEh
+			out 01h, al
+			pop ax
+			sti
+%endmacro
+
+%macro		IPC_Enable_IRQ	0
+			cli
+			push ax
+			push ds
+			xor ax, ax
+			mov ds, ax
+			cmp [0168h], word IPC_IRQ2
+			jz %%1
+			mov al, 0FEh
+			jmp %%2
+%%1:
+			mov al, 0FAh
+%%2:
+			out 01h, al
+			pop ds
+			pop ax
+			popf
+%endmacro
 
 ; --------------------------------------------------------------------------------------
 ; Issue the actual call to the 6509 processor by calling the BIOS
@@ -35,6 +63,146 @@ IPC_GetSeg:
 			mov cx, [001Eh]
 			mov ds, cx
 			ret
+
+; --------------------------------------------------------------------------------------
+; Initialize interrupt vectors and IPC chip.
+; --------------------------------------------------------------------------------------
+
+IPC_Init:
+			cli
+			
+			push ds
+			xor ax, ax
+			mov ds, ax
+			mov ax, cs
+			
+			; Int 58 vector (IPC) -> original INT 08
+			mov [0160h], word 0F1E2h
+			mov [0162h], word 0F000h
+
+			; Int 5A vector (TOD timer) -> Timer handler routine
+			mov [0168h], word IPC_IRQ2
+			mov [016Ah], word ax
+			mov [017Ch], word IPC_IRQ_Spurious
+			mov [017Eh], word ax
+
+			; Int 08 vector -> Our own handler
+			mov [0020h], word INT_08
+			mov [0022h], word ax
+			
+			; Rebase interrupts to 58h, enable IRQ0 and IRQ2
+			mov al, 1Bh
+			out 00h, al
+			mov al, 58h
+			out 01h, al
+			mov al, 1
+			out 01h, al
+			mov al, 0FAh
+			out 01h, al
+			
+			pop ds
+			sti
+			ret
+
+; --------------------------------------------------------------------------------------
+; Handle spurious IRQ. It can be either IRQ0 or IRQ2.
+; --------------------------------------------------------------------------------------
+
+IPC_IRQ_Spurious:
+			push bx
+			; Extremely ugly hack to check if IRQ0 occured.
+			; Before calling the ROM BIOS code, we disable IRQ2.
+			; Therefore, if interrupt occured when the CPU was in the ROM BIOS, 
+			; it must be IRQ0.
+			mov bx, sp
+			cmp [ss:bx+4], word 0F000h
+			jnz IPC_IRQ_Spurious_IRQ2
+			cmp [ss:bx+6], word 0F286h
+			jnz IPC_IRQ_Spurious_IRQ2
+			pop bx
+			jmp 0F000h:0F1E2h
+			
+IPC_IRQ_Spurious_IRQ2:
+			pop bx
+
+; --------------------------------------------------------------------------------------
+; IRQ2 - 500 Hz timer interrupt routine.
+; --------------------------------------------------------------------------------------
+
+IPC_IRQ2:
+			push ax
+			push ds
+			mov al, 20h
+			out 00h, al
+			mov ax, Data_Segment
+			mov ds, ax
+			mov ax, [Data_Ticks]
+			add ax, 182
+			cmp ax, 5000 
+			jb IPC_IRQ2_Below
+			int 08h
+			sub ax, 5000
+IPC_IRQ2_Below:
+			mov [Data_Ticks], ax
+			pop ds
+			pop ax
+			iret
+
+; --------------------------------------------------------------------------------------
+; Fake INT 08 - just call INT 1C
+; --------------------------------------------------------------------------------------
+
+INT_08:
+			int 1Ch
+			iret
+
+; --------------------------------------------------------------------------------------
+; Install IPC data at specified segment.
+; Input:
+;			BX - segment
+; --------------------------------------------------------------------------------------
+
+IPC_Install:
+			push cs
+			pop ds
+			mov es, bx
+			xor ax, ax
+			
+			; Install the code stub
+			mov di, ax
+			mov si, IPC_Stub
+			mov cx, IPC_Stub_End-IPC_Stub
+			rep movsb
+			
+			; Install parameters for incoming functions
+			xor cx, cx
+			add di, 0010h
+IPC_Install_Loop1:
+			mov ax, cx
+			stosw
+			xor ax, ax
+			stosw
+			mov ax, 0F000h
+			stosw
+			inc cx
+			cmp cx, 0010h
+			jne IPC_Install_Loop1
+			
+			; Install parameters for outgoing functions
+			mov si, IPC_Params
+			mov cx, 12h
+IPC_Install_Loop2:
+			movsw
+			add di, 4
+			loop IPC_Install_Loop2
+			
+			; Change INT 07 vector
+			xor ax, ax
+			mov es, ax
+			mov [es:001Ch], ax
+			mov [es:001Eh], bx
+			ret
+			
 			
 ; --------------------------------------------------------------------------------------
 ; Peek into keyboard buffer.
@@ -56,7 +224,6 @@ IPC_KbdPeek:
 ; --------------------------------------------------------------------------------------
 ; Clear keyboard buffer.
 ; Output:
-;			ZF - zero flag set if no key in buffer
 ;			AL - code of key pressed
 ;			AH - shift status (bit 4 = Shift not pressed, bit 5 = Ctrl not pressed)
 ; WARNING: 
@@ -285,13 +452,12 @@ IPC_SerialOut:
 ; --------------------------------------------------------------------------------------
 			
 IPC_SectorRead:		
+			IPC_Disable_IRQ
 			IPC_Enter
 			call IPC_SectorSet
-			pushf
-			sti
 			IPC_Call 96h
-			popf
 			IPC_Leave
+			IPC_Enable_IRQ			
 			ret
 			
 ; --------------------------------------------------------------------------------------
@@ -304,13 +470,12 @@ IPC_SectorRead:
 ; --------------------------------------------------------------------------------------
 			
 IPC_SectorWrite:			
+			IPC_Disable_IRQ
 			IPC_Enter
 			call IPC_SectorSet
-			pushf
-			sti
 			IPC_Call 97h
-			popf
 			IPC_Leave
+			IPC_Enable_IRQ			
 			ret
 			
 ; --------------------------------------------------------------------------------------
@@ -556,3 +721,42 @@ IPC_8250_Layout_2:
 			db	54, 25
 			db	40, 27
 			db	1, 29
+
+; -----------------------------------------------------------------
+; Code stub to put at INT 07 pointer.
+; -----------------------------------------------------------------
+
+IPC_Stub:
+			pop ax
+			pop ax
+			popf
+			jmp 0F000h:0000h
+			db 05Ah
+			db 0A5h
+IPC_Stub_End:
+
+; -----------------------------------------------------------------
+; List of numbers of parameters for IPC functions.
+; -----------------------------------------------------------------
+
+IPC_Params:
+			db 0, 4
+			db 0, 4
+			db 3, 2
+			db 3, 2
+			db 3, 2
+			db 0, 3
+			db 11, 4
+			db 11, 4
+			db 0, 4
+			db 0, 3
+			db 3, 2
+			db 5, 2
+			db 0, 0
+			db 5, 5
+			db 4, 0
+			db 0, 4
+			db 0, 0
+			db 11, 4
+			
+			

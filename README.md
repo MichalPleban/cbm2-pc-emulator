@@ -1,16 +1,16 @@
 # PC emulation layer
 
-This software allows you to run IBM PC software on a Commodore 710 equipped with the 8088 card. The card has a dedicated MS-DOS 1.25 port that runs on it, but there is very little software that could be used.
+This software allows you to run IBM PC software on a Commodore 710 equipped with the 8088 card. The card has a dedicated MS-DOS 1.25 port that runs on it, but there is very little software that could be used with that old version. The computer is also not PC-compatible, so even the few software titles that support MS-DOS 1.x don't work.
 
-The aim of the project is to emulate as much of the PC architecture in software, to allow booting PC versions of MS-DOS and run PC software.
+The aim of the project is to emulate as much of the PC architecture in software as possible, to allow booting PC versions of MS-DOS and running PC software. Currently, PC-DOS versions 2.00 and 3.30 have been successfully booted using the emulation layer.
 
 
 ## Quick start guide
 
 Use `cbmlink` (or other tool) to create two Commdore disks:
 
- * `launch.d80` is the native version of MS-DOS 1.25 designed to run on CBM-II software. It serves as the launchpad for the emulation layer.
- * `msdos330.d80` is the image created from a 360 kB PC diskette containing PC-DOS 3.30.
+ * `host.d80` is the native version of MS-DOS 1.25 designed to run on CBM-II software. It serves as the launchpad for the emulation layer.
+ * `pcdos33.d82` is the image created from a 720 kB PC diskette containing PC-DOS 3.30 (if you do not have the 8250 drive, you can use `pcdos33a.d80` instead).
 
 Insert the first diskette in the drive 0 and hit Shift+Run to start MS-DOS. After the system loads, issue the following commands:
 
@@ -21,7 +21,7 @@ reboot
 
 The first command loads the emulation layer in the upper part of the memory, and the second issues INT 19 to reboot the 8088 system.
 
-Inser the second diskette in the drive 0 and press any key. The emulation layer will load the PC boot sector and execute it, loading the PC version of MS-DOS. Beware: loading the system takes about 2 minutes, due to slow speed of the IEEE drive.
+Inser the second diskette in the drive 0 and press any key. The emulation layer will load the PC boot sector and execute it, loading the PC version of MS-DOS. Loading the system takes about 2 minutes, due to slow speed of the IEEE drive.
 
 Loaded PC-DOS 3.30 runs inside the PC emulation layer. You can try different DOS commands - everyhing that is not tied directly to PC hardware (like GRAFTABL) should work.
 
@@ -68,14 +68,33 @@ Currently the emulation layer requires booting the native version of MS-DOS firs
 
 There are two main versions of the emulation layer:
 
-* `pc-tsr` loads itself as a TSR in the MS-DOS 1.25 system. This allows running PC programs inside native Commodore MS-DOS (if you are lucky enough to find programs that work with such ancient version of MS-DOS).
-* `pc-high` loads itself in the highest 8 kB of the memory, and can function stand-alone. It can be used to boot other operating systems; it also provides greater level of compatilbility (for example, it emulates INT 08 timer interrupt, which is impossible in the native MS-DOS).
+* `pc-tsr.com` loads itself as a TSR in the MS-DOS 1.25 system. This allows running PC programs inside native Commodore MS-DOS (if you are lucky enough to find programs that work with such ancient version of MS-DOS).
+* `pc-high.com` loads itself in the highest 8 kB of the memory, and can function stand-alone. It can be used to boot other operating systems; it also provides greater level of compatilbility (for example, it emulates INT 08 timer interrupt, which is impossible in the native MS-DOS). Additionally, the file `pc-debug.com` contains the same routines but is compiled with the DEBUG flag (see below).
 
 In order to use PC software, it must be transferred to the Commodore disk using the `imager.pl` utility (described below).
 
 ### What software does work?
 
 Currently I am concentrating on booting PC version of MS-DOS and making it work. Once MS-DOS runs without problems, I plan to start testing various other software. Suggestions are welcome on what to try first.
+
+## Compiling and debugging
+
+NASM (Netwide Assembler) is used to compile the 8088 code. To compile everything, issue the command:
+
+```
+compile.bat
+```
+
+The binary files will be created in the `bin` directory. Apart from the trhee versions of emulation layer, there are two little utilities:
+
+ * `cls.com` - a simple test program that clears the screen using INT 10 function 00.
+ * `reboot.com` - program to issue INT 19, used to boot the guest operating system.
+
+If you modify the software, you need to send the new files ot the host operating system using `recv.exe` - see the next chapter. 
+
+A conditional define called "DEBUG" can be used to create the debug version of the compatibility layer. It allows seeing in realtime what interrupt calls are being issued. Information about every received interrupt call is written to the serial port, and can be observed or saved using a PC software such as HyperTerminal. 
+
+Outputting the debug information can slow the system tremendously, therefore it is disabled by default. To turn it on, press the C= key. Press the key again to switch it off.
 
 ## Utilities
 
@@ -101,20 +120,23 @@ The created D80 or D82 image must be written to the Commodore disk drive using y
 
 ### Transferring files to the host OS
 
-The native MS-DOS 1.25 contains a file `recv.exe` that can be used to transmit files from a PC to the host disk over a RS-232 connection. You can use this tool to transfer recompiled emulation layer files to the launch disk. It is *not intended* to transfer PC disks or other software that must be run under the guest OS.
+The native MS-DOS 1.25 host system contains a file `recv.exe` that can be used to transmit files from a PC to the host disk over a RS-232 connection. You can use this tool to transfer recompiled emulation layer files to the launch disk. It is *not intended* to transfer PC disks or other software that must be run under the guest OS.
 
 An appropriate utility `send.pl` is provided that sends a file in the format required by `recv.exe`.
 
-To transfer a file, connect the computers with a serial cable, launch the host OS and type the command:
-
-```
-recv file_to_receive
-```
-
-Then on the PC, use the command:
+To transfer a file, connect the computers with a serial cable, launch the host OS and on the PC use the command:
 
 ```
 send.pl file_to_send
 ```
 
-The file will be transferred to the Commodore and saved on the disk.
+Then on the host OS type the command:
+
+```
+recv file_to_receive
+```
+
+The file will be transferred to the Commodore and saved on the disk. Beware that you *must* launch the send command on the PC first, otherwise `recv.exe` will hang waiting for the first handshake from the sender side.
+
+Note that the host system is on a 8050 diskette; if you have a 8250 drive, you must first switch it to the 8050 mode before booting the host OS; otherwise writing to the diskette will not be possible. Alternatively, you can use the `format` command to format a new MS-DOS disk in the drive 1 (accessed as drive B: under MS-DOS).
+
