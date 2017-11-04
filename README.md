@@ -21,9 +21,9 @@ reboot
 
 The first command loads the emulation layer in the upper part of the memory, and the second issues INT 19 to reboot the 8088 system.
 
-Inser the second diskette in the drive 0 and press any key. The emulation layer will load the PC boot sector and execute it, loading the PC version of MS-DOS. Loading the system takes about 2 minutes, due to slow speed of the IEEE drive.
+Insert the second diskette in the drive 0 and press any key. The emulation layer will load the PC boot sector and execute it, loading the PC version of MS-DOS. Loading the system takes about 2 minutes, due to slow speed of the IEEE drive.
 
-Loaded PC-DOS 3.30 runs inside the PC emulation layer. You can try different DOS commands - everyhing that is not tied directly to PC hardware (like GRAFTABL) should work.
+Loaded PC-DOS 3.30 runs inside the PC emulation layer. You can try different DOS commands - everything that is not tied directly to PC hardware (like GRAFTABL) should work.
 
 ## How does it work?
 
