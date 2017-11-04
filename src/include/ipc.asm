@@ -503,7 +503,7 @@ IPC_SectorSet:
 			ret
 
 ; --------------------------------------------------------------------------------------
-; Get system timer.
+; Set system timer.
 ; Input:
 ;     DH - hour
 ;     DL - minute
