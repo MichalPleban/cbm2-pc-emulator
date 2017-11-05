@@ -438,10 +438,15 @@ INT_13_01:
 			
 ; -----------------------------------------------------------------
 ; INT 13 function 02 - disk read.
+; INT 13 function 03 - disk write.
 ; -----------------------------------------------------------------
 
 INT_13_02:
+			mov bp, 0
+			jmp INT_13_Common
 INT_13_03:
+			mov bp, 1
+INT_13_Common:
 			push es
 			push cx
 			push ax
@@ -452,6 +457,7 @@ INT_13_03:
 			pop cx
 			xor ch, ch
 INT_13_02_Loop:
+
 			call INT_13_Disk
 			jc INT_13_02_Error
 			inc ax
@@ -505,6 +511,7 @@ INT_13_Logical:
 ; -----------------------------------------------------------------
 ; Read or write PC sector
 ; Input:
+;			BP - 0 for disk read, 1 for disk write
 ;			AX - 256-byte sector number
 ;			DL - drive number
 ;			ES:BX - buffer address
@@ -535,7 +542,7 @@ INT_13_Disk:
 			shl ax, 1
 			add ax, bx
 			test ax, ax
-			jz INT_13_Disk_DMA_Error
+			jz INT_13_Disk_Zero
 			xchg ax, bx
 			mov ax, 1
 			mul cl
@@ -549,15 +556,38 @@ INT_13_Disk:
 INT_13_Disk_Loop:
 			push ax
 			call IPC_SectorCalc
-			mov bp, sp
-			add bp, 9
-			test [ss:bp], byte 01h
-			jnz INT_13_Disk_Write
+			cmp bp, 1
+			jz INT_13_Disk_Write
 			call IPC_SectorRead
 			jmp INT_13_Disk_Finish
 INT_13_Disk_Write:
 			call IPC_SectorWrite
 INT_13_Disk_Finish:
+
+			; Check if we were reading on the 0000 boundary
+			; If yes, move the sector 2 bytes below and restore overwritten word
+			test ch, 01h
+			jz INT_13_NotZero
+			push ds
+			push si
+			push di
+			mov di, es
+			mov ds, di
+			sub bx, 2
+			mov si, bx
+			mov di, bx
+			push cx
+			mov cx, 128
+			lodsw
+			rep movsw
+			pop cx
+			xor ch, ch
+			stosw
+			pop di
+			pop si
+			pop ds
+			
+INT_13_NotZero:
 			mov ax, es
 			add ax, 16
 			mov es, ax
@@ -575,6 +605,7 @@ INT_13_Disk_NoTest:
 			clc
 			ret
 
+			; Fake "read across 64 boundary" error
 INT_13_Disk_DMA_Error:
 			pop bx
 			pop ax
@@ -583,7 +614,42 @@ INT_13_Disk_DMA_Error:
 			stc
 			mov ah, 9
 			ret
-						
+
+			; Read on 0000-aligned address: move the pointer +2 bytes
+INT_13_Disk_Zero:
+			pop bx
+
+			; Remember the word that will be overwritten
+			mov ax, [es:bx+256]
+			cmp bp, 1
+			jne INT_13_Disk_NotWrite
+
+			; If writing, move the sector 2 bytes up
+			push ds
+			push si
+			push di
+			mov si, es
+			mov ds, si
+			mov si, bx
+			add si, 254
+			mov di, bx
+			add di, 256
+			std
+			push cx
+			mov cx, 128
+			rep movsw
+			pop cx
+			cld
+			pop di
+			pop si
+			pop ds
+INT_13_Disk_NotWrite:
+			mov [es:bx], ax
+			add bx, 2
+			pop ax
+			mov ch, 01h
+			jmp INT_13_Disk_Loop
+					
 ; -----------------------------------------------------------------
 ; Read parameters from MS-DOS boot sector
 ; -----------------------------------------------------------------
