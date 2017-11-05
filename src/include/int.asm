@@ -535,7 +535,7 @@ INT_13_Disk:
 			shl ax, 1
 			add ax, bx
 			test ax, ax
-			jz INT_13_Disk_DMA_Error
+			jz INT_13_Disk_Zero
 			xchg ax, bx
 			mov ax, 1
 			mul cl
@@ -558,6 +558,31 @@ INT_13_Disk_Loop:
 INT_13_Disk_Write:
 			call IPC_SectorWrite
 INT_13_Disk_Finish:
+
+			; Check if we were reading on the 0000 boundary
+			; If yes, move the sector 2 bytes below and restore overwritten word
+			test ch, 01h
+			jz INT_13_NotZero
+			push ds
+			push si
+			push di
+			mov di, es
+			mov ds, di
+			sub bx, 2
+			mov si, bx
+			mov di, bx
+			push cx
+			mov cx, 128
+			lodsw
+			rep movsw
+			pop cx
+			xor ch, ch
+			stosw
+			pop di
+			pop si
+			pop ds
+			
+INT_13_NotZero:
 			mov ax, es
 			add ax, 16
 			mov es, ax
@@ -575,6 +600,7 @@ INT_13_Disk_NoTest:
 			clc
 			ret
 
+			; Fake "read across 64 boundary" error
 INT_13_Disk_DMA_Error:
 			pop bx
 			pop ax
@@ -583,7 +609,18 @@ INT_13_Disk_DMA_Error:
 			stc
 			mov ah, 9
 			ret
-						
+
+			; Read on 0000-aligned address: move the pointer +2 bytes
+INT_13_Disk_Zero:
+			pop bx
+			; Remember the word that will be overwritten in BP
+			mov ax, [es:bx+256]
+			mov [es:bx], ax
+			add bx, 2
+			pop ax
+			mov ch, 01h
+			jmp INT_13_Disk_Loop
+					
 ; -----------------------------------------------------------------
 ; Read parameters from MS-DOS boot sector
 ; -----------------------------------------------------------------
