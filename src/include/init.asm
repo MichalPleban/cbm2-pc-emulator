@@ -33,9 +33,8 @@ Init_Data:
 			mov di, ax
 			
 			; Cursor position
-			dec ax
 			stosw
-			inc ax
+			dec ax
 			stosw
 			
 			; Disk drive parameters

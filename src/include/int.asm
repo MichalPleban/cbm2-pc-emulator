@@ -86,7 +86,7 @@ INT_10_00:
 			call IPC_ScreenEscape
 			
 			; Invalidate cursor position
-			mov [es:Data_CursorVirtual], byte 0FFh
+			mov [es:Data_CursorPhysical], byte 0FFh
 			
 			ret
 
@@ -124,7 +124,7 @@ INT_10_02_Ret:
 ; -----------------------------------------------------------------
 			
 INT_10_03:
-			mov dx, [es:Data_CursorVirtual]
+			mov dx, [es:Data_CursorPhysical]
 			cmp dl, 0FFh
 			jne INT_10_03_OK
 			call IPC_CursorGet
@@ -234,10 +234,10 @@ INT_10_0A:
 INT_10_CursorCheck:
 			push dx
 
-			mov dx, [es:Data_CursorVirtual]
-			cmp dl, 0FFh
+			cmp [es:Data_CursorPhysical], byte 0FFh
 			je INT_10_CursorCheck_Dirty
-			
+
+			mov dx, [es:Data_CursorVirtual]
 			cmp dx, [es:Data_CursorPhysical]
 			je INT_10_CursorCheck_OK
 			mov [es:Data_CursorPhysical], dx
@@ -285,7 +285,7 @@ INT_10_0E:
 			push ax
 
 			; Check if cursor position has not changed
-			cmp [es:Data_CursorVirtual], byte 0FFh
+			cmp [es:Data_CursorPhysical], byte 0FFh
 			je INT_10_0E_Dirty
 			call INT_10_CursorCheck
 INT_10_0E_Dirty:
@@ -299,7 +299,7 @@ INT_10_0E_Output:
 			
 INT_10_0E_Finish:
 			; Invalidate cursor position
-			mov [es:Data_CursorVirtual], byte 0FFh
+			mov [es:Data_CursorPhysical], byte 0FFh
 
 			pop ax
 			ret
