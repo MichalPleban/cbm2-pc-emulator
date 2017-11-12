@@ -6,7 +6,7 @@
 
 RomStart:
 		
-%include 'src/include/rom.asm'
+%include 'src/8088/include/rom.asm'
 
 RomEnd:
 

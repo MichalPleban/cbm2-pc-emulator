@@ -1,5 +1,5 @@
 
-%include 'src/defs.inc'
+%include 'src/8088/defs.inc'
 
 ;%define DEBUG
 
@@ -17,14 +17,14 @@
 			call Finish
 			int 20h
 						
-%include 'src/include/debug.asm'
-%include 'src/include/ipc.asm'
-%include 'src/include/int.asm'
-%include 'src/include/data.asm'
+%include 'src/8088/include/debug.asm'
+%include 'src/8088/include/ipc.asm'
+%include 'src/8088/include/int.asm'
+%include 'src/8088/include/data.asm'
 
 EndResident:
 
-%include 'src/include/init.asm'
+%include 'src/8088/include/init.asm'
 
 Finish:
 			mov ah, 09h
