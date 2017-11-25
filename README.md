@@ -4,33 +4,27 @@ This software allows you to run IBM PC software on a Commodore 710 equipped with
 
 The aim of the project is to emulate as much of the PC architecture in software as possible, to allow booting PC versions of MS-DOS and running PC software. Currently, PC-DOS versions 2.00 and 3.30 have been successfully booted using the emulation layer.
 
+**New in version 0.60**: Hostless boot. The original MS-DOS 1.25 disk is no longer required to run the emulation layer. You can place the emulation libraries directly on the destination operating system disk.
 
 ## Quick start guide
 
-Use `cbmlink` (or other tool) to create two Commdore disks:
+Use `cbmlink` (or other tool) to create a Commodore 8250 disk from the image `dist/disk/pcdos33.d82` (if you do not have the 8250 drive, you can use `pcdos33a.d80` instead).
 
- * `host.d80` is the native version of MS-DOS 1.25 designed to run on CBM-II software. It serves as the launchpad for the emulation layer.
- * `pcdos33.d82` is the image created from a 720 kB PC diskette containing PC-DOS 3.30 (if you do not have the 8250 drive, you can use `pcdos33a.d80` instead).
+Insert the diskette in drive 0 and hit Shift+Run to start the system. The boot file loads the emulation layer libraries and transfers control to the 8088 processor, which reads the boot sector from the diskette and executes it. Loading the PC-DOS 3.30 system takes about 2 minutes, due to slow speed of the IEEE drive.
 
-Insert the first diskette in the drive 0 and hit Shift+Run to start MS-DOS. After the system loads, issue the following commands:
-
-```
-pc-high
-reboot
-```
-
-The first command loads the emulation layer in the upper part of the memory, and the second issues INT 19 to reboot the 8088 system.
-
-Insert the second diskette in the drive 0 and press any key. The emulation layer will load the PC boot sector and execute it, loading the PC version of MS-DOS. Loading the system takes about 2 minutes, due to slow speed of the IEEE drive.
-
-Loaded PC-DOS 3.30 runs inside the PC emulation layer. You can try different DOS commands - everything that is not tied directly to PC hardware (like GRAFTABL) should work.
+Loaded system runs inside the PC emulation layer. You can try different DOS commands - everything that is not tied directly to PC hardware (like GRAFTABL) should work.
 
 ## How does it work?
 
-The emulation layer consists of two main modules:
+The emulation layer consists of two modules:
 
- * High-level interrupt emulation routines, implementing part of the PC BIOS interrupts. This part is located in the *int.asm* file.
- * Low-level I/O routines, which interface to the 6509 processor and I/O services provided by it. This part is located in the *ipc.asm* file.
+ * `6509.prg`, which contains the 6509 code implementing I/O functions. The 8088 processor has no access to the I/O, therefore it calls this module for every I/O operation.
+ * `8088.prg`, which contains the 8088 code of the emulation layer.
+
+The second file is roughly divided into the following parts:
+
+ * High-level interrupt emulation routines, implementing part of the PC BIOS interrupts. This part is located in the `int.asm` file.
+ * Low-level I/O routines, which interface to the 6509 processor and I/O services provided by it. This part is located in the `ipc.asm` file.
 
 The high-level routines are fairly system-independent and could be adapted to another machine. The low-level routines are specific to the CBM-II.
 
@@ -56,45 +50,33 @@ Additionally, the low-level routines emulate INT 08 and INT 1C using the 500 Hz 
 
 ### What is not emulated?
 
-PC hardware that doesn't exist in the CBM-II cannot be emulated. The most important part is video memory - if the software accesses the video memory directly, it will not work (unfortunately, lots of software does that). Similarly, software that relies on keyboard interrupts, accesses I/O ports, etc will not work. 
+PC hardware that doesn't exist in the CBM-II cannot be emulated. The most important part is video memory - if the software accesses video memory directly, it will not work (unfortunately, lots of software does that). Similarly, software that relies on keyboard interrupts, accesses I/O ports, and performs other hardware accesses will not work. 
 
 Interrupt routines from IBM AT upwards are not emulated, except for a few functions of INT 13. This should not be needed, as the card has an 8088 processor so could not pass for an AT anyway.
 
-BIOS data area at segment 0040 is not emulated - this area is used for IPC calls to the 6509 processor.
+BIOS data area at segment 0040h is not emulated - this area is used for IPC calls to the 6509 processor.
 
 ### How can it be used?
 
-Currently the emulation layer requires booting the native version of MS-DOS first, because it relies on the 6509 portion of it providing I/O routines. Work is underway to place the layer directly in the ROM of the card, so that it could be started without any host environment.
+The easiest way to use the emulation layer is to take an IMG file of a PC diskette, and transform it into a D80 or D82 image using the `imager.pl` utility (described below).
 
-There are two main versions of the emulation layer:
-
-* `pc-tsr.com` loads itself as a TSR in the MS-DOS 1.25 system. This allows running PC programs inside native Commodore MS-DOS (if you are lucky enough to find programs that work with such ancient version of MS-DOS).
-* `pc-high.com` loads itself in the highest 8 kB of the memory, and can function stand-alone. It can be used to boot other operating systems; it also provides greater level of compatilbility (for example, it emulates INT 08 timer interrupt, which is impossible in the native MS-DOS). Additionally, the file `pc-debug.com` contains the same routines but is compiled with the DEBUG flag (see below).
-
-In order to use PC software, it must be transferred to the Commodore disk using the `imager.pl` utility (described below).
+The utility places all the required files on the Commodore disk, therefore booting the image is as simple as inserting the disk and pressing Shift+Run.
 
 ### What software does work?
 
 Currently I am concentrating on booting PC version of MS-DOS and making it work. Once MS-DOS runs without problems, I plan to start testing various other software. Suggestions are welcome on what to try first.
 
-## Compiling and debugging
+## Compiling the software
 
-NASM (Netwide Assembler) is used to compile the 8088 code. To compile everything, issue the command:
+The following tools are required to successfully build the system:
 
-```
-compile.bat
-```
+ * GNU make.
+ * NASM (Netwide Assembler) - to compile the 8088 code. 
+ * XA assembler - to compile the 6509 code.
+ * Perl - to run disk imaging utilities.
+ * c1541 (for example, from your VICE distribution) - to place compiled files in D80 and D82 images.
 
-The binary files will be created in the `bin` directory. Apart from the trhee versions of emulation layer, there are two little utilities:
-
- * `cls.com` - a simple test program that clears the screen using INT 10 function 00.
- * `reboot.com` - program to issue INT 19, used to boot the guest operating system.
-
-If you modify the software, you need to send the new files ot the host operating system using `recv.exe` - see the next chapter. 
-
-A conditional define called "DEBUG" can be used to create the debug version of the compatibility layer. It allows seeing in realtime what interrupt calls are being issued. Information about every received interrupt call is written to the serial port, and can be observed or saved using a PC software such as HyperTerminal. 
-
-Outputting the debug information can slow the system tremendously, therefore it is disabled by default. To turn it on, press the C= key. Press the key again to switch it off.
+The compiled files are placed in the `dist` directory. The most important subdirectory there is the `disk` folder, where ready-to-run PC-DOS disk images are placed after successful compilation. You will need `cbmlink` or similar utility to transfer these images to your disk drive.
 
 ## Utilities
 
