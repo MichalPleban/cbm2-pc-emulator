@@ -959,22 +959,32 @@ INT_19_Again:
 			call IPC_Init
 		
 			; Jump to boot sector code.
+			call INT_19_Segments
+			mov si, INT_19_Banner
+			call Output_String
 			jmp 0000:7C00h
 			
 INT_19_NoSystem:
-			mov ax, Data_Segment
-			mov es, ax
-			push cs
-			pop ds
-			mov si, INT_19_Banner
+			call INT_19_Segments
+			mov si, INT_19_Banner1
 			call Output_String
 			call INT_16_00
 			cmp al, 1Bh
 			jne INT_19_Again
 			iret
 
+INT_19_Segments:
+			mov ax, Data_Segment
+			mov es, ax
+			push cs
+			pop ds
+			ret
+			
 INT_19_Banner:
-			db "Not a system disk. Insert a system disk and press any key.", 10, 13, 0		
+			db "The system is coming up, please wait.", 10, 13, 0		
+
+INT_19_Banner1:
+			db "Insert a system disk and press any key.", 10, 13, 0		
 			
 ; -----------------------------------------------------------------
 ; INT 1A - Timer functions.

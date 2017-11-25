@@ -8,8 +8,7 @@ use File::Spec;
  
 my(%options);
 
-getopt('ioOt', \%options); 
-
+getopt('ioOtbs', \%options); 
 
 #######################################################################################
 #
@@ -102,7 +101,7 @@ else
 	}
 	else
 	{
-		$stub_file = $options{"s"} . $sep . $stub_file;
+		$stub_file = $options{"b"} . $sep . $stub_file;
 	}
 }
 

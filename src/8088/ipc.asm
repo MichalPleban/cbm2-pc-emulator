@@ -22,8 +22,9 @@ Do_Install:
 			call IPC_Install
 			call IPC_Reset
 			call Install_High
+Do_Install1:
 			int 19h
-			hlt
+			jmp Do_Install1
 
 %include 'src/8088/include/install.asm'
 %include 'src/8088/include/version.asm'
