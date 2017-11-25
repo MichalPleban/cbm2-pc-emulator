@@ -205,6 +205,22 @@ IPC_Install_Loop2:
 			
 			
 ; --------------------------------------------------------------------------------------
+; Output character to the printer.
+; Input:
+;     AL - character code
+; --------------------------------------------------------------------------------------
+
+%ifdef STANDALONE
+
+IPC_Reset:
+			IPC_Enter
+			IPC_Call 18h
+			IPC_Leave
+			ret
+			
+%endif
+
+; --------------------------------------------------------------------------------------
 ; Peek into keyboard buffer.
 ; Output:
 ;			ZF - zero flag set if no key in buffer

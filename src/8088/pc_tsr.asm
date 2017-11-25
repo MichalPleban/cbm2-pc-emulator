@@ -1,7 +1,6 @@
 
-%include 'src/8088/defs.inc'
-
-;%define DEBUG
+%undef ROM
+%undef STANDALONE
 
 [BITS 16]
 
@@ -22,17 +21,17 @@
 %include 'src/8088/include/int.asm'
 %include 'src/8088/include/data.asm'
 
+; Resident code ends here.
 EndResident:
 
 %include 'src/8088/include/init.asm'
 
 Finish:
 			mov ah, 09h
-			mov dx, FinishBanner
+			mov dx, Version_Banner
 			int 21h
 			mov dx, EndResident
 			int 27h
 			ret
-FinishBanner:
-			db "IBM PC Compatibility layer v", VERSION, " installed.", 10, 13, '$'
-			
+
+%include 'src/8088/include/version.asm'

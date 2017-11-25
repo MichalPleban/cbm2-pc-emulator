@@ -950,12 +950,14 @@ INT_19_Again:
 			cmp [es:7DFEh], word 0AA55h
 			jne INT_19_NoSystem
 
-			; At this point there is no return to underlying OS.
-			; It is safe to relocate the INT 07 vector and IRQs.
+%ifndef STANDALONE
 			mov bx, 0040h
 			call IPC_Install
+%endif
+			; At this point there is no return to underlying OS.
+			; It is safe to relocate the INT 07 vector and IRQs.
 			call IPC_Init
-			
+		
 			; Jump to boot sector code.
 			jmp 0000:7C00h
 			
