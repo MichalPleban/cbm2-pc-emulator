@@ -556,13 +556,7 @@ INT_13_Disk:
 INT_13_Disk_Loop:
 			push ax
 			call IPC_SectorCalc
-			cmp bp, 1
-			jz INT_13_Disk_Write
-			call IPC_SectorRead
-			jmp INT_13_Disk_Finish
-INT_13_Disk_Write:
-			call IPC_SectorWrite
-INT_13_Disk_Finish:
+			call IPC_SectorAccess
 
 			; Check if we were reading on the 0000 boundary
 			; If yes, move the sector 2 bytes below and restore overwritten word
@@ -939,14 +933,15 @@ INT_19_Again:
 			; Load two first 256-byte sectors from the disk.
 			xor bx, bx
 			mov es, bx
+			mov bp, bx
 			mov bx, 7C00h
 			xor dl, dl
 			mov ax, 0001h
-			call IPC_SectorRead			
+			call IPC_SectorAccess
 			mov bx, 7D00h
 			call INT_13_ResetParams
 			mov ax, 0101h
-			call IPC_SectorRead
+			call IPC_SectorAccess
 			cmp [es:7DFEh], word 0AA55h
 			jne INT_19_NoSystem
 

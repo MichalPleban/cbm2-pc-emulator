@@ -459,37 +459,22 @@ IPC_SerialOut:
 			ret
 
 ; --------------------------------------------------------------------------------------
-; Read disk sector.
+; Read or write disk sector.
 ; Input:
 ;			AH - physical sector number
 ;			AL - physical track number
 ;			DL - drive number
 ;			ES:BX - buffer address
+;			BP - 0 = disk read, 1 = disk write
 ; --------------------------------------------------------------------------------------
 			
-IPC_SectorRead:		
+IPC_SectorAccess:		
 			IPC_Disable_IRQ
 			IPC_Enter
 			call IPC_SectorSet
-			IPC_Call 96h
-			IPC_Leave
-			IPC_Enable_IRQ			
-			ret
-			
-; --------------------------------------------------------------------------------------
-; Write disk sector.
-; Input:
-;			AH - physical sector number
-;			AL - physical track number
-;			DL - drive number
-;			ES:BX - buffer address
-; --------------------------------------------------------------------------------------
-			
-IPC_SectorWrite:			
-			IPC_Disable_IRQ
-			IPC_Enter
-			call IPC_SectorSet
-			IPC_Call 97h
+			mov cx, 0096h
+			add cx, bp
+			call IPC
 			IPC_Leave
 			IPC_Enable_IRQ			
 			ret

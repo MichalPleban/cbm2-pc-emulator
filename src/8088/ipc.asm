@@ -17,14 +17,24 @@
 			dw 0
 
 Do_Install:
+			; Check if the ROM contains current version
+			mov bx, 0F000h
+			mov es, bx
+			cmp [es:0FFFCh], word "PC"
+			jne Do_Install_RAM
+			cmp [es:0FFFEh], word VERSION_NUMBER
+			jb Do_Install_RAM
+			jmp 0F000h:0FFF5h
+
+Do_Install_RAM:
 			; Install IPC table at segment 0040h.
 			mov bx, 0040h
 			call IPC_Install
 			call IPC_Reset
 			call Install_High
-Do_Install1:
+Do_Install_Loop:
 			int 19h
-			jmp Do_Install1
+			jmp Do_Install_Loop
 
 %include 'src/8088/include/install.asm'
 %include 'src/8088/include/version.asm'

@@ -29,7 +29,7 @@ dist/com/pc_high.com: src/8088/pc_high.asm $(COMMON) $(INSTALL)
 dist/com/pc_debug.com: src/8088/pc_high.asm $(COMMON) $(INSTALL) $(DEBUG)
 	nasm src/8088/pc_high.asm -dDEBUG -o dist/com/pc_debug.com
 
-dist/rom/card.bin: src/8088/rom.asm src/8088/include/rom.asm
+dist/rom/card.bin: src/8088/rom.asm src/8088/include/rom.asm $(COMMON)
 	nasm src/8088/rom.asm -w-lock -o dist/rom/card.bin
 
 dist/misc/reboot.com: src/misc/reboot.asm
