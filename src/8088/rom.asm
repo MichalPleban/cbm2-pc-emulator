@@ -45,10 +45,12 @@ RomLoop:
 			jmp	0F000h:startf
 			jmp	0F000h:RomInit
 	
-			times 8188-($-$$) db 0FFh
+			times 8186-($-$$) db 0FFh
 			
 			dw "PC"
 			dw VERSION_NUMBER
+			
+			dw 0FFFFh
 
 
 

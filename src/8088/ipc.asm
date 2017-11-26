@@ -20,9 +20,9 @@ Do_Install:
 			; Check if the ROM contains current version
 			mov bx, 0F000h
 			mov es, bx
-			cmp [es:0FFFCh], word "PC"
+			cmp [es:0FFFAh], word "PC"
 			jne Do_Install_RAM
-			cmp [es:0FFFEh], word VERSION_NUMBER
+			cmp [es:0FFFCh], word VERSION_NUMBER
 			jb Do_Install_RAM
 			jmp 0F000h:0FFF5h
 

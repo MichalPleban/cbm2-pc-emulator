@@ -3,7 +3,7 @@
 VERSION_NUMBER		equ		61
 
 Version_Banner:
-			db "IBM PC Compatibility layer v", VERSION_STRING, " "
+			db "PC Compatibility layer v", VERSION_STRING, " "
 %ifdef ROM
 			db "ROM "
 %endif
