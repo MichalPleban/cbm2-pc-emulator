@@ -6,7 +6,7 @@ MISC = dist/misc/reboot.com dist/misc/cls.com
 
 TRACK = util/160_d80.trk util/160_d82.trk util/180_d80.trk util/180_d82.trk util/360_d80.trk util/360_d82.trk util/720_d82.trk
 ONDISK = dist/prg/boot.prg $(PRG)
-DISK = dist/disk/pcdos33.d82 dist/disk/pcdos33a.d80 dist/disk/pcdos33b.d80
+DISK = dist/disk/pcdos33.d82 dist/disk/pcdos33a.d80 dist/disk/pcdos33b.d80 dist/disk/pcdos11.d82 dist/disk/pcdos11.d80
 
 COMMON = src/8088/include/data.asm src/8088/include/init.asm src/8088/include/int.asm src/8088/include/ipc.asm src/8088/include/version.asm
 INSTALL = src/8088/include/install.asm
@@ -68,3 +68,8 @@ dist/disk/pcdos33a.d80 : util/360_d80.trk src/disk/pcdos33a.img
 dist/disk/pcdos33b.d80 : util/360_d80.trk src/disk/pcdos33b.img
 	util/imager.pl -i src/disk/pcdos33b.img -o dist/disk/pcdos33b.d80 -b util
 
+dist/disk/pcdos11.d82 : util/160_d82.trk src/disk/pcdos11.img
+	util/imager.pl -i src/disk/pcdos11.img -o dist/disk/pcdos11.d82 -b util
+
+dist/disk/pcdos11.d80 : util/160_d80.trk src/disk/pcdos11.img
+	util/imager.pl -i src/disk/pcdos11.img -o dist/disk/pcdos11.d80 -b util

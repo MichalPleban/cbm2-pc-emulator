@@ -99,68 +99,18 @@ vectors:
     .word $0000, $0050
     .word $F1E2, $F000
 
-    .dsb ($0830-*), $00
-        
 ;--------------------------------------------------------------------
-; Jump table to IPC functions (only for function called from 8088).
-; The location of this table is hardcoded to $0830 in the KERNAL.
-;--------------------------------------------------------------------
-
-    .word ipc_10_kbd_peek
-    .word ipc_11_kbd_in
-    .word ipc_12_screen_out
-    .word ipc_13_printer_out
-    .word ipc_14_modem_out
-    .word ipc_15_modem_in
-    .word ipc_96_disk_read
-    .word ipc_97_disk_write
-    .word ipc_18_init
-    .word ipc_19_serial_in
-    .word ipc_1a_serial_out
-    .word ipc_1b_serial_config
-    .word 0
-    .word ipc_1d_console
-    .word ipc_1e_time_set
-    .word ipc_1f_time_get
-    .word ipc_20_kbd_clear
-    .word ipc_21_format
-  
-;--------------------------------------------------------------------
-; Variables used by the code.
+; Some variables moved here to save space.
 ;--------------------------------------------------------------------
 
 ; Filename to open RS-232 channel.
 rs232_param:
-    .byt $1e,$00,$20,$20
+    .byt $1e,$00
     
 ; Secondary address to open RS-232 channel.
 rs232_secaddr:
     .byt $03
     
-; IEEE device number to use as the modem.
-modem_device:
-    .byt $05
-    
-; Secondary address to open the modem channel.
-modem_secaddr:
-    .byt $00
-
-; Status of the disk operation.
-disk_status:
-    .byt $a2,$00
-
-; Command to read or write disk sector.    
-cmd_u1:
-    .byt "u1:8 0 ttt sss",$0d
-
-; Command to read or write disk buffer.
-cmd_br:
-    .byt "b-p 8 0",$0d
-
-; Command to format disk.
-cmd_n:
-    .byt "n0:msdos disk,88",$0d
-
 ; Filename used to open the data channel.
 filename_08:
     .byt "#"
@@ -180,6 +130,52 @@ last_key:
 ; Delay before repeating the pressed key.
 key_delay:
      .byt $00
+
+; Status of the disk operation.
+disk_status:
+    .byt $a2,$00
+
+    .dsb ($0830-*), $AA
+        
+;--------------------------------------------------------------------
+; Jump table to IPC functions (only for function called from 8088).
+; The location of this table is hardcoded to $0830 in the KERNAL.
+;--------------------------------------------------------------------
+
+    .word ipc_10_kbd_peek
+    .word ipc_11_kbd_in
+    .word ipc_12_screen_out
+    .word ipc_13_printer_out
+    .word 0
+    .word 0
+    .word ipc_96_disk_read
+    .word ipc_97_disk_write
+    .word ipc_18_init
+    .word ipc_19_serial_in
+    .word ipc_1a_serial_out
+    .word ipc_1b_serial_config
+    .word 0
+    .word ipc_1d_console
+    .word ipc_1e_time_set
+    .word ipc_1f_time_get
+    .word ipc_20_kbd_clear
+    .word ipc_21_format
+  
+;--------------------------------------------------------------------
+; Variables used by the code.
+;--------------------------------------------------------------------
+
+; Command to read or write disk sector.    
+cmd_u1:
+    .byt "u1:8 0 ttt sss",$0d
+
+; Command to read or write disk buffer.
+cmd_br:
+    .byt "b-p 8 0",$0d
+
+; Command to format disk.
+cmd_n:
+    .byt "n0:msdos disk,88",$0d
 
 ;--------------------------------------------------------------------
 ; IRQ handler function.
@@ -248,44 +244,19 @@ irq_end:
     rti
     
 ;--------------------------------------------------------------------
-; IPC function 15 - read from modem.
+; IPC function 10 - check scancode in keybaord buffer.
 ;--------------------------------------------------------------------
     
-ipc_15_modem_in:
-    ldx #$05
-    jsr CHKIN
-    jsr BASIN
+ipc_10_kbd_peek:
+    ldx buffer_size
+    beq ipc_10_end
+    lda key_buffer
     sta ipc_buffer+2
-ipc_15_end:
-    jsr CLRCH
+    lda shift_buffer
+    sta ipc_buffer+3
+ipc_10_end:
     clc
     jmp ipc_end
-    
-;--------------------------------------------------------------------
-; IPC function 14 - write to modem.
-;--------------------------------------------------------------------
-
-ipc_14_modem_out:
-    ldx #$05
-    jsr CHKOUT
-    lda ipc_buffer+2
-    jsr BSOUT
-    jmp ipc_15_end
-
-;--------------------------------------------------------------------
-; Information about IPC function parameters. For every function:
-;  * low nibble = number of input parameters.
-;  * high nibble = number of output parameters.
-; The location of this table is hardcoded to $0910 in the KERNAL.
-;--------------------------------------------------------------------        
-
-    .dsb ($0910-*), $00
-    
-    .byt $00,$01,$02,$03,$04,$05,$06,$07,
-    .byt $08,$09,$0a,$0b,$0c,$0d,$0e,$0f
-    .byt $40,$40,$23,$23,$23,$30,$4b,$4b
-    .byt $40,$30,$23,$25,$00,$55,$04,$40,
-    .byt $00,$4b
     
 ;--------------------------------------------------------------------
 ; IPC function 11 - read from keyboard.
@@ -302,6 +273,31 @@ ipc_11_loop:
     jsr CLRCH
     clc
     jmp ipc_end
+
+;--------------------------------------------------------------------
+; IPC function 20 - clear keyboard buffer.
+;--------------------------------------------------------------------    
+    
+ipc_20_kbd_clear:
+    lda #$00
+    sta buffer_size
+    sta KeybufIndex
+    rts
+    
+;--------------------------------------------------------------------
+; Information about IPC function parameters. For every function:
+;  * low nibble = number of input parameters.
+;  * high nibble = number of output parameters.
+; The location of this table is hardcoded to $0910 in the KERNAL.
+;--------------------------------------------------------------------        
+
+    .dsb ($0910-*), $AA
+    
+    .byt $00,$01,$02,$03,$04,$05,$06,$07,
+    .byt $08,$09,$0a,$0b,$0c,$0d,$0e,$0f
+    .byt $40,$40,$23,$23,$23,$30,$4b,$4b
+    .byt $40,$30,$23,$25,$00,$55,$04,$40,
+    .byt $00,$4b
     
 ;--------------------------------------------------------------------
 ; IPC function 12 - write to screen.
@@ -318,31 +314,6 @@ ipc_12_screen_out:
     jsr CLRCH
     clc
     jmp ipc_end
-    
-;--------------------------------------------------------------------
-; IPC function 10 - check scancode in keybaord buffer.
-;--------------------------------------------------------------------
-    
-ipc_10_kbd_peek:
-    ldx buffer_size
-    beq ipc_10_end
-    lda key_buffer
-    sta ipc_buffer+2
-    lda shift_buffer
-    sta ipc_buffer+3
-ipc_10_end:
-    clc
-    jmp ipc_end
-    
-;--------------------------------------------------------------------
-; IPC function 20 - clear keyboard buffer.
-;--------------------------------------------------------------------    
-    
-ipc_20_kbd_clear:
-    lda #$00
-    sta buffer_size
-    sta KeybufIndex
-    rts
     
 ;--------------------------------------------------------------------
 ; IPC function 19 - read from RS-232.
@@ -609,7 +580,7 @@ write_loop:
     jmp disk_end
     
 ;--------------------------------------------------------------------
-; IPC function 96 - read disk sector.
+; Disk support functions.
 ;--------------------------------------------------------------------
     
 set_sector:
@@ -663,10 +634,6 @@ check_status:
 disk_error:
     sec
     rts
-    
-;--------------------------------------------------------------------
-; Disk support functions.
-;--------------------------------------------------------------------
 
 ; Prepare I/O channels to the disk.    
 prepare_error:
@@ -802,13 +769,6 @@ init_diskno:
     jsr SETLFS
     jsr OPEN
     jsr printer_reopen
-    lda #$05
-    ldx modem_device
-    ldy modem_secaddr
-    jsr SETLFS
-    lda #$00
-    jsr SETNAM
-    jsr OPEN
     lda #$60
     ldx #$0a
     stx CRTC_RegNo
@@ -927,7 +887,7 @@ serial_reopen:
     sta file_name
     stx file_name+1
     sty file_name+2
-    lda #$04
+    lda #$02
     ldx #$40
     jsr SETNAM
     jmp my_OPEN

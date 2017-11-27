@@ -45,13 +45,27 @@ die "Invalid stub file size (should be 14848 bytes).\n" unless $stub_size = 1484
 #
 #######################################################################################
 
+my $disk_name;
+my $disk_size;
+
+if($out_file =~ /d82.trk$/)
+{
+	$disk_name = "tmp.d82";
+	$disk_size = 1066496;
+}
+else
+{
+	$disk_name = "tmp.d80";
+	$disk_size = 533248;
+}
+
 mkdir "tmp";
 
-open FILE, ">tmp/tmp.d82";
+open FILE, ">tmp/" . $disk_name;
 binmode FILE;
 seek FILE, 274688, SEEK_SET;
 print FILE $stub_data;
-seek FILE, 1066495, SEEK_SET;
+seek FILE, $disk_size-1, SEEK_SET;
 print FILE chr(0);
 close FILE;
 
@@ -70,7 +84,7 @@ while($pc_file = shift @ARGV)
 	$cbm_file = basename($pc_file);
 	$cbm_file =~s /\..*//;
 	
-	system("c1541 tmp/tmp.d82 -write " . $pc_file . " " . $cbm_file);
+	system("c1541 tmp/" . $disk_name . " -write " . $pc_file . " " . $cbm_file);
 }
 
 
@@ -82,7 +96,7 @@ while($pc_file = shift @ARGV)
 
 my $in_data;
 
-open FILE, "tmp/tmp.d82";
+open FILE, "tmp/" . $disk_name;
 binmode FILE;
 seek FILE, 274688, SEEK_SET;
 read(FILE, $in_data, 14848);
