@@ -39,8 +39,6 @@ Do_Install_Loop:
 %include 'src/8088/include/install.asm'
 %include 'src/8088/include/version.asm'
 
-			times 0102h-($-$$) db 0
-			
 ; Starting offest of the resident code.
 Install_Start equ ($-$$)-2
 

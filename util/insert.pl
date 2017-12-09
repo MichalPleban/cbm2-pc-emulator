@@ -79,13 +79,23 @@ close FILE;
 my $pc_file;
 my $cbm_file;
 
+my $cmd_line;
+
+$cmd_line = "@ \"b-a 0 38 6\"\n@ \"b-a 0 38 9\"\n" unless $out_file =~ /d82.trk$/;
+
 while($pc_file = shift @ARGV)
 {
 	$cbm_file = basename($pc_file);
 	$cbm_file =~s /\..*//;
 	
-	system("c1541 tmp/" . $disk_name . " -write " . $pc_file . " " . $cbm_file);
+	$cmd_line .= "write " . $pc_file . " " . $cbm_file . "\n";
 }
+
+$cmd_line .= "@ \"b-f 0 38 6\"\n@ \"b-f 0 38 9\"\n" unless $out_file =~ /d82.trk$/;
+
+open FILE, "|c1541 tmp/" . $disk_name;
+print FILE $cmd_line;
+close FILE;
 
 
 #######################################################################################

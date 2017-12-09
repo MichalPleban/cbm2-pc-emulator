@@ -1,5 +1,5 @@
 
-PRG = dist/prg/8088.prg dist/prg/6509.prg
+PRG = dist/prg/6509.prg dist/prg/8088.prg
 COM = dist/com/pc_tsr.com dist/com/pc_high.com dist/com/pc_debug.com
 ROM = dist/rom/card.bin 
 MISC = dist/misc/reboot.com dist/misc/cls.com
