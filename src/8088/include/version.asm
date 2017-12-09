@@ -8,4 +8,4 @@ Version_Banner:
 %ifdef ROM
 			db "ROM "
 %endif
-			db "(C) 2017 Micha", 9Ch, " Pleban.", 10, 13, 0, '$'
+			db "(C) 2017 Micha", 9Ch, " Pleban", 10, 13, 0, '$'

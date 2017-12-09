@@ -1213,13 +1213,29 @@ output_convert_4:
 output_convert_5:
     jmp SCROUT
 output_convert_6:
+	lda #$0e
+	sta CRTC_RegNo
+	lda CRTC_RegVal
+	and #$10
+	tay
+    dey
+    bmi output_convert_8
+    txa
+    clc
+    adc #$1f
+    dex
+    bmi output_convert_7
+	adc #$40
+output_convert_7:
+    jmp SCROUT
+output_convert_8:
     lda output_table_3-$80,x
     pha
     and #$7f
     cmp #$40
-    bcc output_convert_7
+    bcc output_convert_9
     adc #$3f
-output_convert_7:
+output_convert_9:
     adc #$a0
     tax
     pla
@@ -1266,6 +1282,6 @@ output_table_2:
 output_table_3:
     .byt $04, $80, $01, $02, $82, $81, $3d, $20
     .byt $3b, $3f, $06, $3f, $0b, $13, $11, $12
-    .byt $0e, $10, $1d, $0d, $13, $4a, $7c, $7e
+    .byt $0e, $10, $1d, $0d, $13, $4a, $5c, $5e
     .byt $7e, $76, $1a, $3d, $20, $4a, $ca, $6c
     .byt $00
