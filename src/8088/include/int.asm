@@ -194,9 +194,9 @@ INT_10_09_NoReverse1:
 			; Output characters one by one
 			push cx
 			push ax
-			call IPC_ScreenConvert
+			xor ah, ah
 INT_10_09_Loop:
-			call IPC_ScreenOut
+			call IPC_ScreenOutPC
 			loop INT_10_09_Loop
 			pop ax
 			pop cx
@@ -293,9 +293,8 @@ INT_10_0E_Dirty:
 			; Check control characters
 			cmp al, 20h
 			jl INT_10_0E_Control
-			call IPC_ScreenConvert
 INT_10_0E_Output:
-			call IPC_ScreenOut
+			call IPC_ScreenOutPC
 			
 INT_10_0E_Finish:
 			; Invalidate cursor position
@@ -303,6 +302,10 @@ INT_10_0E_Finish:
 
 			pop ax
 			ret
+			
+INT_10_0E_Output2:
+			call IPC_ScreenOut
+			jmp INT_10_0E_Finish
 
 			; Translate common control codes
 INT_10_0E_Control:
@@ -315,12 +318,12 @@ INT_10_0E_Not07:
 			cmp al, 8	; BackSpace
 			jne INT_10_0E_Not08
 			mov al, CHAR_DEL
-			jmp INT_10_0E_Output
+			jmp INT_10_0E_Output2
 INT_10_0E_Not08:
 			cmp al, 10	; LF
 			jne INT_10_0E_Not0A
 			mov al, CHAR_DOWN
-			jmp INT_10_0E_Output
+			jmp INT_10_0E_Output2
 INT_10_0E_Not0A:
 			cmp al, 13	; CR
 			jne INT_10_0E_Not0D
@@ -328,8 +331,7 @@ INT_10_0E_Not0A:
 			call IPC_ScreenEscape
 			jmp INT_10_0E_Finish
 INT_10_0E_Not0D:
-			pop ax
-			ret
+			jmp INT_10_0E_Output
 			
 ; -----------------------------------------------------------------
 ; INT 10 function 0F - get video mode.

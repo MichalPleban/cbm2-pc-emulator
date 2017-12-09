@@ -283,7 +283,7 @@ IPC_KbdConvert:
 			ret
 			
 ; --------------------------------------------------------------------------------------
-; Output character to the screen.
+; Output PETSCII character to the screen.
 ; Input:
 ;     		AL - character code
 ; --------------------------------------------------------------------------------------
@@ -292,6 +292,21 @@ IPC_ScreenOut:
 			IPC_Enter
 			mov [IPCData+2], al
 			IPC_Call 12h
+			IPC_Leave
+			ret
+
+; --------------------------------------------------------------------------------------
+; Output CP437 character to the screen.
+; Input:
+;     		AL - character code
+;     		AH - reverse flag (80h = reverse)
+; --------------------------------------------------------------------------------------
+
+IPC_ScreenOutPC:
+			IPC_Enter
+			mov [IPCData+2], byte 3
+			mov [IPCData+3], ax
+			IPC_Call 1Dh
 			IPC_Leave
 			ret
 
@@ -348,10 +363,7 @@ IPC_WindowRemove:
 
 IPC_CursorSet:
 			IPC_Enter
-			push ax
-			mov al, 1
-			mov [IPCData+2], al
-			pop ax
+			mov [IPCData+2], byte 1
 			mov [IPCData+3], dx
 			IPC_Call 1Dh
 			IPC_Leave
@@ -366,57 +378,10 @@ IPC_CursorSet:
 
 IPC_CursorGet:
 			IPC_Enter
-			push ax
-			mov al, 2
-			mov [IPCData+2], al
-			pop ax
+			mov [IPCData+2], byte 2
 			IPC_Call 1Dh
 			mov dx, [IPCData+3]
 			IPC_Leave
-			ret
-
-; -----------------------------------------------------------------
-; Translate ASCII into PETSCII for displaying on the screen
-; Input:
-;			AL - ASCII code
-; Output:
-;			AL - PETSCII code
-; -----------------------------------------------------------------
-
-IPC_ScreenConvert:
-			cmp al, 32
-			jnb IPC_ScreenConvertUpper
-			mov al, 0A4h
-			ret
-IPC_ScreenConvertUpper:
-			cmp al, 127
-			jb IPC_ScreenConvertLower
-			xor ah, ah
-			push bp
-			mov bp, ax
-			mov al, [cs:IPC_CharConvert_Table-127+bp]
-			pop bp
-			ret
-
-			; 60-7F maps to C0-DF in the driver
-IPC_ScreenConvertLower:
-			cmp al, 60h
-			jb IPC_ScreenConvertLetter
-			add al, 60h
-
-			; Convert uppercase/lowercase letters
-IPC_ScreenConvertLetter:
-			mov ah, al
-			and ah, 80h
-			and al, 7Fh
-			cmp al, 41h
-			jb IPC_ScreenConvertRet
-			cmp al, 5Bh
-			jae IPC_ScreenConvertRet
-			xor ah, 80h
-
-IPC_ScreenConvertRet:
-			or al, ah
 			ret
 
 ; --------------------------------------------------------------------------------------
@@ -577,27 +542,6 @@ IPC_SectorCalc_1:
 			pop si
 			pop ds
 			ret
-
-; --------------------------------------------------------------------------------------
-; CP437 to PETSCII conversion table for characters above 127.
-; --------------------------------------------------------------------------------------
-
-IPC_CharConvert_Table:
-			db 05Eh
-			db 0A4h, 0A4h, 0A4h, 0A4h, 0A4h, 0A4h, 0A4h, 0A4h ; 80-87
-			db 0A4h, 0A4h, 0A4h, 0A4h, 05Ch, 0A4h, 0A4h, 0A4h ; 88-8F
-			db 0A4h, 0A4h, 0A4h, 0A4h, 0A4h, 0A4h, 0A4h, 0A4h ; 90-97
-			db 0A4h, 0A4h, 0A4h, 0A4h, 05Ch, 0A4h, 0A4h, 0A4h ; 98-9F
-			db 0A4h, 0A4h, 0A4h, 0A4h, 0A4h, 0A4h, 0A4h, 0A4h ; A0-A7
-			db 0A4h, 0A4h, 0A4h, 0A4h, 0A4h, 0A4h, 03Ch, 03Eh ; A8-AF
-			db 0A9h, 0A9h, 0A9h, 0DDh, 0B3h, 0B3h, 0B3h, 0AEh ; B0-B7
-			db 0AEh, 0B3h, 0DDh, 0AEh, 0BDh, 0BDh, 0BDh, 0AEh ; B8-BF
-			db 0ADh, 0B1h, 0B2h, 0ABh, 0C0h, 0DBh, 0ABh, 0ABh ; C0-C7
-			db 0ADh, 0B0h, 0B1h, 0B2h, 0ABh, 0C0h, 0DBh, 0B1h ; C8-CF
-			db 0B1h, 0B2h, 0B2h, 0ADh, 0ADh, 0B0h, 0B0h, 0DBh ; D0-D7
-			db 0DBh, 0BDh, 0B0h, 0DEh, 0A2h, 0A1h, 0B5h, 0B8h ; D8-DF
-			db 0A4h, 0A4h, 0A4h, 0A4h, 0A4h, 0A4h, 0A4h, 0A4h ; 80-87
-			db 0A4h, 0A4h, 0A4h, 0BAh, 0A4h, 0A4h, 0A4h, 020h ; 88-8F
 
 ; --------------------------------------------------------------------------------------
 ; CBM key code to PC scan code conversion table.
