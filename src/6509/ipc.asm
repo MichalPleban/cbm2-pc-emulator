@@ -1202,7 +1202,7 @@ output_convert_2:
     bcc output_convert_3
     cmp #$61
     bcc output_convert_4
-    cmp #$7A
+    cmp #$7B
     bcs output_convert_4
 output_convert_3
     eor #$20

@@ -118,12 +118,12 @@ my $stub_data;
 
 open FILE, $stub_file || die "Unable to open stub file '$stub_file'.\n";
 binmode FILE;
-read(FILE, $stub_data, 14849);
+read(FILE, $stub_data, 22273);
 close FILE;
 
 my $stub_size = length($stub_data);
 
-die "Invalid stub file size (should be 14848 bytes).\n" unless $stub_size = 14848;
+die "Invalid stub file size (should be 14848 bytes).\n" unless $stub_size = 22272;
 
 
 #######################################################################################
@@ -139,15 +139,15 @@ $out_size = 1066496 if $out_type eq "d82";
 
 my $out_data = chr(0) x $out_size;
 
-substr($out_data, 274688, 14848) = $stub_data;
-if($in_size < 274688)
+substr($out_data, 267264, 22272) = $stub_data;
+if($in_size < 267264)
 {
 	substr($out_data, 0, $in_size) = $in_data;
 }
 else
 {
-	substr($out_data, 0, 274688) = substr($in_data, 0, 274688);
-	substr($out_data, 289536, length($in_data)-274688) = substr($in_data, 274688);
+	substr($out_data, 0, 267264) = substr($in_data, 0, 267264);
+	substr($out_data, 289536, length($in_data)-267264) = substr($in_data, 267264);
 }
 
 

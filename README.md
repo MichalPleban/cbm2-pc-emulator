@@ -4,13 +4,17 @@ This software allows you to run IBM PC software on a Commodore 710 equipped with
 
 The aim of the project is to emulate as much of the PC architecture in software as possible, to allow booting PC versions of MS-DOS and running PC software. Currently, PC-DOS versions 2.00 and 3.30 have been successfully booted using the emulation layer.
 
-**New in version 0.60**: Hostless boot. The original MS-DOS 1.25 disk is no longer required to run the emulation layer. You can place the emulation libraries directly on the destination operating system disk.
+A PC-compatible font is also supplied, allowing to display characters that are not present in the PETSCII character set (such as \ | {} or CP437 graphics characters).
 
 ## Quick start guide
 
 Use `cbmlink` (or other tool) to create a Commodore 8250 disk from the image `dist/disk/pcdos33.d82` (if you do not have the 8250 drive, you can use `pcdos33a.d80` instead).
 
-Insert the diskette in drive 0 and hit Shift+Run to start the system. The boot file loads the emulation layer libraries and transfers control to the 8088 processor, which reads the boot sector from the diskette and executes it. Loading the PC-DOS 3.30 system takes about 2 minutes, due to slow speed of the IEEE drive.
+Optionally, burn a 2764 EPROM with the contents of the `dist/rom/charset.bin` file and replace your computer's character ROM with it. It is not necessary, but doing so will enable the PC display font.
+
+Insert the diskette in drive 0 and hit Shift+Run to start the system. If you burned the custom character ROM, you can press space while the sotware is booting, to enable the PC font. If the character ROM is installed successfullty, you should see the back arrow character in the startup message changing into the underscore character.
+
+The boot file loads the emulation layer libraries and transfers control to the 8088 processor, which reads the boot sector from the diskette and executes it. Loading the PC-DOS 3.30 system takes about 2 minutes, due to slow speed of the IEEE drive. If you want to do something faster, you can use the image `dist/disk/pcdos11.d82` which contains PC-DOS 1.10 and boots under 20 seconds.
 
 Loaded system runs inside the PC emulation layer. You can try different DOS commands - everything that is not tied directly to PC hardware (like GRAFTABL) should work.
 

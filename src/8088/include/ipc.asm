@@ -520,9 +520,9 @@ IPC_SectorCalc:
 			push si
 			push bx
 			; Skip tracks 38 and 39
-			cmp ax, 1073
+			cmp ax, 1044
 			jl IPC_SectorCalc_0
-			add ax, 58
+			add ax, 87
 IPC_SectorCalc_0:
 			mov bx, ax
 			push cs

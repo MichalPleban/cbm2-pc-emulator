@@ -31,12 +31,12 @@ my $stub_data;
 
 open FILE, $in_file || die "Could not load input stub file: " . $in_file . "\n";
 binmode FILE;
-read(FILE, $stub_data, 14849);
+read(FILE, $stub_data, 22273);
 close FILE;
 
 my $stub_size = length($stub_data);
 
-die "Invalid stub file size (should be 14848 bytes).\n" unless $stub_size = 14848;
+die "Invalid stub file size (should be 14848 bytes).\n" unless $stub_size = 22272;
 
 
 #######################################################################################
@@ -63,7 +63,7 @@ mkdir "tmp";
 
 open FILE, ">tmp/" . $disk_name;
 binmode FILE;
-seek FILE, 274688, SEEK_SET;
+seek FILE, 267264, SEEK_SET;
 print FILE $stub_data;
 seek FILE, $disk_size-1, SEEK_SET;
 print FILE chr(0);
@@ -87,6 +87,7 @@ while($pc_file = shift @ARGV)
 {
 	$cbm_file = basename($pc_file);
 	$cbm_file =~s /\..*//;
+	$cbm_file =~s /-.*//;
 	
 	$cmd_line .= "write " . $pc_file . " " . $cbm_file . "\n";
 }
@@ -108,8 +109,8 @@ my $in_data;
 
 open FILE, "tmp/" . $disk_name;
 binmode FILE;
-seek FILE, 274688, SEEK_SET;
-read(FILE, $in_data, 14848);
+seek FILE, 267264, SEEK_SET;
+read(FILE, $in_data, 22272);
 close FILE;
 
 open FILE, ">" . $out_file;
