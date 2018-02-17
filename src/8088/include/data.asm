@@ -52,5 +52,11 @@ Data_MemSize:		equ 0008h
 
 Data_Ticks:			equ 000Ah
 
-Data_Length			equ 12
+; -----------------------------------------------------------------
+; Boot flag - set if the sustem is booting.
+; -----------------------------------------------------------------
+
+Data_Boot:			equ 000Ch
+
+Data_Length			equ 13
 

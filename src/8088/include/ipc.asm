@@ -431,6 +431,8 @@ IPC_SerialOut:
 ;			DL - drive number
 ;			ES:BX - buffer address
 ;			BP - 0 = disk read, 1 = disk write
+; Return:
+;			AX - disk read status from the 8050 drive ("00" = OK)
 ; --------------------------------------------------------------------------------------
 			
 IPC_SectorAccess:		
@@ -440,6 +442,7 @@ IPC_SectorAccess:
 			mov cx, 0096h
 			add cx, bp
 			call IPC
+			mov ax, [IPCData+2]
 			IPC_Leave
 			IPC_Enable_IRQ			
 			ret
@@ -480,7 +483,7 @@ IPC_SectorSet:
 IPC_TimeSet:
 			IPC_Enter
 			xchg dh, dl
-			mov [IPCData+0], ax
+			mov [IPCData+0], dx
 			xchg ah, al
 			mov [IPCData+2], ax
 			IPC_Call 1Eh

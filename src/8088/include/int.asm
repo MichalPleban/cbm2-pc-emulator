@@ -70,6 +70,8 @@ INT_10_Functions:
 ; -----------------------------------------------------------------
 			
 INT_10_00:
+			mov [es:Data_Boot], byte 00h
+			
 			; Make whole screen editable
 			call IPC_WindowRemove
 
@@ -170,6 +172,8 @@ INT_10_06_Clear:
 ; -----------------------------------------------------------------
 
 INT_10_09:
+			call INT_ClearDot
+			
 			; MS BASIC Compiler runtime calls this function with AL=00 ?
 			test al, al
 			jz INT_10_09_Ret
@@ -282,6 +286,8 @@ INT_10_CursorAdvance_Ret:
 ; -----------------------------------------------------------------
 
 INT_10_0E:
+			call INT_ClearDot
+			
 			push ax
 
 			; Check if cursor position has not changed
@@ -557,9 +563,19 @@ INT_13_Disk:
 			; Read physical sectors
 INT_13_Disk_Loop:
 			push ax
+			call INT_BootDot
 			call IPC_SectorCalc
 			call IPC_SectorAccess
+			cmp ax, 3030h
+			jz INT_13_Disk_NoError
+			pop ax
+			pop ax
+			pop cx
+			stc
+			mov ah, 2
+			ret
 
+INT_13_Disk_NoError:
 			; Check if we were reading on the 0000 boundary
 			; If yes, move the sector 2 bytes below and restore overwritten word
 			test ch, 01h
@@ -959,6 +975,7 @@ INT_19_Again:
 			call INT_19_Segments
 			mov si, INT_19_Banner
 			call Output_String
+			mov [es:Data_Boot], byte 80h
 			jmp 0000:7C00h
 			
 INT_19_NoSystem:
@@ -982,6 +999,38 @@ INT_19_Banner:
 
 INT_19_Banner1:
 			db "Insert a system disk and press any key.", 10, 13, 0		
+
+; -----------------------------------------------------------------
+; Dots printed on disk access when the system boots.
+; -----------------------------------------------------------------
+
+INT_BootDot:			
+			push ds
+			push ax
+			mov ax, Data_Segment
+			mov ds, ax
+			test [Data_Boot], byte 80h
+			jz INT_NoDot
+			mov al, '.'
+			call IPC_ScreenOut
+INT_NoDot:
+			pop ax
+			pop ds
+			ret
+
+INT_ClearDot:
+			push ds
+			push ax
+			mov ax, Data_Segment
+			mov ds, ax
+			test [Data_Boot], byte 80h
+			jz INT_NoDot
+			mov al, 13
+			call IPC_ScreenOut
+			mov [Data_Boot], byte 00h
+			pop ax
+			pop ds
+			ret
 			
 ; -----------------------------------------------------------------
 ; INT 1A - Timer functions.
@@ -1048,6 +1097,39 @@ INT_1A_00:
 ; -----------------------------------------------------------------
 
 INT_1A_01:
+			push ax
+			push bx
+			push cx
+			push dx
+			mov ax, dx
+			mov dx, cx
+			
+			; Calculate hour and minute
+			mov cx, 1092 ; Ticks per minute
+			div cx
+			mov bx, dx
+			mov cl, 60
+			div cl
+			xchg al, ah
+			
+			; Calculate number of seconds
+			xchg ax, bx
+			xor dx, dx
+			mov cx, 50
+			mul cx
+			mov cx, 91
+			div cx
+			mov cl, 10
+			div cl
+			xchg al, ah
+			
+			mov dx, bx			
+			call IPC_TimeSet
+			
+			pop dx
+			pop cx
+			pop bx
+			pop ax
 			iret
 
 ; -----------------------------------------------------------------

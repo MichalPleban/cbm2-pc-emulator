@@ -37,6 +37,7 @@ SysMemTop = $355
 RS232Status = $37a
 RvsFlag = $0397
 ScrollFlag = $39b
+WstFlag = $3fa
 
 ;--------------------------------------------------------------------
 ; I/O chip ports
@@ -72,13 +73,127 @@ PLOT = $fff0
 ; Load address for the PRG file
 ;--------------------------------------------------------------------
 
-    .word $0800
+    .word $0600
+
+    * = $0600
+    
+;--------------------------------------------------------------------
+; CP437 screen output function.
+; Performs appropriate conversion to PETSCII.
+;--------------------------------------------------------------------
+
+output_convert:
+    tax
+    inx
+    bpl output_convert_1
+    lda output_table_2-$80,x
+output_convert_1:
+    cpx #$21
+    bcs output_convert_2
+    lda output_table_1, x
+output_convert_2:
+    tax
+    bmi output_convert_6
+	jsr uppercase_convert
+    jmp SCROUT
+output_convert_6:
+	lda #$0e
+	sta CRTC_RegNo
+	lda CRTC_RegVal
+	and #$10
+	tay
+    dey
+    bmi output_convert_8
+    txa
+    clc
+    adc #$1f
+    dex
+    bmi output_convert_7
+	adc #$40
+output_convert_7:
+    jmp SCROUT
+output_convert_8:
+    lda output_table_3-$80,x
+    pha
+    and #$7f
+    cmp #$40
+    bcc output_convert_9
+    adc #$3f
+output_convert_9:
+    adc #$a0
+    tax
+    pla
+    and #$80
+    pha
+    eor RvsFlag
+    sta RvsFlag
+    txa
+    jsr SCROUT
+    pla
+    eor RvsFlag
+    sta RvsFlag
+    rts
+
+uppercase_convert:
+    cmp #$41
+    bcc uppercase_convert_2
+    cmp #$5B
+    bcc uppercase_convert_1
+    cmp #$61
+    bcc uppercase_convert_2
+    cmp #$7B
+    bcs uppercase_convert_2
+uppercase_convert_1:
+    eor #$20
+uppercase_convert_2:
+    cmp #$60
+    bcc uppercase_convert_3
+    adc #$5F
+uppercase_convert_3:
+	rts
+    
+; Conversion of characters FF and 00-1F into meta-characters.
+output_table_1:
+    .byt $a0
+    .byt $a0, $80, $80, $80, $80, $80, $80, $9d
+    .byt $9e, $9d, $9e, $80, $80, $80, $80, $80
+    .byt $97, $96, $9b, $80, $80, $80, $83, $9b
+    .byt $98, $99, $97, $96, $80, $80, $98, $99
+
+; Conversion of characters 7F-FE into meta-characters.
+output_table_2:
+    .byt $98
+    .byt $80, $80, $80, $80, $80, $80, $80, $80
+    .byt $80, $80, $80, $80, $80, $80, $80, $80
+    .byt $80, $80, $80, $80, $80, $80, $80, $80
+    .byt $80, $80, $80, $80, $9f, $80, $80, $80
+    .byt $80, $80, $80, $80, $80, $80, $80, $80
+    .byt $80, $80, $80, $80, $80, $80, $96, $97
+    .byt $8a, $89, $8b, $86, $8d, $8d, $8d, $8d
+    .byt $90, $91, $8e, $8f, $8c, $87, $88, $8e
+    .byt $93, $8e, $8f, $8c, $87, $88, $8c, $8c
+    .byt $93, $91, $8e, $8f, $8c, $87, $88, $8e
+    .byt $8e, $8f, $8f, $93, $93, $91, $91, $88
+    .byt $88, $92, $91, $81, $83, $82, $85, $84
+    .byt $80, $80, $80, $80, $80, $80, $80, $80
+    .byt $80, $80, $80, $80, $80, $80, $80, $80
+    .byt $80, $80, $80, $80, $80, $80, $80, $80
+    .byt $80, $9d, $9d, $9a, $80, $80, $95
+    
+; Conversion of meta-characters into actual PETSCII.
+output_table_3:
+    .byt $04, $80, $01, $02, $82, $81, $3d, $20
+    .byt $3b, $3f, $06, $3f, $0b, $13, $11, $12
+    .byt $0e, $10, $1d, $0d, $13, $4a, $5c, $5e
+    .byt $7e, $76, $1a, $3d, $20, $4a, $ca, $6c
+    .byt $00
     
 ;--------------------------------------------------------------------
 ; Startup routine - sets interrupt vectors and starts 8088 processor.
 ;--------------------------------------------------------------------
+
+    .dsb ($0800-*), $AA    
     
-    * = $0800
 ipc_buffer = *+5
 
     ldy #$01
@@ -136,6 +251,10 @@ key_delay:
 ; Status of the disk operation.
 disk_status:
     .byt $a2,$00
+
+; Flag indicating whether "lowercase" character was sent to the printer.
+printer_flag:
+	.byt 0
 
     .dsb ($0830-*), $AA
         
@@ -753,6 +872,8 @@ ipc_18_init:
     jsr reopen_08
     lda #$00
     sta ipc_buffer+2
+    sta WstFlag
+    sta WstFlag+1
     jsr reopen_09
     bcs init_diskno
     inc ipc_buffer+2
@@ -900,25 +1021,51 @@ serial_reopen:
     
 ipc_13_printer_out:
     lda ipc_buffer+2
-    cmp #$0a
-    beq printer_skip
+    clc
+    bmi printer_end
+    cmp #$0d
+    beq printer_cr
+    cmp #$20
+    bcc printer_end
+    jsr uppercase_convert
+printer_print:
+	jsr printer_out
+printer_end:
+    jmp ipc_end
+printer_cr:
+	jsr printer_out
+	ldx #0
+	stx printer_flag
+	clc
+	bcc printer_end
+	
+printer_out:
+	pha
     ldx #$04
     jsr CHKOUT
     bcc printer_ok
     jsr printer_reopen
-    bcs printer_end
+    bcs printer_finish
     ldx #$04
     jsr CHKOUT
-    bcs printer_end
+    bcs printer_finish
 printer_ok:
-    lda ipc_buffer+2
+    bit printer_flag
+    bmi printer_do
+    lda #$11
+    jsr BSOUT
+    lda #$80
+    sta printer_flag
+printer_do:
+    pla
     jsr BSOUT
     jsr CLRCH
-printer_skip:
     clc
-printer_end:
-    jmp ipc_end
-    
+    rts
+printer_finish:
+	pla
+	rts
+	    
 ; Reopen channel #4 to printer in case of error.
 printer_reopen:
     lda #$04
@@ -1179,109 +1326,3 @@ getin_end:
     clc
     rts
 
-;--------------------------------------------------------------------
-; CP437 screen output function.
-; Performs appropriate conversion to PETSCII.
-;--------------------------------------------------------------------
-
-output_convert:
-    tax
-    inx
-    bpl output_convert_1
-    lda output_table_2-$80,x
-output_convert_1:
-    cpx #$21
-    bcs output_convert_2
-    lda output_table_1, x
-output_convert_2:
-    tax
-    bmi output_convert_6
-    cmp #$41
-    bcc output_convert_4
-    cmp #$5B
-    bcc output_convert_3
-    cmp #$61
-    bcc output_convert_4
-    cmp #$7B
-    bcs output_convert_4
-output_convert_3
-    eor #$20
-output_convert_4:
-    cmp #$60
-    bcc output_convert_5
-    adc #$5F
-output_convert_5:
-    jmp SCROUT
-output_convert_6:
-	lda #$0e
-	sta CRTC_RegNo
-	lda CRTC_RegVal
-	and #$10
-	tay
-    dey
-    bmi output_convert_8
-    txa
-    clc
-    adc #$1f
-    dex
-    bmi output_convert_7
-	adc #$40
-output_convert_7:
-    jmp SCROUT
-output_convert_8:
-    lda output_table_3-$80,x
-    pha
-    and #$7f
-    cmp #$40
-    bcc output_convert_9
-    adc #$3f
-output_convert_9:
-    adc #$a0
-    tax
-    pla
-    and #$80
-    pha
-    eor RvsFlag
-    sta RvsFlag
-    txa
-    jsr SCROUT
-    pla
-    eor RvsFlag
-    sta RvsFlag
-    rts
-
-; Conversion of characters FF and 00-1F into meta-characters.
-output_table_1:
-    .byt $a0
-    .byt $a0, $80, $80, $80, $80, $80, $80, $9d
-    .byt $9e, $9d, $9e, $80, $80, $80, $80, $80
-    .byt $97, $96, $9b, $80, $80, $80, $83, $9b
-    .byt $98, $99, $97, $96, $80, $80, $98, $99
-
-; Conversion of characters 7F-FE into meta-characters.
-output_table_2:
-    .byt $98
-    .byt $80, $80, $80, $80, $80, $80, $80, $80
-    .byt $80, $80, $80, $80, $80, $80, $80, $80
-    .byt $80, $80, $80, $80, $80, $80, $80, $80
-    .byt $80, $80, $80, $80, $9f, $80, $80, $80
-    .byt $80, $80, $80, $80, $80, $80, $80, $80
-    .byt $80, $80, $80, $80, $80, $80, $96, $97
-    .byt $8a, $89, $8b, $86, $8d, $8d, $8d, $8d
-    .byt $90, $91, $8e, $8f, $8c, $87, $88, $8e
-    .byt $93, $8e, $8f, $8c, $87, $88, $8c, $8c
-    .byt $93, $91, $8e, $8f, $8c, $87, $88, $8e
-    .byt $8e, $8f, $8f, $93, $93, $91, $91, $88
-    .byt $88, $92, $91, $81, $83, $82, $85, $84
-    .byt $80, $80, $80, $80, $80, $80, $80, $80
-    .byt $80, $80, $80, $80, $80, $80, $80, $80
-    .byt $80, $80, $80, $80, $80, $80, $80, $80
-    .byt $80, $9d, $9d, $9a, $80, $80, $95
-    
-; Conversion of meta-characters into actual PETSCII.
-output_table_3:
-    .byt $04, $80, $01, $02, $82, $81, $3d, $20
-    .byt $3b, $3f, $06, $3f, $0b, $13, $11, $12
-    .byt $0e, $10, $1d, $0d, $13, $4a, $5c, $5e
-    .byt $7e, $76, $1a, $3d, $20, $4a, $ca, $6c
-    .byt $00
