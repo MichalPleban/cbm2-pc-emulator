@@ -44,7 +44,7 @@ The emulation layer presents itself as an IBM PC with a MDA graphics card, one s
 * INT 16 - functions 00, 01, 02
 * INT 17 - functions 00, 01, 02
 * INT 18 and INT 19
-* INT 1A - function 00 only
+* INT 1A - functions 00, 01
 
 These services are sufficient to run MS-DOS and other software which does not rely on accessing PC hardware directly.
 
