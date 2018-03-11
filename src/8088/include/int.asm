@@ -727,16 +727,22 @@ INT_13_ResetParams_Default:
 ; -----------------------------------------------------------------
 
 INT_13_08:
+			test dl, 80h
+			jnz INT_13_08_Error
 			clc
 			xor ah, ah
 			mov bl, 03h
-			mov ch, 80
-			mov cl, 9
-			mov dh, 1
-			mov dl, 2
-			; TODO: ES:DI pointer
+			mov cx, 5009h
+			mov dx, 0102h
+			mov di, INT_1E
+			push cs
+			pop es
 			ret
-
+INT_13_08_Error:
+			stc
+			mov ah, 0FFh
+			ret		
+			
 ; -----------------------------------------------------------------
 ; INT 13 function 15 - get disk change type.
 ; -----------------------------------------------------------------

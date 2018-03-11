@@ -1,6 +1,6 @@
 
-%define VERSION_STRING		"0.63"
-VERSION_NUMBER		equ		63
+%define VERSION_STRING		"0.64"
+VERSION_NUMBER		equ		64
 
 
 Version_Banner:
@@ -8,4 +8,4 @@ Version_Banner:
 %ifdef ROM
 			db "ROM "
 %endif
-			db "(C) 2017 Micha", 9Ch, " Pleban", 10, 13, 0, '$'
+			db "(C) 2017-2018 Micha", 9Ch, " Pleban", 10, 13, 0, '$'
