@@ -19,6 +19,7 @@
 %include 'src/8088/include/debug.asm'
 %include 'src/8088/include/ipc.asm'
 %include 'src/8088/include/int.asm'
+%include 'src/8088/include/hdrom.asm'
 %include 'src/8088/include/data.asm'
 
 ; Resident code ends here.

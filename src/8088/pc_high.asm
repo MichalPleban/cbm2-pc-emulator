@@ -21,6 +21,7 @@ Install_Leave equ 1800h
 %include 'src/8088/include/ipc.asm'
 %include 'src/8088/include/int.asm'
 %include 'src/8088/include/init.asm'
+%include 'src/8088/include/hdrom.asm'
 %include 'src/8088/include/data.asm'
 
 Init_Far:

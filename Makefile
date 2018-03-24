@@ -1,7 +1,7 @@
 
 PRG = dist/prg/6509.prg dist/prg/8088.prg
 COM = dist/com/pc_tsr.com dist/com/pc_high.com dist/com/pc_debug.com
-ROM = dist/rom/card.bin 
+ROM = dist/rom/card.bin dist/rom/card_big.bin
 MISC = dist/misc/reboot.com dist/misc/cls.com
 
 TRACK = util/160_d80.trk util/160_d82.trk util/180_d80.trk util/180_d82.trk util/360_d80.trk util/360_d82.trk util/720_d82.trk
@@ -9,7 +9,7 @@ ONDISK = dist/prg/boot.prg $(PRG)
 DISK = dist/disk/pcdos33.d82 dist/disk/pcdos33a.d80 dist/disk/pcdos33b.d80 dist/disk/pcdos11.d82 dist/disk/pcdos11.d80
 EMPTY = dist/disk/empty/empty160.d80 dist/disk/empty/empty160.d82 dist/disk/empty/empty180.d80 dist/disk/empty/empty180.d82 dist/disk/empty/empty360.d80 dist/disk/empty/empty360.d82 dist/disk/empty/empty720.d82
 
-COMMON = src/8088/include/data.asm src/8088/include/init.asm src/8088/include/int.asm src/8088/include/ipc.asm src/8088/include/version.asm
+COMMON = src/8088/include/data.asm src/8088/include/init.asm src/8088/include/int.asm src/8088/include/ipc.asm src/8088/include/hdrom.asm src/8088/include/version.asm
 INSTALL = src/8088/include/install.asm
 DEBUG = src/8088/include/debug.asm
 
@@ -32,6 +32,9 @@ dist/com/pc_debug.com: src/8088/pc_high.asm $(COMMON) $(INSTALL) $(DEBUG)
 
 dist/rom/card.bin: src/8088/rom.asm src/8088/include/rom.asm $(COMMON)
 	nasm src/8088/rom.asm -w-lock -o dist/rom/card.bin
+
+dist/rom/card_big.bin: src/8088/rom_big.asm src/8088/include/rom.asm $(COMMON) src/disk/hd.bin
+	nasm src/8088/rom_big.asm -w-lock -o dist/rom/card_big.bin
 
 dist/misc/reboot.com: src/misc/reboot.asm
 	nasm src/misc/reboot.asm -o dist/misc/reboot.com

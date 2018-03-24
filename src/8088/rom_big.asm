@@ -2,9 +2,18 @@
 %define STANDALONE
 %define ROM
 
-			org	0E000h
+			org	00000h
+			
+			jmp 0F000h:0F000h
+
+			times 0008h-($-$$) db 0FFh			
+			dw "HD"
+			dw 0F001h
+			times 0010h-($-$$) db 0FFh
+			
+incbin 'src/disk/hd.bin'
 	
-			times 4096 db 0FFh
+			times 0F000h-($-$$) db 0FFh
 
 RomStart:
 		
@@ -39,13 +48,13 @@ RomLoop:
 %include 'src/8088/include/data.asm'
 %include 'src/8088/include/hdrom.asm'
 
-			times 8176-($-$$) db 0FFh
+			times 0FFF0h-($-$$) db 0FFh
 	
 	
 			jmp	0F000h:startf
 			jmp	0F000h:RomInit
 	
-			times 8186-($-$$) db 0FFh
+			times 0FFFAh-($-$$) db 0FFh
 			
 			dw "PC"
 			dw VERSION_NUMBER

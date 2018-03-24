@@ -406,11 +406,11 @@ INT_13_Functions:
 			dw INT_13_Error
 			dw INT_13_Error
 			dw INT_13_Error
+			dw INT_13_OK
+			dw INT_13_OK
 			dw INT_13_Error
 			dw INT_13_Error
-			dw INT_13_Error
-			dw INT_13_Error
-			dw INT_13_Error
+			dw INT_13_OK
 			dw INT_13_Error
 			dw INT_13_Error
 			dw INT_13_Error
@@ -421,6 +421,26 @@ INT_13_Functions:
 			dw INT_13_Error
 			dw INT_13_Error
 			dw INT_13_Error
+
+; -----------------------------------------------------------------
+; Check whether there is HD image in the ROM.
+; -----------------------------------------------------------------
+
+INT_13_HD:
+			push ds
+			push ax
+			mov ax, 0F000h
+			mov ds, ax
+			cmp [0008h], word "HD"
+			pop ax
+			pop ds
+			jz INT_13_HD_OK
+			stc
+			mov ah, 0FFh
+			ret		
+INT_13_HD_OK:
+            jmp HDROM_Handle
+            
 
 ; -----------------------------------------------------------------
 ; INT 13 function 00 - reset drive.
@@ -450,6 +470,10 @@ INT_13_01:
 ; -----------------------------------------------------------------
 
 INT_13_02:
+			test dl, 80h
+			jz INT_13_02_Floppy
+			jmp INT_13_HD
+INT_13_02_Floppy:
 			mov bp, 0
 			jmp INT_13_Common
 INT_13_03:
@@ -728,7 +752,9 @@ INT_13_ResetParams_Default:
 
 INT_13_08:
 			test dl, 80h
-			jnz INT_13_08_Error
+			jz INT_13_08_Floppy
+			jmp INT_13_HD
+INT_13_08_Floppy:
 			clc
 			xor ah, ah
 			mov bl, 03h
@@ -738,16 +764,16 @@ INT_13_08:
 			push cs
 			pop es
 			ret
-INT_13_08_Error:
-			stc
-			mov ah, 0FFh
-			ret		
 			
 ; -----------------------------------------------------------------
 ; INT 13 function 15 - get disk change type.
 ; -----------------------------------------------------------------
 
 INT_13_15:
+			test dl, 80h
+			jz INT_13_15_Floppy
+			jmp INT_13_HD
+INT_13_15_Floppy:
 			clc
 			mov ah, 01h
 			ret
@@ -953,8 +979,23 @@ INT_19:
 			INT_Debug 19h
 INT_19_Again:
 			call Init_Data
-
-			; Load two first 256-byte sectors from the disk.
+			
+			; Try loading boot sector from hard disk
+			mov ax, 0201h
+			mov dx, 0080h
+			xor cx, cx
+			mov es, cx
+			inc cx
+			mov bx, 7C00h
+			call INT_13_02
+			jc INT_19_Floppy
+			cmp [es:7DFEh], word 0AA55h
+			jne INT_19_Floppy
+			mov dl, 80h
+			jmp INT_19_Found
+			
+INT_19_Floppy:
+			; Load two first 256-byte sectors from the floppy disk.
 			xor bx, bx
 			mov es, bx
 			mov bp, bx
@@ -968,6 +1009,10 @@ INT_19_Again:
 			call IPC_SectorAccess
 			cmp [es:7DFEh], word 0AA55h
 			jne INT_19_NoSystem
+			xor dl, dl
+
+INT_19_Found:
+			push dx
 
 %ifndef STANDALONE
 			mov bx, 0040h
@@ -982,6 +1027,7 @@ INT_19_Again:
 			mov si, INT_19_Banner
 			call Output_String
 			mov [es:Data_Boot], byte 80h
+			pop dx
 			jmp 0000:7C00h
 			
 INT_19_NoSystem:
