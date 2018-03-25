@@ -34,7 +34,7 @@ dist/rom/card.bin: src/8088/rom.asm src/8088/include/rom.asm $(COMMON)
 	nasm src/8088/rom.asm -w-lock -o dist/rom/card.bin
 
 dist/rom/card_big.bin: src/8088/rom_big.asm src/8088/include/rom.asm $(COMMON) src/disk/hd.bin
-	nasm src/8088/rom_big.asm -w-lock -o dist/rom/card_big.bin
+	nasm src/8088/rom_big.asm -w-lock -w-number-overflow -o dist/rom/card_big.bin
 
 dist/misc/reboot.com: src/misc/reboot.asm
 	nasm src/misc/reboot.asm -o dist/misc/reboot.com

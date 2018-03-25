@@ -1,6 +1,7 @@
 
 %define STANDALONE
 %define ROM
+%undef BIG
 
 			org	0E000h
 	
@@ -37,7 +38,6 @@ RomLoop:
 %include 'src/8088/include/int.asm'
 %include 'src/8088/include/init.asm'
 %include 'src/8088/include/data.asm'
-%include 'src/8088/include/hdrom.asm'
 
 			times 8176-($-$$) db 0FFh
 	

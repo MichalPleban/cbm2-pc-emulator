@@ -14,7 +14,7 @@ HDROM_Handle:
             jz HDROM_15
 			stc
 			mov ah, 0FFh
-			ret		
+			retf
 
 ; --------------------------------------------------------------------------------------
 ; Function 08 - return hard disk parameters.
@@ -25,7 +25,7 @@ HDROM_08:
             mov dx, 01h ; 1 head, 1 disk attached
             xor ah, ah
             clc
-            ret
+            retf
             
 ; --------------------------------------------------------------------------------------
 ; Function 15 - read disk type.
@@ -36,7 +36,7 @@ HDROM_15:
             xor cx, cx
             mov dx, 100h ; 256 total sectors
             clc
-            ret
+            retf
 
 ; --------------------------------------------------------------------------------------
 ; Function 02 - read disk sector.
@@ -54,7 +54,7 @@ HDROM_02:
             push bp
             mov bx, 0F000h
             mov ds, bx
-            mov bx, [000Ah]
+            mov bx, [000Ch]
             mov ds, bx
             mov bl, ch
             xor bh, bh
@@ -75,7 +75,7 @@ HDROM_02_Loop:
             pop di
             pop ds
             clc
-            ret
+            retf
 
 HDROM_Read:
             mov bp, di

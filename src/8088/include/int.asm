@@ -431,7 +431,7 @@ INT_13_HD:
 			push ax
 			mov ax, 0F000h
 			mov ds, ax
-			cmp [0008h], word "HD"
+			cmp [000Eh], word "HD"
 			pop ax
 			pop ds
 			jz INT_13_HD_OK
@@ -439,7 +439,8 @@ INT_13_HD:
 			mov ah, 0FFh
 			ret		
 INT_13_HD_OK:
-            jmp HDROM_Handle
+            call 0F000h:00008h
+            ret
             
 
 ; -----------------------------------------------------------------

@@ -1,17 +1,21 @@
 
 %define STANDALONE
 %define ROM
+%define BIG
 
 			org	00000h
 			
 			jmp 0F000h:0F000h
 
-			times 0008h-($-$$) db 0FFh			
-			dw "HD"
+			times 0008h-($-$$) db 0FFh
+			jmp HDROM_Handle
+			times 000Ch-($-$$) db 0FFh
 			dw 0F001h
-			times 0010h-($-$$) db 0FFh
+			dw "HD"
 			
 incbin 'src/disk/hd.bin'
+
+%include 'src/8088/include/hdrom.asm'
 	
 			times 0F000h-($-$$) db 0FFh
 
@@ -46,7 +50,6 @@ RomLoop:
 %include 'src/8088/include/int.asm'
 %include 'src/8088/include/init.asm'
 %include 'src/8088/include/data.asm'
-%include 'src/8088/include/hdrom.asm'
 
 			times 0FFF0h-($-$$) db 0FFh
 	
