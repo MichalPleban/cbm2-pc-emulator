@@ -356,9 +356,50 @@ INT_10_0F:
 
 INT_11:
 			INT_Debug 11h
-			; Return data: 2 disk drives, MDA card, 64K+ memory, 1 serial port
-			mov ax, 037Dh
+			
+			; Detect 8087 processor
+			call INT_11_CPU
+			and ax, 0001h
+			shl ax, 1
+
+			; 2 disk drives, MDA card, 64K+ memory, 1 serial port
+			add ax, 037Dh
+			
 			iret
+
+; -----------------------------------------------------------------
+; Equipment flags.
+; -----------------------------------------------------------------
+
+EQUIPMENT_8087      equ 1
+EQUIPMENT_V20       equ 2
+
+INT_11_CPU:
+            push cx
+            push bx
+            ; Test if 8087 present
+            fninit
+            mov cx, 3
+INT_11_CPU_8087:
+            loop INT_11_CPU_8087
+            mov bx, sp
+            add bx, 2
+            mov [ss:bx], ax
+            fnstcw [ss:bx]
+            cmp [ss:bx], word 03FFh
+            jne INT_11_CPU_No8087
+            mov cl, EQUIPMENT_8087
+INT_11_CPU_No8087:
+            pusha
+            stc
+            jnc INT_11_CPU_NoV20
+            popa
+            or cl, EQUIPMENT_V20
+INT_11_CPU_NoV20:
+            mov al, cl
+            pop bx
+            pop cx
+            ret
 
 ; -----------------------------------------------------------------
 ; INT 12 - memory size.

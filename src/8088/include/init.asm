@@ -46,8 +46,17 @@ Init_Data:
 			stosb
 			
 			; Debug flag
-			xor al, al
+			xor ax, ax
 			stosb
+			
+			; Memory size
+            add di, 2
+            
+            ; Tick count
+            stosw
+            
+            ; Boot flag
+            stosb
 			
 			ret
 
