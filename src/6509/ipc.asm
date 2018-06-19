@@ -187,6 +187,14 @@ output_table_3:
     .byt $0e, $10, $1d, $0d, $13, $4a, $5c, $5e
     .byt $7e, $76, $1a, $3d, $20, $4a, $ca, $6c
     .byt $00
+
+;--------------------------------------------------------------------
+; 8088 INT memory vectors
+;--------------------------------------------------------------------
+
+vectors:
+    .word $0000, $0050
+    .word $F1E2, $F000
     
 ;--------------------------------------------------------------------
 ; Startup routine - sets interrupt vectors and starts 8088 processor.
@@ -200,6 +208,8 @@ ipc_buffer = *+5
     sty CPU_ACCESS_BANK
     dey
     sty load_addr+1
+    sty WstFlag
+    sty WstFlag+1
     lda #$1C
     sta load_addr
 vector_loop:
@@ -211,10 +221,6 @@ vector_loop:
     lda #$0F
     sta CPU_ACCESS_BANK
     jmp RUNCOPRO
-        
-vectors:
-    .word $0000, $0050
-    .word $F1E2, $F000
 
 ;--------------------------------------------------------------------
 ; Some variables moved here to save space.
@@ -246,7 +252,7 @@ last_key:
 
 ; Delay before repeating the pressed key.
 key_delay:
-     .byt $00
+    .byt $00
 
 ; Status of the disk operation.
 disk_status:
@@ -872,8 +878,6 @@ ipc_18_init:
     jsr reopen_08
     lda #$00
     sta ipc_buffer+2
-    sta WstFlag
-    sta WstFlag+1
     jsr reopen_09
     bcs init_diskno
     inc ipc_buffer+2

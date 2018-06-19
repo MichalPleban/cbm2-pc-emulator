@@ -117,8 +117,10 @@ IPC_IRQ_Spurious:
 			mov bx, sp
 			cmp [ss:bx+4], word 0F000h
 			jnz IPC_IRQ_Spurious_IRQ2
+			cmp [ss:bx+6], word 0F000h
+			jb IPC_IRQ_Spurious_IRQ2
 			cmp [ss:bx+6], word 0F286h
-			jnz IPC_IRQ_Spurious_IRQ2
+			ja IPC_IRQ_Spurious_IRQ2
 			pop bx
 			jmp 0F000h:0F1E2h
 			

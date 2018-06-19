@@ -21,7 +21,7 @@ incbin 'src/disk/hd.bin'
 
 RomStart:
 		
-%include 'src/8088/include/rom.asm'
+%include 'src/8088/include/rom_8255.asm'
 
 RomEnd:
 
