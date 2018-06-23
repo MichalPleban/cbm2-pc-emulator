@@ -5,8 +5,11 @@ IPCData		equ 000Ah				; Offset of the data trasfer area (16 bytes)
 
 
 %macro		IPC_Call 	1
+			pushf
+			cli
 			mov cl, %1
 			call IPC
+			popf
 %endmacro
 
 %macro		IPC_Enter	0
@@ -20,7 +23,7 @@ IPCData		equ 000Ah				; Offset of the data trasfer area (16 bytes)
 			pop cx
 %endmacro
 
-%macro		IPC_Disable_IRQ	0
+%macro		IPC_Disable_IRQ_old	0
 			pushf
 			cli
 			push ax
@@ -30,7 +33,7 @@ IPCData		equ 000Ah				; Offset of the data trasfer area (16 bytes)
 			sti
 %endmacro
 
-%macro		IPC_Enable_IRQ	0
+%macro		IPC_Enable_IRQ_old	0
 			cli
 			push ax
 			push ds
@@ -45,6 +48,25 @@ IPCData		equ 000Ah				; Offset of the data trasfer area (16 bytes)
 %%2:
 			out 01h, al
 			pop ds
+			pop ax
+			popf
+%endmacro
+
+%macro		IPC_Disable_IRQ	0
+			pushf
+			cli
+			push ax
+			in al, 01h
+			push ax
+			mov al, 0FEh
+			out 01h, al
+			sti
+%endmacro
+
+%macro		IPC_Enable_IRQ	0
+			cli
+			pop ax
+			out 01h, al
 			pop ax
 			popf
 %endmacro
@@ -438,15 +460,15 @@ IPC_SerialOut:
 ; --------------------------------------------------------------------------------------
 			
 IPC_SectorAccess:		
-			IPC_Disable_IRQ
 			IPC_Enter
 			call IPC_SectorSet
 			mov cx, 0096h
 			add cx, bp
+			IPC_Disable_IRQ
 			call IPC
+			IPC_Enable_IRQ			
 			mov ax, [IPCData+2]
 			IPC_Leave
-			IPC_Enable_IRQ			
 			ret
 			
 ; --------------------------------------------------------------------------------------

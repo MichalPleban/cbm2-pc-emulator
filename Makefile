@@ -31,10 +31,10 @@ dist/com/pc_debug.com: src/8088/pc_high.asm $(COMMON) $(INSTALL) $(DEBUG)
 	nasm src/8088/pc_high.asm -dDEBUG -o dist/com/pc_debug.com
 
 dist/rom/card.bin: src/8088/rom.asm src/8088/include/rom.asm $(COMMON)
-	nasm src/8088/rom.asm -w-lock -o dist/rom/card.bin
+	nasm src/8088/rom.asm -w-lock -o dist/rom/card.bin -l tmp/rom.lst
 
 dist/rom/card_big.bin: src/8088/rom_big.asm src/8088/include/rom_8255.asm $(COMMON) src/disk/hd.bin
-	nasm src/8088/rom_big.asm -w-lock -w-number-overflow -o dist/rom/card_big.bin -l tmp/test.lst
+	nasm src/8088/rom_big.asm -w-lock -w-number-overflow -o dist/rom/card_big.bin -l tmp/rom_big.lst
 
 dist/misc/reboot.com: src/misc/reboot.asm
 	nasm src/misc/reboot.asm -o dist/misc/reboot.com

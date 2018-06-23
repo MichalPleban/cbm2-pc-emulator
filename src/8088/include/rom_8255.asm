@@ -389,7 +389,6 @@ serv130:
 		int	7		; gone!
 
 serv220:
-        hlt
 		pop	dx		; restore dh
 		cmp	dh,0
 		je	serv400			; Jump if equal
