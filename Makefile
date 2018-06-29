@@ -6,10 +6,10 @@ MISC = dist/misc/reboot.com dist/misc/cls.com
 
 TRACK = util/160_d80.trk util/160_d82.trk util/180_d80.trk util/180_d82.trk util/360_d80.trk util/360_d82.trk util/720_d82.trk
 ONDISK = dist/prg/boot.prg $(PRG)
-DISK = dist/disk/pcdos33.d82 dist/disk/pcdos33a.d80 dist/disk/pcdos33b.d80 dist/disk/pcdos11.d82 dist/disk/pcdos11.d80
+DISK = dist/disk/pcdos33.d82 dist/disk/pcdos33a.d80 dist/disk/pcdos33b.d80 dist/disk/pcdos32.d82 dist/disk/pcdos32a.d80 dist/disk/pcdos32b.d80 dist/disk/pcdos11.d82 dist/disk/pcdos11.d80
 EMPTY = dist/disk/empty/empty160.d80 dist/disk/empty/empty160.d82 dist/disk/empty/empty180.d80 dist/disk/empty/empty180.d82 dist/disk/empty/empty360.d80 dist/disk/empty/empty360.d82 dist/disk/empty/empty720.d82
 
-COMMON = src/8088/include/data.asm src/8088/include/init.asm src/8088/include/int.asm src/8088/include/ipc.asm src/8088/include/hdrom.asm src/8088/include/version.asm
+COMMON = src/8088/include/data.asm src/8088/include/init.asm src/8088/include/int.asm src/8088/include/ipc.asm src/8088/include/hdrom.asm src/8088/include/sd.asm src/8088/include/version.asm
 INSTALL = src/8088/include/install.asm
 DEBUG = src/8088/include/debug.asm
 
@@ -31,10 +31,10 @@ dist/com/pc_debug.com: src/8088/pc_high.asm $(COMMON) $(INSTALL) $(DEBUG)
 	nasm src/8088/pc_high.asm -dDEBUG -o dist/com/pc_debug.com
 
 dist/rom/card.bin: src/8088/rom.asm src/8088/include/rom.asm $(COMMON)
-	nasm src/8088/rom.asm -w-lock -o dist/rom/card.bin -l tmp/rom.lst
+	nasm src/8088/rom.asm -w-lock -o dist/rom/card.bin
 
 dist/rom/card_big.bin: src/8088/rom_big.asm src/8088/include/rom_8255.asm $(COMMON) src/disk/hd.bin
-	nasm src/8088/rom_big.asm -w-lock -w-number-overflow -o dist/rom/card_big.bin -l tmp/rom_big.lst
+	nasm src/8088/rom_big.asm -w-lock -w-number-overflow -o dist/rom/card_big.bin
 
 dist/misc/reboot.com: src/misc/reboot.asm
 	nasm src/misc/reboot.asm -o dist/misc/reboot.com
@@ -71,6 +71,15 @@ dist/disk/pcdos33a.d80 : util/360_d80.trk src/disk/pcdos33a.img
 
 dist/disk/pcdos33b.d80 : util/360_d80.trk src/disk/pcdos33b.img
 	util/imager.pl -i src/disk/pcdos33b.img -o dist/disk/pcdos33b.d80 -b util
+
+dist/disk/pcdos32.d82 : util/720_d82.trk src/disk/pcdos32.img
+	util/imager.pl -i src/disk/pcdos32.img -o dist/disk/pcdos32.d82 -b util
+
+dist/disk/pcdos32a.d80 : util/360_d80.trk src/disk/pcdos32a.img
+	util/imager.pl -i src/disk/pcdos32a.img -o dist/disk/pcdos32a.d80 -b util
+
+dist/disk/pcdos32b.d80 : util/360_d80.trk src/disk/pcdos32b.img
+	util/imager.pl -i src/disk/pcdos32b.img -o dist/disk/pcdos32b.d80 -b util
 
 dist/disk/pcdos11.d82 : util/160_d82.trk src/disk/pcdos11.img
 	util/imager.pl -i src/disk/pcdos11.img -o dist/disk/pcdos11.d82 -b util

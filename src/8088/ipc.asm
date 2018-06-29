@@ -1,8 +1,10 @@
 
 %undef ROM
 %define STANDALONE
+%define SD
 
 [BITS 16]
+[CPU 8086]
 
 [ORG 0xFFFE]
 [SECTION .text]
@@ -50,6 +52,7 @@ Install_Leave equ 0
 %include 'src/8088/include/int.asm'
 %include 'src/8088/include/init.asm'
 %include 'src/8088/include/hdrom.asm'
+%include 'src/8088/include/sd.asm'
 %include 'src/8088/include/data.asm'
 
 Init_Far:

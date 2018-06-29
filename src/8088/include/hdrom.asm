@@ -22,7 +22,7 @@ HDROM_Handle:
 
 HDROM_08:
             mov cx, 41h ; 256 cylinders, 1 sector/cylinder
-            mov dx, 01h ; 1 head, 1 disk attached
+            mov dx, 02h ; 1 head, 2 disks attached (second one is SD card)
             xor ah, ah
             clc
             retf
@@ -75,6 +75,7 @@ HDROM_02_Loop:
             pop di
             pop ds
             clc
+            xor ah, ah
             retf
 
 HDROM_Read:

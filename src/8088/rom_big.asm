@@ -1,7 +1,10 @@
 
+[CPU 8086]
+
 %define STANDALONE
 %define ROM
 %define BIG
+%define SD
 
 			org	00000h
 			
@@ -16,6 +19,7 @@
 incbin 'src/disk/hd.bin'
 
 %include 'src/8088/include/hdrom.asm'
+%include 'src/8088/include/sd.asm'
 	
 			times 0F000h-($-$$) db 0FFh
 

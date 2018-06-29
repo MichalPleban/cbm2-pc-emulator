@@ -3,6 +3,7 @@
 %undef STANDALONE
 
 [BITS 16]
+[CPU 8086]
 
 [ORG 0x0100]
 [SECTION .text]

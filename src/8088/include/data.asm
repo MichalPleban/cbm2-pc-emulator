@@ -58,5 +58,11 @@ Data_Ticks:			equ 000Ah
 
 Data_Boot:			equ 000Ch
 
-Data_Length			equ 13
+; -----------------------------------------------------------------
+; SD card presence flags.
+; -----------------------------------------------------------------
+
+Data_SD:			equ 000Dh
+
+Data_Length			equ 14
 

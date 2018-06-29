@@ -1,4 +1,6 @@
 
+[CPU 8086]
+
 %define STANDALONE
 %define ROM
 %undef BIG

@@ -390,10 +390,10 @@ INT_11_CPU_8087:
             jne INT_11_CPU_No8087
             mov cl, EQUIPMENT_8087
 INT_11_CPU_No8087:
-            pusha
+            db 60h      ; PUSHA
             stc
             jnc INT_11_CPU_NoV20
-            popa
+            db 61h      ; POPA
             or cl, EQUIPMENT_V20
 INT_11_CPU_NoV20:
             mov al, cl
@@ -467,7 +467,16 @@ INT_13_Functions:
 ; Check whether there is HD image in the ROM.
 ; -----------------------------------------------------------------
 
+HD_Drive    equ 81h
+SD_Drive    equ 80h
+
 INT_13_HD:
+%ifdef SD
+            cmp dl, SD_Drive
+            jne INT_13_HD_Do
+            jmp SD_Handle
+INT_13_HD_Do:
+%endif
 			push ds
 			push ax
 			mov ax, 0F000h
@@ -480,6 +489,14 @@ INT_13_HD:
 			mov ah, 0FFh
 			ret		
 INT_13_HD_OK:
+%ifdef SD
+            cmp ah, 08h
+            jne INT_13_HD_Not08
+            call 0F000h:00008h
+            mov dl, 02h
+            ret
+INT_13_HD_Not08:
+%endif
             call 0F000h:00008h
             ret
             
@@ -513,12 +530,13 @@ INT_13_01:
 
 INT_13_02:
 			test dl, 80h
-			jz INT_13_02_Floppy
-			jmp INT_13_HD
+			jnz INT_13_HD
 INT_13_02_Floppy:
 			mov bp, 0
 			jmp INT_13_Common
 INT_13_03:
+			test dl, 80h
+			jnz INT_13_HD
 			mov bp, 1
 INT_13_Common:
 			push es

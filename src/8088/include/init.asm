@@ -57,7 +57,10 @@ Init_Data:
             
             ; Boot flag
             stosb
-			
+
+            ; SD presence flag
+            stosb
+
 			ret
 
 ; -----------------------------------------------------------------

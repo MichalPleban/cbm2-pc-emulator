@@ -1,6 +1,6 @@
 
-%define VERSION_STRING		"0.67"
-VERSION_NUMBER		equ		67
+%define VERSION_STRING		"0.68"
+VERSION_NUMBER		equ		68
 
 
 Version_Banner:
