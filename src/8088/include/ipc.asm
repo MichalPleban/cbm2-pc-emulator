@@ -161,10 +161,6 @@ IPC_IRQ2:
 
 			mov ax, Data_Segment
 			mov ds, ax
-			
-%ifdef SCREEN
-;            call Screen_Interrupt
-%endif
 
 			mov ax, [Data_Ticks]
 			add ax, 182
@@ -188,12 +184,42 @@ INT_08:
 			iret
 
 ; --------------------------------------------------------------------------------------
-; Install IPC data at specified segment.
-; Input:
-;			BX - segment
+; Find segment where IPC table can be installed.
+; Output:
+;           BX - segment
+; --------------------------------------------------------------------------------------
+
+IPC_FindSegment:
+            push ax
+            push ds
+            
+            ; Try in MDA video memory, after the screen buffer
+            mov bx, 0B100h
+            mov ds, bx
+            mov ax, 0A55Ah
+            mov [0000h], ax
+            cmp ax, [0000h]
+            jne IPC_FindSegment_Fail
+            neg ax
+            mov [0000h], ax
+            cmp ax, [0000h]
+            jne IPC_FindSegment_Fail
+IPC_FindSegment_Ret:            
+            pop ds
+            pop ax
+            ret
+            
+            ; Return default 0040 if all else fails
+IPC_FindSegment_Fail:
+            mov bx, 0040h
+            jmp IPC_FindSegment_Ret
+
+; --------------------------------------------------------------------------------------
+; Install IPC data at segment specified by previous function.
 ; --------------------------------------------------------------------------------------
 
 IPC_Install:
+            call IPC_FindSegment
 			push cs
 			pop ds
 			mov es, bx

@@ -32,7 +32,6 @@ RomStart:
 RomEnd:
 
 RomInit:
-			mov bx, 0040h
 			call IPC_Install
 			call IPC_Reset
 			call Init_Data

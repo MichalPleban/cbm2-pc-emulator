@@ -250,7 +250,7 @@ irq_end:
     rti
     
 ;--------------------------------------------------------------------
-; IPC function 10 - check scancode in keybaord buffer.
+; IPC function 10 - check scancode in keyboard buffer.
 ;--------------------------------------------------------------------
     
 ipc_10_kbd_peek:

@@ -30,8 +30,6 @@ Do_Install:
 			jmp 0F000h:0FFF5h
 
 Do_Install_RAM:
-			; Install IPC table at segment 0040h.
-			mov bx, 0040h
 			call IPC_Install
 			call IPC_Reset
 			call Install_High
