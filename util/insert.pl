@@ -88,6 +88,7 @@ while($pc_file = shift @ARGV)
 	$cbm_file = basename($pc_file);
 	$cbm_file =~s /\..*//;
 	$cbm_file =~s /-.*//;
+	$cbm_file =~s /_/-/;
 	
 	$cmd_line .= "write " . $pc_file . " " . $cbm_file . "\n";
 }

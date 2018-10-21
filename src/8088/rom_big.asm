@@ -5,6 +5,7 @@
 %define ROM
 %define BIG
 %define SD
+%define SCREEN
 
 			org	00000h
 			
@@ -20,6 +21,7 @@ incbin 'src/disk/hd.bin'
 
 %include 'src/8088/include/hdrom.asm'
 %include 'src/8088/include/sd.asm'
+%include 'src/8088/include/screen.asm'
 	
 			times 0F000h-($-$$) db 0FFh
 
@@ -36,6 +38,7 @@ RomInit:
 			call Init_Data
 			call Init_CheckMem
 			call Init_INT
+			call Screen_Init
 			xor ah, ah
 			int 10h
 			mov ax, Data_Segment

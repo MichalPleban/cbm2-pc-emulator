@@ -64,5 +64,11 @@ Data_Boot:			equ 000Ch
 
 Data_SD:			equ 000Dh
 
-Data_Length			equ 14
+; -----------------------------------------------------------------
+; Video refresh counter.
+; -----------------------------------------------------------------
+
+Data_Refresh:		equ 000Eh
+
+Data_Length			equ 15
 

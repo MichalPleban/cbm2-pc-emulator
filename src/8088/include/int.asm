@@ -33,7 +33,7 @@ INT_Unimplemented:
 INT_10:
 			INT_Debug 10h
 			cmp ah, 0Fh
-			jg INT_10_Ret
+			ja INT_10_Ret
 			push bp
 			push es
 			mov bp, Data_Segment
@@ -383,13 +383,16 @@ INT_11_CPU:
 INT_11_CPU_8087:
             loop INT_11_CPU_8087
             mov bx, sp
-            add bx, 2
+            sub bx, 2
             mov [ss:bx], ax
             fnstcw [ss:bx]
             cmp [ss:bx], word 03FFh
             jne INT_11_CPU_No8087
             mov cl, EQUIPMENT_8087
 INT_11_CPU_No8087:
+            pop bx
+            pop cx
+            ret
             db 60h      ; PUSHA
             stc
             jnc INT_11_CPU_NoV20
@@ -425,7 +428,7 @@ INT_12:
 INT_13:
 			INT_Debug 13h
 			cmp ah, 1Bh
-			jg INT_13_Ret
+			ja INT_13_Ret
 			push bp
 			mov bp, INT_13_Functions
 			call INT_Dispatch
@@ -854,7 +857,7 @@ INT_13_16:
 INT_14:
 			INT_Debug 14h
 			cmp ah, 03h
-			jg INT_14_Ret
+			ja INT_14_Ret
 			push bp
 			mov bp, INT_14_Functions
 			call INT_Dispatch
@@ -915,7 +918,8 @@ INT_14_03:
 
 INT_15:
 			INT_Debug 15h
-			iret
+			stc
+			retf 2
 
 ; -----------------------------------------------------------------
 ; INT 16 - keyboard functions.
@@ -924,7 +928,7 @@ INT_15:
 INT_16:
 			INT_Debug 16h
 			cmp ah, 03h
-			jg INT_16_Ret
+			ja INT_16_Ret
 			push bp
 			mov bp, INT_16_Functions
 			call INT_Dispatch
@@ -944,6 +948,9 @@ INT_16_Functions:
 ; -----------------------------------------------------------------
 
 INT_16_00:
+%ifdef SCREEN
+			call Screen_Interrupt
+%endif
 			call IPC_KbdPeek
 			jz INT_16_00
 			call IPC_KbdClear
@@ -955,6 +962,9 @@ INT_16_00:
 ; -----------------------------------------------------------------
 
 INT_16_01:
+%ifdef SCREEN
+			call Screen_Interrupt
+%endif
 			call IPC_KbdPeek
 			jz INT_16_NoKey
 			call IPC_KbdConvert
@@ -987,7 +997,7 @@ INT_16_02:
 INT_17:
 			INT_Debug 17h
 			cmp ah, 02h
-			jg INT_17_Ret
+			ja INT_17_Ret
 			push bp
 			mov bp, INT_17_Functions
 			call INT_Dispatch
@@ -1038,7 +1048,9 @@ INT_18:
 INT_19:
 			INT_Debug 19h
 INT_19_Again:
+%ifndef SCREEN
 			call Init_Data
+%endif
 			
 			; Try loading boot sector from hard disk
 			mov ax, 0201h
@@ -1117,31 +1129,10 @@ INT_19_Banner1:
 ; -----------------------------------------------------------------
 
 INT_BootDot:			
-			push ds
-			push ax
-			mov ax, Data_Segment
-			mov ds, ax
-			test [Data_Boot], byte 80h
-			jz INT_NoDot
-			mov al, '.'
-			call IPC_ScreenOut
-INT_NoDot:
-			pop ax
-			pop ds
+            call IPC_ShowProgress
 			ret
 
 INT_ClearDot:
-			push ds
-			push ax
-			mov ax, Data_Segment
-			mov ds, ax
-			test [Data_Boot], byte 80h
-			jz INT_NoDot
-			mov al, 13
-			call IPC_ScreenOut
-			mov [Data_Boot], byte 00h
-			pop ax
-			pop ds
 			ret
 			
 ; -----------------------------------------------------------------

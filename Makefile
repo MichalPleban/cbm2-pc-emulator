@@ -1,5 +1,5 @@
 
-PRG = dist/prg/6509.prg dist/prg/8088.prg
+PRG = dist/prg/6509.prg dist/prg/8088.prg dist/prg/screen_kernal.prg dist/prg/screen_memory.prg
 COM = dist/com/pc_tsr.com dist/com/pc_high.com dist/com/pc_debug.com
 ROM = dist/rom/card.bin dist/rom/card_big.bin
 MISC = dist/misc/reboot.com dist/misc/cls.com
@@ -9,17 +9,23 @@ ONDISK = dist/prg/boot.prg $(PRG)
 DISK = dist/disk/pcdos33.d82 dist/disk/pcdos33a.d80 dist/disk/pcdos33b.d80 dist/disk/pcdos32.d82 dist/disk/pcdos32a.d80 dist/disk/pcdos32b.d80 dist/disk/pcdos11.d82 dist/disk/pcdos11.d80
 EMPTY = dist/disk/empty/empty160.d80 dist/disk/empty/empty160.d82 dist/disk/empty/empty180.d80 dist/disk/empty/empty180.d82 dist/disk/empty/empty360.d80 dist/disk/empty/empty360.d82 dist/disk/empty/empty720.d82
 
-COMMON = src/8088/include/data.asm src/8088/include/init.asm src/8088/include/int.asm src/8088/include/ipc.asm src/8088/include/hdrom.asm src/8088/include/sd.asm src/8088/include/version.asm
+COMMON = src/8088/include/data.asm src/8088/include/init.asm src/8088/include/int.asm src/8088/include/ipc.asm src/8088/include/hdrom.asm src/8088/include/sd.asm src/8088/include/screen.asm src/8088/include/version.asm
 INSTALL = src/8088/include/install.asm
 DEBUG = src/8088/include/debug.asm
 
 all: $(PRG) $(COM) $(ROM) $(MISC) $(TRACK) $(DISK) $(EMPTY)
 
 dist/prg/8088.prg: src/8088/ipc.asm $(COMMON) $(INSTALL)
-	nasm src/8088/ipc.asm -o dist/prg/8088.prg
+	nasm src/8088/ipc.asm -dDEBUG -o dist/prg/8088.prg
 
 dist/prg/6509.prg: src/6509/ipc.asm
 	xa src/6509/ipc.asm -O PETSCII -o dist/prg/6509.prg
+
+dist/prg/screen_kernal.prg: src/6509/scr_kernal.asm
+	xa src/6509/scr_kernal.asm -O PETSCII -o dist/prg/screen_kernal.prg
+
+dist/prg/screen_memory.prg: src/6509/scr_memory.asm
+	xa src/6509/scr_memory.asm -O PETSCII -o dist/prg/screen_memory.prg
 
 dist/com/pc_tsr.com: src/8088/pc_tsr.asm $(COMMON)
 	nasm src/8088/pc_tsr.asm -o dist/com/pc_tsr.com

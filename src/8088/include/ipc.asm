@@ -158,8 +158,14 @@ IPC_IRQ2:
 			push ds
 			mov al, 20h
 			out 00h, al
+
 			mov ax, Data_Segment
 			mov ds, ax
+			
+%ifdef SCREEN
+;            call Screen_Interrupt
+%endif
+
 			mov ax, [Data_Ticks]
 			add ax, 182
 			cmp ax, 5000 
@@ -168,6 +174,7 @@ IPC_IRQ2:
 			sub ax, 5000
 IPC_IRQ2_Below:
 			mov [Data_Ticks], ax
+
 			pop ds
 			pop ax
 			iret
@@ -335,6 +342,17 @@ IPC_ScreenOutPC:
 			ret
 
 ; --------------------------------------------------------------------------------------
+; Visually simulate that an operation is in progress 
+; --------------------------------------------------------------------------------------
+
+IPC_ShowProgress:
+			IPC_Enter
+			mov [IPCData+2], byte 7
+			IPC_Call 1Dh
+			IPC_Leave
+			ret
+
+; --------------------------------------------------------------------------------------
 ; Output Escape sequence (Esc, then character) to the screen.
 ; Input:
 ;     		AL - character code
@@ -407,6 +425,46 @@ IPC_CursorGet:
 			mov dx, [IPCData+3]
 			IPC_Leave
 			ret
+
+; --------------------------------------------------------------------------------------
+; Initialize the video driver.
+; Output:
+;           
+; --------------------------------------------------------------------------------------
+
+%ifdef SCREEN
+
+IPC_Video_Init:
+			IPC_Enter
+			mov [IPCData+2], byte 6
+			IPC_Disable_IRQ
+			mov cl, 9Dh
+			call IPC
+			IPC_Enable_IRQ
+			mov al, [IPCData+2]
+			mov dx, [IPCData+3]
+			IPC_Leave
+			ret
+
+%endif 
+
+; --------------------------------------------------------------------------------------
+; Call the video screen conversion routine.
+; --------------------------------------------------------------------------------------
+
+%ifdef SCREEN
+
+IPC_Video_Convert:
+			IPC_Enter
+			mov [IPCData+2], byte 5
+			IPC_Disable_IRQ
+			mov cl, 9Dh
+			call IPC
+			IPC_Enable_IRQ
+			IPC_Leave
+			ret
+
+%endif 
 
 ; --------------------------------------------------------------------------------------
 ; Output character to the printer.
@@ -731,4 +789,4 @@ IPC_Params:
 			db 0, 0
 			db 11, 4
 			
-			
+

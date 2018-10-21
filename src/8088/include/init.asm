@@ -61,6 +61,9 @@ Init_Data:
             ; SD presence flag
             stosb
 
+            ; Video refresh counter
+            stosb
+            
 			ret
 
 ; -----------------------------------------------------------------
@@ -69,11 +72,11 @@ Init_Data:
 
 Init_CheckMem:
 			push ds
-			mov bx, 0FFFh
+			mov bx, 00FFh
 			mov ax, 5AA5h
 Init_CheckMemLoop:
 			mov ds, bx			
-			mov cx, [es:000Eh]
+			mov cx, [000Eh]
 			mov [000Eh], ax
 			cmp [000Eh], ax
 			jne Init_CheckMemFinish
@@ -82,11 +85,11 @@ Init_CheckMemLoop:
 			cmp [000Eh], ax
 			jne Init_CheckMemFinish
 			mov [000Eh], cx
-			add bx, 1000h
-			cmp bx, 0A000h
+			add bx, 00100h
+			cmp bx, 0B000h
 			jb Init_CheckMemLoop
 Init_CheckMemFinish:	
-			and bx, 0F000h
+			and bx, 0FF00h
 			mov ax, Data_Segment
 			mov ds, ax
 			mov [Data_MemSize], bx
@@ -127,7 +130,8 @@ Output_String:
 			lodsb
 			test al, al
 			jz Output_String_End
-			call INT_10_0E
+			mov ah, 0Eh
+			int 10h
 			jmp Output_String
 Output_String_End:
 			ret
