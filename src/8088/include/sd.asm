@@ -1,4 +1,7 @@
 
+%define SD_HEADS 255
+%define SD_SECTORS 63
+%define SD_CYLINDERS 1024
 
 %macro	SEND_BIT 0
             mov al, 00h
@@ -53,12 +56,6 @@
 ; --------------------------------------------------------------------------------------
 
 SD_Handle:
-;            push ax
-;            mov al, ah
-;            add al, 40h
-;            mov ah, 0Eh
-;            int 10h
-;            pop ax
             cmp ah, 02h
             jz SD_Func_02
             cmp ah, 03h
@@ -92,8 +89,12 @@ SD_Dummy:
 ; --------------------------------------------------------------------------------------
 
 SD_Func_08:
-            mov cx, 0FFFFh ; 1024 cylinders, 63 sectors/cylinder
-            mov dx, 00F02h ; 16 heads, 2 disks attached (second one is HDROM image)
+            mov dh, SD_HEADS-1
+            mov dl, 2
+            mov cl, SD_SECTORS + (((SD_CYLINDERS-1)>>8)<<6)
+            mov ch, (SD_CYLINDERS-1)&255
+;            mov cx, 0FFFFh ; 1024 cylinders, 63 sectors/cylinder
+;            mov dx, 00F02h ; 16 heads, 2 disks attached (second one is HDROM image)
             xor ah, ah
             clc
             ret
@@ -104,8 +105,8 @@ SD_Func_08:
 
 SD_Func_15:
             mov ah, 3
-            mov cx, 00FBh
-            mov dx, 0400h ; 16450560 total sectors
+            mov cx, (SD_SECTORS*SD_HEADS*SD_CYLINDERS)>>16
+            mov dx, (SD_SECTORS*SD_HEADS*SD_CYLINDERS)&65535
             clc
             ret
 
@@ -597,12 +598,12 @@ SD_CHS:
             shr ah, cl
             mov cl, dh
             xor dx, dx
-            mov bx, 16      ; Number of heads
+            mov bx, SD_HEADS
             mul bx
             add al, cl
             adc ah, 00h
             adc dl, 00h
-            mov bx, 63      ; Number of sectors
+            mov bx, SD_SECTORS
             mul bx
             and ch, 3Fh
             dec ch
