@@ -2,6 +2,8 @@
 
 IPCData		equ 000Ah				; Offset of the data trasfer area (16 bytes)
 
+Screen_Segment  equ 0B000h
+
 
 
 %macro		IPC_Call 	1
@@ -461,6 +463,15 @@ IPC_CursorGet:
 %ifdef SCREEN
 
 IPC_Video_Init:
+            push ax
+            push ds
+            mov ax, 0B000h
+            mov ds, ax
+            mov [0000h], word 0694Dh
+            mov [0002h], word 06843h
+            mov [0004h], word 07541h
+            pop ds
+            pop ax
 			IPC_Enter
 			mov [IPCData+2], byte 6
 			IPC_Disable_IRQ

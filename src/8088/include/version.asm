@@ -9,3 +9,16 @@ Version_Banner:
 			db "ROM "
 %endif
 			db "(C) 2017-2018 Micha", 9Ch, " Pleban", 10, 13, 0, '$'
+
+Version_Output:
+   			mov ax, Data_Segment
+			mov es, ax
+			push cs
+			pop ds
+			mov si, Version_Banner
+			call Output_String
+%ifdef SCREEN
+            call Screen_ShowInfo
+%endif
+			ret
+

@@ -44,12 +44,7 @@ RomInit:
 			call Screen_Init
 			xor ah, ah
 			int 10h
-			mov ax, Data_Segment
-			mov es, ax
-			push cs
-			pop ds
-			mov si, Version_Banner
-			call Output_String
+			call Version_Output
 RomLoop:
 			int 19h
 			jmp RomLoop

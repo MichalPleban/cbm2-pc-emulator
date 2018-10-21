@@ -46,12 +46,7 @@ Install_High_0:
 			; Output banner
 			xor ah, ah
 			int 10h
-			mov ax, Data_Segment
-			mov es, ax
-			push cs
-			pop ds
-			mov si, Version_Banner
-			call Output_String
+			call Version_Output
 			
 			ret
 
