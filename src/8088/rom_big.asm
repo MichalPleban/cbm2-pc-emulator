@@ -22,6 +22,10 @@ incbin 'src/disk/hd.bin'
 %include 'src/8088/include/hdrom.asm'
 %include 'src/8088/include/sd.asm'
 %include 'src/8088/include/screen.asm'
+%include 'src/8088/include/version.asm'
+%include 'src/8088/include/data.asm'
+%include 'src/8088/include/debug.asm'
+%include 'src/8088/include/init.asm'
 	
 			times 0F000h-($-$$) db 0FFh
 
@@ -50,12 +54,8 @@ RomLoop:
 			int 19h
 			jmp RomLoop
 		
-%include 'src/8088/include/version.asm'
-%include 'src/8088/include/debug.asm'
-%include 'src/8088/include/ipc.asm'
 %include 'src/8088/include/int.asm'
-%include 'src/8088/include/init.asm'
-%include 'src/8088/include/data.asm'
+%include 'src/8088/include/ipc.asm'
 
 			times 0FFF0h-($-$$) db 0FFh
 	

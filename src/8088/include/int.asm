@@ -1051,7 +1051,17 @@ INT_19_Again:
 %ifndef SCREEN
 			call Init_Data
 %endif
-			
+
+%ifdef BIG
+			mov si, INT_19_Banner1
+			call Output_String
+INT_19_Loop:
+            call INT_16_00
+			cmp ah, 3Ch ; F2
+			jz INT_19_Floppy
+			cmp ah, 3Bh ; F1
+			jnz INT_19_Loop
+            
 			; Try loading boot sector from hard disk
 			mov ax, 0201h
 			mov dx, 0080h
@@ -1060,12 +1070,13 @@ INT_19_Again:
 			inc cx
 			mov bx, 7C00h
 			call INT_13_02
-			jc INT_19_Floppy
+			jc INT_19_Error
 			cmp [es:7DFEh], word 0AA55h
-			jne INT_19_Floppy
+			jne INT_19_NoSystem
 			mov dl, 80h
 			jmp INT_19_Found
-			
+%endif
+						
 INT_19_Floppy:
 			; Load two first 256-byte sectors from the floppy disk.
 			xor bx, bx
@@ -1096,7 +1107,7 @@ INT_19_Found:
 		
 			; Jump to boot sector code.
 			call INT_19_Segments
-			mov si, INT_19_Banner
+			mov si, INT_19_Banner2
 			call Output_String
 			mov [es:Data_Boot], byte 80h
 			pop dx
@@ -1104,12 +1115,9 @@ INT_19_Found:
 			
 INT_19_NoSystem:
 			call INT_19_Segments
-			mov si, INT_19_Banner1
+			mov si, INT_19_Banner3
 			call Output_String
-			call INT_16_00
-			cmp al, 1Bh
-			jne INT_19_Again
-			iret
+			jmp INT_19_Again
 
 INT_19_Segments:
 			mov ax, Data_Segment
@@ -1118,10 +1126,25 @@ INT_19_Segments:
 			pop ds
 			ret
 			
-INT_19_Banner:
-			db "The system is coming up, please wait.", 10, 13, 0		
+%ifdef BIG
+
+INT_19_Error:
+			call INT_19_Segments
+			mov si, INT_19_Banner4
+			call Output_String
+			jmp INT_19_Again
 
 INT_19_Banner1:
+			db "Select your boot device:", 10, 13, " <F1> SD card", 10, 13, " <F2> Floppy disk", 10, 13, 0
+INT_19_Banner4:
+			db "SD card not found, please try again.", 10, 13, 0		
+
+%endif
+
+INT_19_Banner2:
+			db "The system is coming up, please wait.", 10, 13, 0		
+
+INT_19_Banner3:
 			db "Insert a system disk and press any key.", 10, 13, 0		
 
 ; -----------------------------------------------------------------

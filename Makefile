@@ -16,7 +16,7 @@ DEBUG = src/8088/include/debug.asm
 all: $(PRG) $(COM) $(ROM) $(MISC) $(TRACK) $(DISK) $(EMPTY)
 
 dist/prg/8088.prg: src/8088/ipc.asm $(COMMON) $(INSTALL)
-	nasm src/8088/ipc.asm -dDEBUG -o dist/prg/8088.prg
+	nasm src/8088/ipc.asm -o dist/prg/8088.prg
 
 dist/prg/6509.prg: src/6509/ipc.asm
 	xa src/6509/ipc.asm -O PETSCII -o dist/prg/6509.prg

@@ -3,6 +3,7 @@
 %define STANDALONE
 %define SD
 %define SCREEN
+%define BIG
 
 [BITS 16]
 [CPU 8086]
