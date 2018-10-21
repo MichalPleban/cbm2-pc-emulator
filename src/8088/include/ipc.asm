@@ -635,7 +635,7 @@ IPC_SectorCalc_1:
 IPC_KbdConvert_Table:
 			dw 03B00h, 05400h, 05E00h, 06800h ; 00 - F1
 			dw 0011Bh, 0011Bh, 0011Bh, 00100h ; 01 - Esc
-			dw 09400h, 00F00h, 09400h, 0A500h ; 02 - Tab
+			dw 00F09h, 00F00h, 09400h, 0A500h ; 02 - Tab
 			dw 00000h, 00000h, 00000h, 00000h ; 03
 			dw 00000h, 00000h, 00000h, 00000h ; 04
 			dw 00000h, 00000h, 00000h, 00000h ; 05
