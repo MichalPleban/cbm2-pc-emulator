@@ -475,6 +475,18 @@ SD_Drive    equ 80h
 
 INT_13_HD:
 %ifdef SD
+			push ds
+			push ax
+			mov ax, Data_Segment
+			mov ds, ax
+			test byte [Data_SD], 01h
+			pop ax
+			pop ds
+			jz INT_13_HD_2
+            cmp dl, HD_Drive
+            jne INT_13_HD_Do
+            jmp SD_Handle
+INT_13_HD_2:
             cmp dl, SD_Drive
             jne INT_13_HD_Do
             jmp SD_Handle
@@ -1059,12 +1071,24 @@ INT_19_Loop:
             call INT_16_00
 			cmp ah, 3Ch ; F2
 			jz INT_19_Floppy
+			cmp ah, 3Dh ; F3
+			jnz INT_19_Loop2
+			push ds
+			push ax
+			mov ax, Data_Segment
+			mov ds, ax
+			mov byte [Data_SD], 01h
+			pop ax
+			pop ds
+			jmp INT_19_HD
+INT_19_Loop2:
 			cmp ah, 3Bh ; F1
 			jnz INT_19_Loop
             
 			; Try loading boot sector from hard disk
-			mov ax, 0201h
+INT_19_HD:
 			mov dx, 0080h
+			mov ax, 0201h
 			xor cx, cx
 			mov es, cx
 			inc cx
@@ -1135,7 +1159,11 @@ INT_19_Error:
 			jmp INT_19_Again
 
 INT_19_Banner1:
-			db "Select your boot device:", 10, 13, " <F1> SD card", 10, 13, " <F2> Floppy disk", 10, 13, 0
+			db "Select your boot device:", 10, 13
+			db " F1 - SD card", 10, 13
+			db " F2 - Floppy disk", 10, 13
+			db " F3 - EPROM disk", 10, 13 
+			db 0
 INT_19_Banner4:
 			db "SD card not found, please try again.", 10, 13, 0		
 

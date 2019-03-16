@@ -214,7 +214,9 @@ SD_Check:
             stc
             ret
 SD_Check_Initialized:
-            mov byte [Data_SD], 80h
+            mov al, byte [Data_SD]
+            or al, 80h
+            mov byte [Data_SD], al
 SD_Check_OK:
             pop ds
             pop ax

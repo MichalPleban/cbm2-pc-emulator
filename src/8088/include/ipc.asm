@@ -467,9 +467,9 @@ IPC_Video_Init:
             push ds
             mov ax, 0B000h
             mov ds, ax
-            mov [0000h], word 0694Dh
-            mov [0002h], word 06843h
-            mov [0004h], word 07541h
+            mov [0002h], word 0694Dh
+            mov [0004h], word 06843h
+            mov [0006h], word 07541h
             pop ds
             pop ax
 			IPC_Enter
@@ -492,7 +492,16 @@ IPC_Video_Init:
 %ifdef SCREEN
 
 IPC_Video_Convert:
+            push ax
+            push ds
+            mov ax, 0B000h
+            mov ds, ax
+            mov ax, word [0000]
+            mov word [4000], ax
+            pop ds
+            pop ax
 			IPC_Enter
+			mov [IPCData+3], dx
 			mov [IPCData+2], byte 5
 			IPC_Disable_IRQ
 			mov cl, 9Dh
