@@ -438,19 +438,19 @@ startf:
 		out	cia_ddrc,al	; pc5 = out
 
 ; free bus, 0 -> 1 transition on pc5
-        	lock	nop
-                lock	mov	al,0DFh
-                lock	out	cia_prc,al
-                lock	nop
-                lock	nop
-                lock	nop
-                lock	or	al,20h
-                lock	out	cia_prc,al
+       	lock	nop
+        lock	mov	al,0DFh
+        lock	out	cia_prc,al
+        lock	nop
+        lock	nop
+        lock	nop
+        lock	or	al,20h
+        lock	out	cia_prc,al
 
 ;
 ;   8259A initialization
 ;
-		mov	al,1Bh		; icw1:level, single, icw4
+		mov	al,1Bh		; icw1: level, single, icw4
 		out	inta00,al
 
 		mov	al,8		; icw2: interrupt address
@@ -462,7 +462,7 @@ startf:
 		mov	al,0FEh		; ocw: inhibit I7-I1
 		out	inta01,al
 
-		sti			; Enable interrupts
+		sti			    ; Enable interrupts
 
 self:
 		jmp	short self

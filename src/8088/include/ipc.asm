@@ -152,7 +152,7 @@ IPC_IRQ_Spurious_IRQ2:
 			pop bx
 
 ; --------------------------------------------------------------------------------------
-; IRQ2 - 500 Hz timer interrupt routine.
+; IRQ2 - 50 Hz timer interrupt routine.
 ; --------------------------------------------------------------------------------------
 
 IPC_IRQ2:
@@ -211,9 +211,9 @@ IPC_FindSegment_Ret:
             pop ax
             ret
             
-            ; Return default 0040 if all else fails
+            ; Return default 0030 if all else fails
 IPC_FindSegment_Fail:
-            mov bx, 0040h
+            mov bx, 0030h
             jmp IPC_FindSegment_Ret
 
 ; --------------------------------------------------------------------------------------
@@ -260,6 +260,15 @@ IPC_Install_Loop2:
 			mov es, ax
 			mov [es:001Ch], ax
 			mov [es:001Eh], bx
+			
+			; Install some fake BIOS variables
+			
+			mov [es:0449h], byte 07       ; Current video mode
+			mov [es:044Ah], word 80       ; Number of screen columns
+			mov [es:0463h], word 03B4h    ; CRTC port
+			mov [es:048Ah], byte 01       ; Display combination code
+			
+			
 			ret
 			
 			

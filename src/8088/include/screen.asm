@@ -205,6 +205,7 @@ Screen_INT_03:
 Screen_INT_06:
 ;            db 0CCh
             call Screen_ScrollCalc
+            mov bp, 0
             call Screen_ScrollPerform
             ret            
 
@@ -268,6 +269,8 @@ Screen_ScrollPerform:
             add si, cx
             add di, cx
             dec bh
+            add si, bp
+            add di, bp
             jmp Screen_ScrollPerform
 Screen_ScrollClear:
             mov cl, bl
@@ -275,17 +278,32 @@ Screen_ScrollClear:
             rep stosw
             mov cl, dl
             add di, cx
+            add di, bp
             dec bh
             jnz Screen_ScrollClear
-            ret
-            
-            
+            ret            
             
 ; -----------------------------------------------------------------
 ; INT 10 function 07 - scroll screen down
 ; -----------------------------------------------------------------
 
 Screen_INT_07:
+            call Screen_ScrollCalc
+            xchg si, di
+            mov cl, bh
+            dec cl
+            dec cl
+            test cl, cl
+            jz Screen_INT_07_Doit
+Screen_INT_07_Loop:
+            add si, 160
+            add di, 160
+            loop Screen_INT_07_Loop
+Screen_INT_07_Doit:
+            mov bp, -320
+            call Screen_ScrollPerform
+            ret
+
             push ax
             call Screen_Segments
             pop ax
