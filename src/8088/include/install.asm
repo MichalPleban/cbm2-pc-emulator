@@ -55,18 +55,22 @@ FinishVector:
 			dw 0
 
 ; -----------------------------------------------------------------
-; Checks if the library can be copied to the video memory.
+; Checks if the library can be copied to the upper memory.
 ; -----------------------------------------------------------------
 
 Install_Check:
+			mov ax, 0E000h
+			call Install_Check_0
+			jz Install_Check_End
 			mov ax, 0B100h
+Install_Check_0:
 			mov es, ax
 			mov cx, 0A55Ah
 			mov [es:bx], cx
 			cmp cx, [es:bx]
-			jnz Install_Check_Fail
+			jnz Install_Check_End
 			neg cx
 			mov [es:bx], cx
 			cmp cx, [es:bx]
-Install_Check_Fail:
+Install_Check_End:
             ret
