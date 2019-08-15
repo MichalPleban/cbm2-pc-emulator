@@ -260,6 +260,8 @@ IPC_Install_Loop2:
 			
 			; Install some fake BIOS variables
 			
+			mov [es:0417h], byte 0        ; Shift flags #1
+			mov [es:0418h], byte 0        ; Shift flags #2
 			mov [es:0449h], byte 07       ; Current video mode
 			mov [es:044Ah], word 80       ; Number of screen columns
 			mov [es:0463h], word 03B4h    ; CRTC port

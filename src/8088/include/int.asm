@@ -965,9 +965,11 @@ INT_16_00:
 %endif
 			call IPC_KbdPeek
 			jz INT_16_00
+			push ax
+			call INT_16_BIOSFlags
+			pop ax
 			call IPC_KbdClear
-			call IPC_KbdConvert
-			ret
+			jmp IPC_KbdConvert
 
 ; -----------------------------------------------------------------
 ; INT 16 function 01 - peek into keyboard buffer.
@@ -979,8 +981,10 @@ INT_16_01:
 %endif
 			call IPC_KbdPeek
 			jz INT_16_NoKey
-			call IPC_KbdConvert
-			ret
+			push ax
+			call INT_16_BIOSFlags
+			pop ax
+			jmp IPC_KbdConvert
 INT_16_NoKey:
 			xor ax, ax
 			ret
@@ -991,6 +995,9 @@ INT_16_NoKey:
 
 INT_16_02:
 			call IPC_KbdPeek
+
+			; Store shift key state in BIOS data area for Turbo Pascal 7
+INT_16_BIOSFlags:
 			shr ah, 1
 			shr ah, 1
 			shr ah, 1
@@ -1000,7 +1007,15 @@ INT_16_02:
 			shl ah, 1
 			or al, ah
 			xor al, 05h
+			push bx
+			push ds
+			xor bx, bx
+			mov ds, bx
+			mov [0417h], al
+			pop ds
+			pop bx
 			ret
+
 
 ; -----------------------------------------------------------------
 ; INT 17 - printer functions.
