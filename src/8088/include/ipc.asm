@@ -2,9 +2,6 @@
 
 IPCData		equ 000Ah				; Offset of the data trasfer area (16 bytes)
 
-Screen_Segment  equ 0B000h
-
-
 
 %macro		IPC_Call 	1
 			pushf
@@ -466,7 +463,8 @@ IPC_CursorGet:
 ; --------------------------------------------------------------------------------------
 ; Initialize the video driver.
 ; Output:
-;           
+;           AL -
+;           DX - 
 ; --------------------------------------------------------------------------------------
 
 %ifdef SCREEN
@@ -496,20 +494,28 @@ IPC_Video_Init:
 
 ; --------------------------------------------------------------------------------------
 ; Call the video screen conversion routine.
+; Input:
+;           BL - video page
+;     		DH - cursor row
+;			DL - cursor column
 ; --------------------------------------------------------------------------------------
 
 %ifdef SCREEN
 
 IPC_Video_Convert:
+            push bx
             push ax
             push ds
             mov ax, 0B000h
+            add ah, bl
             mov ds, ax
             mov ax, word [0000]
             mov word [4000], ax
             pop ds
             pop ax
+			pop bx
 			IPC_Enter
+			mov [IPCData+5], bl
 			mov [IPCData+3], dx
 			mov [IPCData+2], byte 5
 			IPC_Disable_IRQ
@@ -838,7 +844,7 @@ IPC_Params:
 			db 3, 2
 			db 5, 2
 			db 0, 0
-			db 5, 5
+			db 6, 5
 			db 4, 0
 			db 0, 4
 			db 0, 0

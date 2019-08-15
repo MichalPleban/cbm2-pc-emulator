@@ -1,4 +1,5 @@
 
+Screen_Segment  equ 0B000h
 
 ; --------------------------------------------------------------------------------------
 ; Check if the screen conversion memory is installed.
@@ -101,7 +102,7 @@ Screen_INT_Functions:
 			dw Screen_INT_02
 			dw Screen_INT_03
 			dw INT_Unimplemented
-			dw INT_Unimplemented
+			dw Screen_INT_05
 			dw Screen_INT_06
 			dw Screen_INT_07
 			dw INT_Unimplemented
@@ -137,11 +138,14 @@ Screen_interrupt_NoRefresh:
 ; -----------------------------------------------------------------
 
 Screen_Refresh:
+            push bx
             push dx
             mov byte [Data_Refresh], 00h
             mov dx, [Data_CursorVirtual]
+            mov bl, [Data_ScreenPage]
             call IPC_Video_Convert
             pop dx
+            pop bx
             ret
 			
 ; -----------------------------------------------------------------
@@ -196,6 +200,20 @@ Screen_INT_03:
             mov dx, Data_Segment
             mov ds, dx
             mov dx, [Data_CursorVirtual]
+            ret
+            
+; -----------------------------------------------------------------
+; INT 10 function 05 - set active page
+; -----------------------------------------------------------------
+			
+Screen_INT_05:
+            push dx
+            mov dx, Data_Segment
+            mov es, dx
+            mov dl, al
+            and dl, 07h
+            mov [es:Data_ScreenPage], dl
+            pop dx
             ret
             
 ; -----------------------------------------------------------------
@@ -437,6 +455,7 @@ Screen_Segments:
             mov ax, Data_Segment
             mov ds, ax
 			mov ax, Screen_Segment
+			add ah, [Data_ScreenPage]
 			mov es, ax
             ret
 			

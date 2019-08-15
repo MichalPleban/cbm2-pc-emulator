@@ -131,7 +131,12 @@ screen_convert:
     sta page_count
     lda #$D0
     sta screen_proc_dst-screen_proc+PROC_ADDR+2
-    lda screen_location+1
+    lda ipc_buffer+5
+    asl 
+    asl 
+    asl 
+    asl
+    ora screen_location+1
     sta src_addr+1
     ldy #$01
     sty src_addr

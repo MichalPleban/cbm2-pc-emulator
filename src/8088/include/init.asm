@@ -64,6 +64,9 @@ Init_Data:
             ; Video refresh counter
             stosb
             
+            ; Active video page
+            stosb
+            
 			ret
 
 ; -----------------------------------------------------------------

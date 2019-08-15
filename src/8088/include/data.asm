@@ -70,5 +70,11 @@ Data_SD:			equ 000Dh
 
 Data_Refresh:		equ 000Eh
 
-Data_Length			equ 15
+; -----------------------------------------------------------------
+; Active video screen page.
+; -----------------------------------------------------------------
+
+Data_ScreenPage:	equ 000Fh
+
+Data_Length			equ 16
 
