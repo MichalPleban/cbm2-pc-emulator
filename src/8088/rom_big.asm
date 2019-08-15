@@ -26,14 +26,6 @@ incbin 'src/disk/hd.bin'
 %include 'src/8088/include/data.asm'
 %include 'src/8088/include/debug.asm'
 %include 'src/8088/include/init.asm'
-	
-			times 0F000h-($-$$) db 0FFh
-
-RomStart:
-		
-%include 'src/8088/include/rom_8255.asm'
-
-RomEnd:
 
 RomInit:
 			call IPC_Install
@@ -48,6 +40,14 @@ RomInit:
 RomLoop:
 			int 19h
 			jmp RomLoop
+	
+			times 0F000h-($-$$) db 0FFh
+
+RomStart:
+		
+%include 'src/8088/include/rom_8255.asm'
+
+RomEnd:
 		
 %include 'src/8088/include/int.asm'
 %include 'src/8088/include/ipc.asm'

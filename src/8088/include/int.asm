@@ -1063,7 +1063,8 @@ INT_19_Again:
 %ifndef SCREEN
 			call Init_Data
 %endif
-
+            push cs
+            pop ds
 %ifdef BIG
 			mov si, INT_19_Banner1
 			call Output_String

@@ -24,7 +24,7 @@
 			test [Data_Debug], byte 1
 			pop ds
 			pop ax
-			jz %%2
+;			jz %%2
 			push bp
 			mov bp, %1
 			call Debug_All

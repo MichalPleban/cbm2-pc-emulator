@@ -505,6 +505,7 @@ Screen_CursorCheck:
             pop cx
             pop ax
             pop ds
+            call Screen_CursorCalc
             call Screen_Refresh
 Screen_CursorCheck_End:
             ret

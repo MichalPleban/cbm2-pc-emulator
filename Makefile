@@ -15,6 +15,10 @@ DEBUG = src/8088/include/debug.asm
 
 all: $(PRG) $(COM) $(ROM) $(MISC) $(TRACK) $(DISK) $(EMPTY)
 
+# Uncomment for interrupt debugging
+#dist/prg/8088.prg: src/8088/ipc.asm $(COMMON) $(INSTALL) $(DEBUG)
+#	nasm src/8088/ipc.asm -dDEBUG -o dist/prg/8088.prg
+
 dist/prg/8088.prg: src/8088/ipc.asm $(COMMON) $(INSTALL)
 	nasm src/8088/ipc.asm -o dist/prg/8088.prg
 
