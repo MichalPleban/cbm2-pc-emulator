@@ -160,6 +160,7 @@ Screen_INT_00:
 			mov [Data_CursorVirtual], ax
 			mov [Data_CursorPhysical], ax
 			call Screen_Clear
+			call Screen_Refresh
 			pop ax 
             ret
 
@@ -444,7 +445,12 @@ Screen_INT_0F:
 			; MDA text mode
 			mov al, 07h		
 			mov ah, 80
-			mov bh, 0
+			; Current display page
+            push dx
+            mov dx, Data_Segment
+            mov ds, dx
+			mov bh, [Data_ScreenPage]
+			pop dx
 			ret
 
 ; -----------------------------------------------------------------
