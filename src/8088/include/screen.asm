@@ -234,9 +234,17 @@ Screen_ScrollCalc:
             ; BL - number of columns in the window
             sub bl, cl
             inc bl
+            cmp bl, 81
+            jb Screen_ScrollCalc_Col
+            mov bl, 80
+Screen_ScrollCalc_Col:
             ; BH - number of rows in the window
             sub bh, ch
             inc bh
+            cmp bh, 26
+            jb Screen_ScrollCalc_Row
+            mov bh, 25
+Screen_ScrollCalc_Row:
             
             ; DH - number of rows to shift
             test al, al
