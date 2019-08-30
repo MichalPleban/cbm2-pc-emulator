@@ -441,6 +441,7 @@ Screen_INT_0E_Not0D:
 			inc byte [Data_CursorVirtual+1]
 			call Screen_CursorCheck
 			call Screen_CursorCalc
+			call Screen_Refresh
 			jmp Screen_INT_0E_Finish
 Screen_INT_0E_Not0A:
 			jmp Screen_INT_0E_Output
