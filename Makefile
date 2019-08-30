@@ -6,7 +6,7 @@ MISC = dist/misc/reboot.com dist/misc/cls.com
 
 TRACK = util/160_d80.trk util/160_d82.trk util/180_d80.trk util/180_d82.trk util/360_d80.trk util/360_d82.trk util/720_d82.trk
 ONDISK = dist/prg/boot.prg $(PRG)
-DISK = dist/disk/pcdos33.d82 dist/disk/pcdos33a.d80 dist/disk/pcdos33b.d80 dist/disk/pcdos32.d82 dist/disk/pcdos32a.d80 dist/disk/pcdos32b.d80 dist/disk/pcdos11.d82 dist/disk/pcdos11.d80
+DISK = dist/disk/freedos.d82 dist/disk/pcdos33.d82 dist/disk/pcdos33a.d80 dist/disk/pcdos33b.d80 dist/disk/pcdos32.d82 dist/disk/pcdos32a.d80 dist/disk/pcdos32b.d80 dist/disk/pcdos11.d82 dist/disk/pcdos11.d80
 EMPTY = dist/disk/empty/empty160.d80 dist/disk/empty/empty160.d82 dist/disk/empty/empty180.d80 dist/disk/empty/empty180.d82 dist/disk/empty/empty360.d80 dist/disk/empty/empty360.d82 dist/disk/empty/empty720.d82
 
 COMMON = src/8088/include/data.asm src/8088/include/init.asm src/8088/include/int.asm src/8088/include/ipc.asm src/8088/include/hdrom.asm src/8088/include/sd.asm src/8088/include/screen.asm src/8088/include/version.asm
@@ -75,6 +75,9 @@ util/720_d82.trk: src/track/720_d82.trk $(ONDISK) dist/prg/bamfix/bamfix-720.prg
 
 dist/disk/pcdos33.d82 : util/720_d82.trk src/disk/pcdos33.img
 	util/imager.pl -i src/disk/pcdos33.img -o dist/disk/pcdos33.d82 -b util
+
+dist/disk/freedos.d82 : util/720_d82.trk src/disk/freedos.img
+	util/imager.pl -i src/disk/freedos.img -o dist/disk/freedos.d82 -b util
 
 dist/disk/pcdos33a.d80 : util/360_d80.trk src/disk/pcdos33a.img
 	util/imager.pl -i src/disk/pcdos33a.img -o dist/disk/pcdos33a.d80 -b util
