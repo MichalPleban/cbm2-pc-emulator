@@ -104,7 +104,7 @@ rqst010:
 
 		mov	al,cl
 		out	cia_pra,al	; write cmd to port
-
+ 
 		in	al,cia_prb	
 		and	al,0BFh
 		out	cia_prb,al	; cause IRQ (lo -> hi transition)

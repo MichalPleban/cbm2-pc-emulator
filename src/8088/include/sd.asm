@@ -3,52 +3,27 @@
 %define SD_SECTORS 63
 %define SD_CYLINDERS 1024
 
-%macro	SEND_BIT 0
-            mov al, 00h
-            adc al, 00h
-            out 23h, al         ; Set bit PC0 according to the carry flag
-%endmacro
-
-%macro	READ_BIT 0
-            in al, 20h
-            shl al, 1           ; Read bit PA7 into the carry flag
-%endmacro
-
-%macro	CLOCK_HI 0
-            mov al, 2*2+1       ; Set bit PC2 to 1
-            out 23h, al
-%endmacro
-
-%macro	CLOCK_LO 0
-            mov al, 2*2+0       ; Set bit PC2 to 0
-            out 23h, al
-%endmacro
-
-%macro	CLOCK_PULSE 0
-            CLOCK_HI
-            nop
-            nop
-            nop
-            CLOCK_LO
-%endmacro
 
 %macro	SEL_HI 0
-            mov al, 2*3+1       ; Set bit PC3 to 1
+            mov al, 2*7+1       ; Set bit PC7 to 1
             out 23h, al
 %endmacro
 
 %macro	SEL_LO 0
-            mov al, 2*3+0       ; Set bit PC3 to 0
+            mov al, 2*7+0       ; Set bit PC7 to 0
             out 23h, al
 %endmacro
 
 %macro  SEND_BYTE 1
-            mov dl, %1
-            call SD_Byte
+            mov al, %1
+            out 0E0h, al
 %endmacro
 
 %macro  READ_BYTE 0
             SEND_BYTE 0FFh
+            nop
+            nop
+            in al, 0E0h
 %endmacro
 
 ; --------------------------------------------------------------------------------------
@@ -233,20 +208,19 @@ SD_Init:
             push ax
             push bx
             
-            ; Step 1 - send 80 dummy pulses with card deselected
+            ; Step 1 - send dummy pulses with card deselected
             stc
-            SEND_BIT
             SEL_HI
-            mov cx, 80
+            mov cx, 10
 SD_Init_Loop_1:
-            CLOCK_PULSE
+            SEND_BYTE 0FFh
             loop SD_Init_Loop_1
             SEL_LO
             
-            ; Step 2 - send 80 dummy pulses with card selected
-            mov cx, 80
+            ; Step 2 - send dummy pulses with card selected
+            mov cx, 600
 SD_Init_Loop_2:
-            CLOCK_PULSE
+            SEND_BYTE 0FFh
             loop SD_Init_Loop_2
             
             ; Step 3 - send CMD0
@@ -258,7 +232,7 @@ SD_Init_Loop_2:
             SEND_BYTE 95h
             READ_BYTE
             READ_BYTE
-            mov bh, dl
+            mov bh, al
             READ_BYTE
             cmp bh, 01h
             jne SD_Init_Error
@@ -272,9 +246,9 @@ SD_Init_Loop_2:
             SEND_BYTE 87h
             READ_BYTE
             READ_BYTE
-            cmp dl, 05h
+            cmp al, 05h
             je SD_Init_Skip
-            cmp dl, 01h
+            cmp al, 01h
             jne SD_Init_Error
             READ_BYTE
             READ_BYTE
@@ -283,7 +257,7 @@ SD_Init_Loop_2:
 SD_Init_Skip:
             READ_BYTE
 
-            mov cx, 100
+            mov cx, 10000
 SD_Init_New:
             ; Step 5a - send CMD55
             SEND_BYTE 77h
@@ -294,7 +268,7 @@ SD_Init_New:
             SEND_BYTE 01h
             READ_BYTE
             READ_BYTE
-            mov bh, dl
+            mov bh, al
             READ_BYTE
             cmp bh, 05h
             je SD_Init_Old
@@ -310,7 +284,7 @@ SD_Init_New:
             SEND_BYTE 77h
             READ_BYTE
             READ_BYTE
-            mov bh, dl
+            mov bh, al
             READ_BYTE
             cmp bh, 00h
             je SD_Init_Done
@@ -318,8 +292,10 @@ SD_Init_New:
             je SD_Init_Old
             cmp bh, 01h
             jne SD_Init_Error
-            loop SD_Init_New
+            loop SD_Init_New2
             jmp SD_Init_Error
+SD_Init_New2:
+            jmp SD_Init_New
 
 SD_Init_Old:
             ; Step 5a - send CMD41
@@ -331,7 +307,7 @@ SD_Init_Old:
             SEND_BYTE 0F9h
             READ_BYTE
             READ_BYTE
-            mov bh, dl
+            mov bh, al
             READ_BYTE
             cmp bh, 00h
             je SD_Init_Done
@@ -350,10 +326,10 @@ SD_Init_Done:
             SEND_BYTE 01h
             READ_BYTE
             READ_BYTE
-            cmp dl, 00h
+            cmp al, 00h
             jne SD_Init_Error
             READ_BYTE
-            mov bh, dl
+            mov bh, al
             READ_BYTE
             READ_BYTE
             READ_BYTE
@@ -371,7 +347,7 @@ SD_Init_Sector:
             SEND_BYTE 01h
             READ_BYTE
             READ_BYTE
-            mov bh, dl
+            mov bh, al
             READ_BYTE
             cmp bh, 00h
             jne SD_Init_Error
@@ -389,34 +365,14 @@ SD_Init_End:
             pop dx
             pop cx
             ret
-        
+
+
 ; -----------------------------------------------------------------
 ; Read sector from the SD card.
 ; Input:
 ;       DX:AX - sector number
 ;       ES:DI - destination in memory
 ; -----------------------------------------------------------------
-
-%macro	SD_READ_BIT_FAST 0
-            mov al, bh
-            out dx, al
-            in al, 20h
-            shl ax, 1
-            mov al, bl
-            out dx, al
-%endmacro
-
-%macro	SD_READ_BYTE_FAST 0
-            SD_READ_BIT_FAST
-            SD_READ_BIT_FAST
-            SD_READ_BIT_FAST
-            SD_READ_BIT_FAST
-            SD_READ_BIT_FAST
-            SD_READ_BIT_FAST
-            SD_READ_BIT_FAST
-            SD_READ_BIT_FAST
-            mov al, ah
-%endmacro
 
 SD_Read:
             call IPC_ShowProgress
@@ -428,61 +384,48 @@ SD_Read:
             push ax
             push ax
             push dx
-            
+                        
             ; Send CMD17
             SEND_BYTE 51h
             SEND_BYTE 00h
             pop dx
             xchg dl, dh
             SEND_BYTE dh
-            pop ax
-            SEND_BYTE ah
-            pop ax
-            SEND_BYTE al
+            pop dx
+            SEND_BYTE dh
+            pop dx
+            SEND_BYTE dl
             SEND_BYTE 01h
             
-            ; Prepare fast data transfers
-            mov dx, 22h
-            mov bx, 0501h
-            
             ; Wait for "00" response
-            mov cx, 1000
+            mov cx, 10000
 SD_Read_Response:
-            call SD_Byte_Read_Fast
+            READ_BYTE
             cmp al, 00h
-            ;READ_BYTE
-            ;cmp dl, 00h
             je SD_Read_Do
             loop SD_Read_Response
             jmp SD_Read_Error
             
             ; Wait for data token
 SD_Read_Do:
-            mov cx, 1000
+            mov cx, 10000
 SD_Read_Wait:
-            call SD_Byte_Read_Fast
+            READ_BYTE
             cmp al, 0FEh
-            ;READ_BYTE
-            ;cmp dl, 0FEh
             je SD_Read_Continue
             loop SD_Read_Wait
             jmp SD_Read_Error
             
             ; Read sector bytes
 SD_Read_Continue:
+            SEND_BYTE 0FFh
             mov cx, 512
 SD_Read_Loop:
-            SD_READ_BYTE_FAST
-            ;READ_BYTE
-            ;mov al, dl
+            in al, 0E1h
             stosb
             loop SD_Read_Loop
-            call SD_Byte_Read_Fast
-            call SD_Byte_Read_Fast
-            call SD_Byte_Read_Fast
-            ;READ_BYTE
-            ;READ_BYTE
-            ;READ_BYTE
+            READ_BYTE
+            READ_BYTE
             clc
             jmp SD_Read_End
 SD_Read_Error:
@@ -518,18 +461,18 @@ SD_Write:
             pop dx
             xchg dl, dh
             SEND_BYTE dh
-            pop ax
-            SEND_BYTE ah
-            pop ax
-            SEND_BYTE al
+            pop dx
+            SEND_BYTE dh
+            pop dx
+            SEND_BYTE dl
             SEND_BYTE 01h
             READ_BYTE
             
             ; Wait for "00" response
-            mov cx, 1000
+            mov cx, 10000
 SD_Write_Response:
             READ_BYTE
-            cmp dl, 00h
+            cmp al, 00h
             je SD_Write_Do
             loop SD_Write_Response
             jmp SD_Write_Error
@@ -544,7 +487,7 @@ SD_Write_Continue:
             mov cx, 512
 SD_Write_Loop:
             lodsb
-            SEND_BYTE al
+            out 0E0h, al
             loop SD_Write_Loop
             ; Dummy CRC checksum
             SEND_BYTE 00h
@@ -552,17 +495,17 @@ SD_Write_Loop:
 
             ; Check data response
             READ_BYTE
-            mov ah, dl
+            mov ah, al
             READ_BYTE
             and ah, 1Fh
             cmp ah, 05h
             jne SD_Write_End
 
             ; Wait while the card is busy
-            mov cx, 1000
+            mov cx, 30000
 SD_Write_Wait:
             READ_BYTE
-            cmp dl, 0FFh
+            cmp al, 0FFh
             je SD_Write_Finish
             loop SD_Write_Wait
             jmp SD_Write_Error
@@ -615,38 +558,3 @@ SD_CHS:
             pop bx
             ret
             
-; -----------------------------------------------------------------
-; Send and receive a byte from the SD card QUICKLY.
-; Input:
-;       AL - byte to send
-; Output:
-;       AL - received byte
-; Remarks:
-;       DX, BX - destroyed
-; -----------------------------------------------------------------
-        
-SD_Byte_Read_Fast:
-            SD_READ_BYTE_FAST
-            ret
-            
-; -----------------------------------------------------------------
-; Send and receive a byte from the SD card.
-; Input:
-;       DL - byte to send
-; Output:
-;       DL - received byte
-; -----------------------------------------------------------------
-
-SD_Byte:
-            push cx
-            mov cx, 8
-SD_Byte_Loop:
-            shl dl, 1
-            SEND_BIT
-            CLOCK_HI
-            READ_BIT
-            adc dl, 00h
-            CLOCK_LO
-            loop SD_Byte_Loop
-            pop cx
-            ret
