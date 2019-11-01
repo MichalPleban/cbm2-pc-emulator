@@ -420,10 +420,19 @@ SD_Read_Wait:
 SD_Read_Continue:
             SEND_BYTE 0FFh
             mov cx, 512
+            ; More efficient routine on NEC V20
+            db 60h          ; PUSHA
+            stc
+            jnc SD_Read_Loop
+            db 61h          ; POPA
+            mov dx, 00E1h
+            db 0F3h, 06Ch   ; REP INSB
+            jmp SD_Read_Finished
 SD_Read_Loop:
             in al, 0E1h
             stosb
             loop SD_Read_Loop
+SD_Read_Finished:
             READ_BYTE
             READ_BYTE
             clc
@@ -485,10 +494,19 @@ SD_Write_Do:
             ; Write sector bytes
 SD_Write_Continue:
             mov cx, 512
+            ; More efficient routine on NEC V20
+            db 60h          ; PUSHA
+            stc
+            jnc SD_Write_Loop
+            db 61h          ; POPA
+            mov dx, 00E0h
+            db 0F3h, 06Eh   ; REP OUTSB
+            jmp SD_Write_Finished
 SD_Write_Loop:
             lodsb
             out 0E0h, al
             loop SD_Write_Loop
+SD_Write_Finished:
             ; Dummy CRC checksum
             SEND_BYTE 00h
             SEND_BYTE 00h
