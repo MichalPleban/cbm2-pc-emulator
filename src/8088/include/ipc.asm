@@ -22,35 +22,6 @@ IPCData		equ 000Ah				; Offset of the data trasfer area (16 bytes)
 			pop cx
 %endmacro
 
-%macro		IPC_Disable_IRQ_old	0
-			pushf
-			cli
-			push ax
-			mov al, 0FEh
-			out 01h, al
-			pop ax
-			sti
-%endmacro
-
-%macro		IPC_Enable_IRQ_old	0
-			cli
-			push ax
-			push ds
-			xor ax, ax
-			mov ds, ax
-			cmp [0168h], word IPC_IRQ2
-			jz %%1
-			mov al, 0FEh
-			jmp %%2
-%%1:
-			mov al, 0FAh
-%%2:
-			out 01h, al
-			pop ds
-			pop ax
-			popf
-%endmacro
-
 %macro		IPC_Disable_IRQ	0
 			pushf
 			cli
@@ -101,76 +72,40 @@ IPC_Init:
 			mov [0160h], word 0F1E2h
 			mov [0162h], word 0F000h
 
-			; Int 5A vector (TOD timer) -> Timer handler routine
-			mov [0168h], word IPC_IRQ2
-			mov [016Ah], word ax
-			mov [017Ch], word IPC_IRQ_Spurious
+			; Int 5F vector (18.2 Hz timer) -> Timer handler routine
+			mov [017Ch], word IPC_IRQ7
 			mov [017Eh], word ax
 
 			; Int 08 vector -> Our own handler
 			mov [0020h], word INT_08
 			mov [0022h], word ax
 			
-			; Rebase interrupts to 58h, enable IRQ0 and IRQ2
+			; Rebase interrupts to 58h, enable IRQ0 and IRQ7
 			mov al, 1Bh
 			out 00h, al
 			mov al, 58h
 			out 01h, al
 			mov al, 1
 			out 01h, al
-			mov al, 0FAh
+			mov al, 07Eh
 			out 01h, al
 			
 			pop ds
 			sti
 			ret
 
-; --------------------------------------------------------------------------------------
-; Handle spurious IRQ. It can be either IRQ0 or IRQ2.
-; --------------------------------------------------------------------------------------
-
-IPC_IRQ_Spurious:
-			push bx
-			; Extremely ugly hack to check if IRQ0 occured.
-			; Before calling the ROM BIOS code, we disable IRQ2.
-			; Therefore, if interrupt occured when the CPU was in the ROM BIOS, 
-			; it must be IRQ0.
-			mov bx, sp
-			cmp [ss:bx+4], word 0F000h
-			jnz IPC_IRQ_Spurious_IRQ2
-			cmp [ss:bx+6], word 0F000h
-			jb IPC_IRQ_Spurious_IRQ2
-			cmp [ss:bx+6], word 0F286h
-			ja IPC_IRQ_Spurious_IRQ2
-			pop bx
-			jmp 0F000h:0F1E2h
-			
-IPC_IRQ_Spurious_IRQ2:
-			pop bx
 
 ; --------------------------------------------------------------------------------------
-; IRQ2 - 50 Hz timer interrupt routine.
+; IRQ7 - 18.2 Hz timer interrupt routine.
 ; --------------------------------------------------------------------------------------
 
-IPC_IRQ2:
+IPC_IRQ7:
 			push ax
-			push ds
 			mov al, 20h
 			out 00h, al
 
-			mov ax, Data_Segment
-			mov ds, ax
+;			int 08h
 
-			mov ax, [Data_Ticks]
-			add ax, 182
-			cmp ax, 5000 
-			jb IPC_IRQ2_Below
-			int 08h
-			sub ax, 5000
-IPC_IRQ2_Below:
-			mov [Data_Ticks], ax
-
-			pop ds
 			pop ax
 			iret
 
