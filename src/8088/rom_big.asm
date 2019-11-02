@@ -5,6 +5,7 @@
 %define ROM
 %define BIG
 %define SD
+%define I2C
 %define SCREEN
 
 			org	00000h
@@ -21,6 +22,7 @@ incbin 'src/disk/hd.bin'
 
 %include 'src/8088/include/hdrom.asm'
 %include 'src/8088/include/sd.asm'
+%include 'src/8088/include/i2c.asm'
 %include 'src/8088/include/debug.asm'
 %include 'src/8088/include/version.asm'
 %include 'src/8088/include/data.asm'

@@ -1212,6 +1212,16 @@ INT_1A:
 			je INT_1A_00
 			cmp ah, 01
 			je INT_1A_01
+%ifdef I2C
+			cmp ah, 02
+			je INT_1A_02
+			cmp ah, 03
+			je INT_1A_03
+			cmp ah, 04
+			je INT_1A_04
+			cmp ah, 05
+			je INT_1A_05
+%endif
 			stc
 			xor dx, dx
 			xor cx, cx
@@ -1224,8 +1234,9 @@ INT_1A:
 INT_1A_00:
 			push ax
 			push bx
-			call IPC_TimeGet
-			
+
+            call IPC_TimeGet
+
 			; Calculate number of ticks in whole minutes
 			mov bx, ax
 			mov al, dh
@@ -1301,6 +1312,191 @@ INT_1A_01:
 			pop bx
 			pop ax
 			iret
+
+%ifdef I2C
+
+; -----------------------------------------------------------------
+; INT 1A function 02 - get RTC time.
+; -----------------------------------------------------------------
+
+INT_1A_02:
+            call INT_1A_02_Do
+            retf 2
+
+INT_1A_02_Do:
+            push ax
+            call I2C_Start
+            
+            ; RTC adress + write flag
+            mov al, 0D0h
+            call I2C_Send
+            jnc INT_1A_02_Do2
+            stc
+            ret
+
+INT_1A_02_Do2:
+            ; Read start address
+            mov al, 00h
+            call I2C_Send
+            
+            call I2C_Start
+
+            ; RTC adress + read flag
+            mov al, 0D1h
+            call I2C_Send
+            
+            ; Read address 00 (seconds)
+            clc
+            call I2C_Receive
+            mov dh, al
+
+            ; Read address 01 (minutes)
+            clc
+            call I2C_Receive
+            mov cl, al
+
+            ; Read address 02 (seconds)
+            stc
+            call I2C_Receive
+            mov ch, al
+            xor dl, dl
+
+            pop ax
+            clc
+            ret
+
+; -----------------------------------------------------------------
+; INT 1A function 03 - set RTC time.
+; -----------------------------------------------------------------
+
+INT_1A_03:
+            push ax
+            call I2C_Start
+            
+            ; RTC adress + write flag
+            mov al, 0D0h
+            call I2C_Send
+            jc INT_1A_NoRTC
+            
+            ; Write start address
+            mov al, 00h
+            call I2C_Send
+                        
+            ; Write address 00 (seconds)
+            mov al, dh
+            call I2C_Send
+
+            ; Write address 01 (minutes)
+            mov al, cl
+            call I2C_Send
+
+            ; Write address 02 (seconds)
+            mov al, ch
+            call I2C_Send
+
+            pop ax
+            clc
+            retf 2
+
+INT_1A_NoRTC:
+            pop ax
+            stc
+            iret
+
+; -----------------------------------------------------------------
+; INT 1A function 04 - get RTC date.
+; -----------------------------------------------------------------
+
+INT_1A_04:
+            push ax
+            call I2C_Start
+            
+            ; RTC adress + write flag
+            mov al, 0D0h
+            call I2C_Send
+            jc INT_1A_NoRTC
+            
+            ; Read start address
+            mov al, 04h
+            call I2C_Send
+            
+            call I2C_Start
+
+            ; RTC adress + read flag
+            mov al, 0D1h
+            call I2C_Send
+            
+            ; Read address 04 (day)
+            clc
+            call I2C_Receive
+            mov dl, al
+
+            ; Read address 05 (month)
+            clc
+            call I2C_Receive
+            mov dh, al
+
+            ; Read address 06 (year)
+            stc
+            call I2C_Receive
+            mov cl, al
+            mov ch, 020h
+
+            pop ax
+            clc
+            retf 2
+
+; -----------------------------------------------------------------
+; INT 1A function 05 - set RTC date.
+; -----------------------------------------------------------------
+
+INT_1A_05:
+            push ax
+            call I2C_Start
+            
+            ; RTC adress + write flag
+            mov al, 0D0h
+            call I2C_Send
+            jc INT_1A_NoRTC
+            
+            ; Write start address
+            mov al, 04h
+            call I2C_Send
+            
+            ; Write address 04 (day)
+            mov al, dl
+            call I2C_Send
+
+            ; Write address 05 (month)
+            mov al, dh
+            call I2C_Send
+
+            ; Write address 06 (year)
+            mov al, cl
+            call I2C_Send
+
+            pop ax
+            clc
+            retf 2
+
+%endif
+
+
+; -----------------------------------------------------------------
+; Convert BCD to decimal
+; -----------------------------------------------------------------
+
+BCDConvert:
+            mov bh, al
+            and bh, 0Fh
+            shr al, 1
+            shr al, 1
+            shr al, 1
+            shr al, 1
+            mov bl, 10
+            mul bl
+            add al, bh
+            ret
 
 ; -----------------------------------------------------------------
 ; INT 1B - Ctrl+Break.

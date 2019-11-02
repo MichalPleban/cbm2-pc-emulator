@@ -19,6 +19,27 @@ Init_INT_0:
 			movsw
 			stosw
 			loop Init_INT_0
+			
+%ifdef I2C
+            ; Hack for old DOS versions - copy RTC time to CBM time
+            call INT_1A_02_Do
+            jc Init_INT_1
+            mov al, dh
+            call BCDConvert
+			mov ah, al
+			push ax
+			mov al, cl
+			call BCDConvert
+			mov dl, al
+			mov al, ch
+			call BCDConvert
+			mov dh, al
+			pop ax
+			xor al, al
+			call IPC_TimeSet
+Init_INT_1:
+%endif
+			
 			ret
 
 ; -----------------------------------------------------------------

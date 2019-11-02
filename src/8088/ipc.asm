@@ -2,6 +2,7 @@
 %undef ROM
 %define STANDALONE
 %define SD
+%define I2C
 %define SCREEN
 %define BIG
 
@@ -53,6 +54,7 @@ Install_Leave equ 0
 %include 'src/8088/include/init.asm'
 %include 'src/8088/include/hdrom.asm'
 %include 'src/8088/include/sd.asm'
+%include 'src/8088/include/i2c.asm'
 %include 'src/8088/include/screen.asm'
 %include 'src/8088/include/data.asm'
 

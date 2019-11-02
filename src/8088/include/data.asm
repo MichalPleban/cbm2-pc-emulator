@@ -53,7 +53,7 @@ Data_MemSize:		equ 0008h
 Data_Ticks:			equ 000Ah
 
 ; -----------------------------------------------------------------
-; Boot flag - set if the sustem is booting.
+; Boot flag - set if the system is booting.
 ; -----------------------------------------------------------------
 
 Data_Boot:			equ 000Ch
