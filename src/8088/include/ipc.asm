@@ -634,15 +634,15 @@ IPC_KbdConvert_Table:
 			dw 03B00h, 05400h, 05E00h, 06800h ; 00 - F1
 			dw 0011Bh, 0011Bh, 0011Bh, 00100h ; 01 - Esc
 			dw 00F09h, 00F00h, 09400h, 0A500h ; 02 - Tab
-			dw 00000h, 00000h, 00000h, 00000h ; 03
-			dw 00000h, 00000h, 00000h, 00000h ; 04
-			dw 00000h, 00000h, 00000h, 00000h ; 05
+			dw 00000h, 00000h, 00000h, 00000h ; 03 - Shift Lock (unused)
+			dw 00000h, 00000h, 00000h, 00000h ; 04 - Left Shift (unused)
+			dw 00000h, 00000h, 00000h, 00000h ; 05 - Ctrl (unused)
 			dw 03C00h, 05500h, 05F00h, 06900h ; 06 - F2
-			dw 00231h, 00221h, 00000h, 07800h ; 07 - 1
+			dw 00231h, 00221h, 0FF00h, 07800h ; 07 - 1
 			dw 01071h, 01051h, 01011h, 01000h ; 08 - Q
 			dw 01E61h, 01E41h, 01E01h, 01E00h ; 09 - A
 			dw 02C7Ah, 02C5Ah, 02C1Ah, 02C00h ; 0A - Z
-			dw 00000h, 00000h, 00000h, 00000h ; 0B
+			dw 00000h, 00000h, 00000h, 00000h ; 0B - Right Shift (unused)
 			dw 03D00h, 05600h, 06000h, 06A00h ; 0C - F3
 			dw 00332h, 00340h, 00300h, 07900h ; 0D - 2
 			dw 01177h, 01157h, 01117h, 01100h ; 0E - W
@@ -650,73 +650,73 @@ IPC_KbdConvert_Table:
 			dw 02D78h, 02D58h, 02D18h, 02D00h ; 10 - X
 			dw 02E63h, 02E43h, 02E03h, 02E00h ; 11 - C
 			dw 03E00h, 05700h, 06100h, 06B00h ; 12 - F4
-			dw 00433h, 00423h, 00000h, 07A00h ; 13 - 3
+			dw 00433h, 00423h, 0FF00h, 07A00h ; 13 - 3
 			dw 01265h, 01245h, 01205h, 01200h ; 14 - E
 			dw 02064h, 02044h, 02004h, 02000h ; 15 - D
 			dw 02166h, 02146h, 02106h, 02100h ; 16 - F
 			dw 02F76h, 02F56h, 02F16h, 02F00h ; 17 - V
 			dw 03F00h, 05800h, 06200h, 06C00h ; 18 - F5
-			dw 00534h, 00524h, 00000h, 07B00h ; 19 - 4
+			dw 00534h, 00524h, 0FF00h, 07B00h ; 19 - 4
 			dw 01372h, 01352h, 01312h, 01300h ; 1A - R
 			dw 01474h, 01454h, 01414h, 01400h ; 1B - T
 			dw 02267h, 02247h, 02207h, 02200h ; 1C - G
 			dw 03062h, 03042h, 03002h, 03000h ; 1D - B
 			dw 04000h, 05900h, 06300h, 06D00h ; 1E - F6
-			dw 00635h, 00625h, 00000h, 07C00h ; 1F - 5
+			dw 00635h, 00625h, 0FF00h, 07C00h ; 1F - 5
 			dw 00736h, 0075Eh, 0071Eh, 07D00h ; 20 - 6
 			dw 01579h, 01559h, 01519h, 01500h ; 21 - Y
 			dw 02368h, 02348h, 02308h, 02300h ; 22 - H
 			dw 0316Eh, 0314Eh, 0310Eh, 03100h ; 23 - N
 			dw 04100h, 05A00h, 06400h, 06E00h ; 24 - F7
-			dw 00837h, 00826h, 00000h, 07E00h ; 25 - 7
+			dw 00837h, 00826h, 0FF00h, 07E00h ; 25 - 7
 			dw 01675h, 01655h, 01615h, 01600h ; 26 - U
 			dw 0246Ah, 0244Ah, 0240Ah, 02400h ; 27 - J
 			dw 0326Dh, 0324Dh, 0320Dh, 03200h ; 28 - M
 			dw 03920h, 03920h, 03920h, 03920h ; 29 - Space
 			dw 04200h, 05B00h, 06500h, 06F00h ; 2A - F8
-			dw 00938h, 0092Ah, 00000h, 07F00h ; 2B - 8
+			dw 00938h, 0092Ah, 0FF00h, 07F00h ; 2B - 8
 			dw 01769h, 01749h, 01709h, 01700h ; 2C - I
 			dw 0256Bh, 0254Bh, 0250Bh, 02500h ; 2D - K
-			dw 0332Ch, 0333Ch, 00000h, 00000h ; 2E - ,
-			dw 0342Eh, 0343Eh, 00000h, 00000h ; 2F - .
+			dw 0332Ch, 0333Ch, 0FF00h, 0FF00h ; 2E - ,
+			dw 0342Eh, 0343Eh, 0FF00h, 0FF00h ; 2F - .
 			dw 04300h, 05C00h, 06600h, 07000h ; 30 - F9
-			dw 00A39h, 00A28h, 00000h, 08000h ; 31 - 9
+			dw 00A39h, 00A28h, 0FF00h, 08000h ; 31 - 9
 			dw 0186Fh, 0184Fh, 0180Fh, 01800h ; 32 - O
 			dw 0266Ch, 0264Ch, 0260Ch, 02600h ; 33 - L
-			dw 0273Bh, 0273Ah, 00000h, 02700h ; 34 - ;
-			dw 0352Fh, 0353Fh, 00000h, 00000h ; 35 - /
+			dw 0273Bh, 0273Ah, 0FF00h, 02700h ; 34 - ;
+			dw 0352Fh, 0353Fh, 0FF00h, 0FF00h ; 35 - /
 			dw 04400h, 05D00h, 06700h, 07100h ; 36 - F10
-			dw 00B30h, 00B29h, 00000h, 08100h ; 37
+			dw 00B30h, 00B29h, 0FF00h, 08100h ; 37 - 0
 			dw 00C2Dh, 00C5Fh, 00C1Fh, 08200h ; 38 - -
 			dw 01970h, 01950h, 01910h, 01900h ; 39 - P
 			dw 01A5Bh, 01A7Bh, 01A1Bh, 01A00h ; 3A - [
-			dw 02827h, 02822h, 00000h, 00000h ; 3B - '
+			dw 02827h, 02822h, 0FF00h, 0FF00h ; 3B - '
 			dw 05000h, 05032h, 09100h, 0A000h ; 3C - cursor down
-			dw 00D3Dh, 00D2Bh, 00000h, 08300h ; 3D - =
+			dw 00D3Dh, 00D2Bh, 0FF00h, 08300h ; 3D - =
 			dw 02B5Ch, 02B7Ch, 02B1Ch, 02600h ; 3E - <-
 			dw 01B5Dh, 01B7Dh, 01B1Dh, 01B00h ; 3F - ]
 			dw 01C0Dh, 01C0Dh, 01C0Ah, 0A600h ; 40 - Return
-			dw 02960h, 0297Eh, 00000h, 00000h ; 41 - PI
+			dw 02960h, 0297Eh, 0FF00h, 0FF00h ; 41 - PI
 			dw 04800h, 04838h, 08D00h, 09800h ; 42 - cursor up
 			dw 04B00h, 04B34h, 07300h, 09B00h ; 43 - cursor left
 			dw 04D00h, 04D36h, 07400h, 09D00h ; 44 - cursor right
 			dw 00E08h, 00E08h, 00E7Fh, 00E00h ; 45 - Ins Del
-			dw 00000h, 00000h, 00000h, 00000h ; 46 - C=
-			dw 00000h, 00000h, 00000h, 00000h ; 47
+			dw 0FF00h, 0FF00h, 0FF00h, 0FF00h ; 46 - C=
+			dw 0FF00h, 0FF00h, 0FF00h, 0FF00h ; 47
 			dw 08500h, 08700h, 08900h, 08B00h ; 48 - Clr Home
-			dw 0353Fh, 0353Fh, 00000h, 00000h ; 49 - numerical ?
+			dw 0353Fh, 0353Fh, 0FF00h, 0FF00h ; 49 - numerical ?
 			dw 04700h, 04737h, 07700h, 09700h ; 4A - numerical 7
 			dw 04B00h, 04B34h, 07300h, 09B00h ; 4B - numerical 4
 			dw 04F00h, 04F31h, 07500h, 09F00h ; 4C - numerical 1
-			dw 00B30h, 00B29h, 00000h, 08100h ; 4D - numerical 0
+			dw 00B30h, 00B29h, 0FF00h, 08100h ; 4D - numerical 0
 			dw 08600h, 08800h, 08A00h, 08C00h ; 4E - Rvs Off
-			dw 00000h, 00000h, 00000h, 00000h ; 4F - numerical CE
+			dw 0FF00h, 0FF00h, 0FF00h, 0FF00h ; 4F - numerical CE
 			dw 04800h, 04838h, 08D00h, 09800h ; 50 - numerical 8
-			dw 04C35h, 04C35h, 08F00h, 00000h ; 51 - numerical 5
+			dw 04C35h, 04C35h, 08F00h, 0FF00h ; 51 - numerical 5
 			dw 05000h, 05032h, 09100h, 0A000h ; 52 - numerical 2
 			dw 05300h, 0532Eh, 09300h, 0A300h ; 53 - numerical .
 			dw 07200h, 07200h, 07200h, 07200h ; 54 - Norm Graph
-			dw 0372Ah, 00000h, 09600h, 03700h ; 55 - numerical *
+			dw 0372Ah, 0FF00h, 09600h, 03700h ; 55 - numerical *
 			dw 04900h, 04939h, 08400h, 09900h ; 56 - numerical 9
 			dw 04D00h, 04D36h, 07400h, 09D00h ; 57 - numerical 6
 			dw 05100h, 05133h, 07600h, 0A100h ; 58 - numerical 3
@@ -724,7 +724,7 @@ IPC_KbdConvert_Table:
 			dw 02E03h, 02E03h, 02E03h, 02E03h ; 5A - Run Stop
 			dw 0352Fh, 0352Fh, 09500h, 0A400h ; 5B - numerical /
 			dw 04A2Dh, 04A2Dh, 08E00h, 04A00h ; 5C - numerical -
-			dw 04E2Bh, 04E2Bh, 00000h, 04E00h ; 5D - numerical +
+			dw 04E2Bh, 04E2Bh, 0FF00h, 04E00h ; 5D - numerical +
 			dw 01C0Dh, 01C0Dh, 01C0Ah, 0A600h ; 5E - numerical Enter
 
 ; -----------------------------------------------------------------
