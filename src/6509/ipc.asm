@@ -804,17 +804,11 @@ init_diskno:
     sta GETINVec
     lda #>my_getin
     sta GETINVec+1
-    lda #$04
-    sta $db05
-    lda #$a9
-    sta $db04
-    lda #$91
-    sta $db0e
-    lda #$00
+    lda #$D6
     sta $db07
-    lda #$2d
+    lda #$93
     sta $db06
-    lda #$47
+    lda #$17
     sta $db0f
     jmp ipc_end
     

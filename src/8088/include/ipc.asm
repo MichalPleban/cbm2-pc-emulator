@@ -4,11 +4,8 @@ IPCData		equ 000Ah				; Offset of the data trasfer area (16 bytes)
 
 
 %macro		IPC_Call 	1
-			pushf
-			cli
 			mov cl, %1
 			call IPC
-			popf
 %endmacro
 
 %macro		IPC_Enter	0
@@ -81,7 +78,7 @@ IPC_Init:
 			mov [0022h], word ax
 			
 			; Rebase interrupts to 58h, enable IRQ0 and IRQ7
-			mov al, 1Bh
+			mov al, 13h
 			out 00h, al
 			mov al, 58h
 			out 01h, al
@@ -104,16 +101,32 @@ IPC_IRQ7:
 			mov al, 20h
 			out 00h, al
 
-;			int 08h
+			int 08h
 
 			pop ax
 			iret
 
 ; --------------------------------------------------------------------------------------
-; Fake INT 08 - just call INT 1C
+; Fake INT 08 - increase counter and call INT 1C
 ; --------------------------------------------------------------------------------------
 
 INT_08:
+            push ax
+            push ds
+            xor ax, ax
+            mov ds, ax
+            mov ax, [046Ch]
+            add ax, 1
+            mov [046Ch], ax
+            mov ax, [046Eh]
+            adc ax, 0
+            cmp ax, 24
+            jb INT_08_1
+            xor ax, ax
+INT_08_1:
+            mov [046Eh], ax
+            pop ds
+            pop ax
 			int 1Ch
 			iret
 
@@ -195,13 +208,13 @@ IPC_Install_Loop2:
 			
 			; Install some fake BIOS variables
 			
-			mov [es:0417h], byte 0        ; Shift flags #1
-			mov [es:0418h], byte 0        ; Shift flags #2
+			mov [es:0417h], ax            ; Shift flags #1 & #2
 			mov [es:0449h], byte 07       ; Current video mode
 			mov [es:044Ah], word 80       ; Number of screen columns
 			mov [es:0463h], word 03B4h    ; CRTC port
+			mov [es:046Ch], ax            ; Tick count low word
+			mov [es:046Eh], ax            ; Tick count high word
 			mov [es:048Ah], byte 01       ; Display combination code
-			
 			
 			ret
 			

@@ -1232,6 +1232,15 @@ INT_1A:
 ; -----------------------------------------------------------------
 
 INT_1A_00:
+;            push ds
+;            xor cx, cx
+;            mov ds, cx
+;            mov dx, [046Ch]
+;            mov cx, [046Eh]
+;            pop ds
+;            clc
+;            retf 2
+            
 			push ax
 			push bx
 

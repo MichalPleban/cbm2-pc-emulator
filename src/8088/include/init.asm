@@ -21,23 +21,7 @@ Init_INT_0:
 			loop Init_INT_0
 			
 %ifdef I2C
-            ; Hack for old DOS versions - copy RTC time to CBM time
-            call INT_1A_02_Do
-            jc Init_INT_1
-            mov al, dh
-            call BCDConvert
-			mov ah, al
-			push ax
-			mov al, cl
-			call BCDConvert
-			mov dl, al
-			mov al, ch
-			call BCDConvert
-			mov dh, al
-			pop ax
-			xor al, al
-			call IPC_TimeSet
-Init_INT_1:
+            call Init_RTC
 %endif
 			
 			ret
@@ -160,3 +144,67 @@ Output_String:
 Output_String_End:
 			ret
 
+
+; -----------------------------------------------------------------
+; Copy time from the RTC chip to the tick count.
+; -----------------------------------------------------------------
+
+%ifdef I2C
+Init_RTC:
+            push ax
+            
+            ; Load time from the RTC
+            call INT_1A_02_Do
+            jc Init_RTC_1
+            mov al, dh
+            call BCDConvert
+            mov ah, al          ; AH = Seconds
+			mov al, cl
+			call BCDConvert
+			mov dl, al          ; DL = Minutes
+			mov al, ch
+			call BCDConvert
+			mov dh, al          ; DH = Hours
+			xor al, al
+			
+			push ax
+			push dx
+			call IPC_TimeSet
+			pop dx
+			pop ax
+			
+			mov bl, dh          ; BL = Hours
+			mov al, ah          ; AL = Minutes
+			mov dh, al          ; DH = Seconds
+			
+			xor ah, ah
+			mov cl, 60
+			mul cl              ; AX = minutes * 60
+			add al, dh
+			adc ah, 0           ; AX = minutes * 60 + seconds
+			push ax
+			xor dx, dx
+			mov cx, 5
+			div cx              ; AX = (minutes * 60 + seconds) * 0.2
+			mov dx, ax
+            pop ax
+            mov ch, ah			
+			mov cl, 18
+			mul cl              ; AX = (minutes * 60 + seconds) * 18
+			add dx, ax          
+			mov al, ch
+			mul cl
+			add dh, al          ; DX = (minutes * 60 + seconds) * 18.2
+			
+			xor bh, bh
+			push ds
+			xor ax, ax
+			mov ds, ax
+			mov [046Ch], dx
+			mov [046Eh], bx
+			pop ds
+			
+Init_RTC_1:
+            pop ax
+            ret
+%endif
