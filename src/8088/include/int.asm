@@ -1244,7 +1244,27 @@ INT_1A_00:
 			push ax
 			push bx
 
+%ifdef I2C
+            call INT_1A_02_Do
+            jc INT_1A_00_1
+            mov al, dh
+            call ConvertFromBCD
+            mov ah, al          ; AH = Seconds
+            push ax
+			mov al, cl
+			call ConvertFromBCD
+			mov dl, al          ; DL = Minutes
+			mov al, ch
+			call ConvertFromBCD
+			mov dh, al          ; DH = Hours
+			pop ax
+			xor al, al          ; AL = Microseconds
+			jmp INT_1A_00_2
+%endif
+
+INT_1A_00_1:
             call IPC_TimeGet
+INT_1A_00_2:
 
 			; Calculate number of ticks in whole minutes
 			mov bx, ax
@@ -1313,8 +1333,25 @@ INT_1A_01:
 			div cl
 			xchg al, ah
 			
-			mov dx, bx			
+			mov dx, bx
+			push ax
+			push dx
 			call IPC_TimeSet
+			pop dx
+
+%ifdef I2C
+            mov al, dh
+            call ConvertToBCD
+            mov ch, al
+            mov al, dl
+            call ConvertToBCD
+            mov cl, al
+			pop ax
+            mov al, ah
+            call ConvertToBCD
+            mov dh, al
+            call INT_1A_03_Do
+%endif
 			
 			pop dx
 			pop cx
@@ -1340,6 +1377,8 @@ INT_1A_02_Do:
             mov al, 0D0h
             call I2C_Send
             jnc INT_1A_02_Do2
+            call I2C_Stop
+            pop ax
             stc
             ret
 
@@ -1370,6 +1409,7 @@ INT_1A_02_Do2:
             mov ch, al
             xor dl, dl
 
+            call I2C_Stop
             pop ax
             clc
             ret
@@ -1379,13 +1419,23 @@ INT_1A_02_Do2:
 ; -----------------------------------------------------------------
 
 INT_1A_03:
+            call INT_1A_03_Do
+            retf 2
+            
+INT_1A_03_Do:
             push ax
             call I2C_Start
             
             ; RTC adress + write flag
             mov al, 0D0h
             call I2C_Send
-            jc INT_1A_NoRTC
+            jnc INT_1A_03_Do2
+            call I2C_Stop
+            pop ax
+            stc
+            ret
+
+INT_1A_03_Do2:
             
             ; Write start address
             mov al, 00h
@@ -1403,11 +1453,13 @@ INT_1A_03:
             mov al, ch
             call I2C_Send
 
+            call I2C_Stop
             pop ax
             clc
-            retf 2
+            ret
 
 INT_1A_NoRTC:
+            call I2C_Stop
             pop ax
             stc
             iret
@@ -1451,6 +1503,7 @@ INT_1A_04:
             mov cl, al
             mov ch, 020h
 
+            call I2C_Stop
             pop ax
             clc
             retf 2
@@ -1484,6 +1537,7 @@ INT_1A_05:
             mov al, cl
             call I2C_Send
 
+            call I2C_Stop
             pop ax
             clc
             retf 2
@@ -1495,7 +1549,7 @@ INT_1A_05:
 ; Convert BCD to decimal
 ; -----------------------------------------------------------------
 
-BCDConvert:
+ConvertFromBCD:
             mov bh, al
             and bh, 0Fh
             shr al, 1
@@ -1505,6 +1559,19 @@ BCDConvert:
             mov bl, 10
             mul bl
             add al, bh
+            ret
+
+; -----------------------------------------------------------------
+; Convert decimal to BCD
+; -----------------------------------------------------------------
+
+ConvertToBCD:
+            aam
+            shl ah, 1
+            shl ah, 1
+            shl ah, 1
+            shl ah, 1
+            or al, ah
             ret
 
 ; -----------------------------------------------------------------

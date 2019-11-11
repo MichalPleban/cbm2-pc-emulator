@@ -157,15 +157,15 @@ Init_RTC:
             call INT_1A_02_Do
             jc Init_RTC_1
             mov al, dh
-            call BCDConvert
+            call ConvertFromBCD
             mov ah, al          ; AH = Seconds
 			mov al, cl
-			call BCDConvert
+			call ConvertFromBCD
 			mov dl, al          ; DL = Minutes
 			mov al, ch
-			call BCDConvert
+			call ConvertFromBCD
 			mov dh, al          ; DH = Hours
-			xor al, al
+			xor al, al          ; AL = Microseconds
 			
 			push ax
 			push dx
