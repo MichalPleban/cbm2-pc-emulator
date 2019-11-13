@@ -1396,6 +1396,7 @@ INT_1A_02_Do2:
             ; Read address 00 (seconds)
             clc
             call I2C_Receive
+            and al, 7Fh
             mov dh, al
 
             ; Read address 01 (minutes)

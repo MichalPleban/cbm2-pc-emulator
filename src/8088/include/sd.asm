@@ -385,6 +385,9 @@ SD_Read:
             push ax
             push dx
                         
+            mov al, 1       ; Set bit PC0 to 1
+            out 23h, al
+            
             ; Send CMD17
             SEND_BYTE 51h
             SEND_BYTE 00h
@@ -421,13 +424,13 @@ SD_Read_Continue:
             SEND_BYTE 0FFh
             mov cx, 512
             ; More efficient routine on NEC V20
-            db 60h          ; PUSHA
-            stc
-            jnc SD_Read_Loop
-            db 61h          ; POPA
-            mov dx, 00E1h
-            db 0F3h, 06Ch   ; REP INSB
-            jmp SD_Read_Finished
+;            db 60h          ; PUSHA
+;            stc
+;            jnc SD_Read_Loop
+;            db 61h          ; POPA
+;            mov dx, 00E1h
+;            db 0F3h, 06Ch   ; REP INSB
+;            jmp SD_Read_Finished
 SD_Read_Loop:
             in al, 0E1h
             stosb
@@ -435,9 +438,13 @@ SD_Read_Loop:
 SD_Read_Finished:
             READ_BYTE
             READ_BYTE
+            mov al, 0       ; Set bit PC0 to 0
+            out 23h, al
             clc
             jmp SD_Read_End
 SD_Read_Error:
+            mov al, 0       ; Set bit PC0 to 0
+            out 23h, al
             stc
 SD_Read_End:
             pop cx
@@ -464,6 +471,9 @@ SD_Write:
             push ax
             push dx
             
+            mov al, 1       ; Set bit PC0 to 1
+            out 23h, al
+
             ; Send CMD24
             SEND_BYTE 58h
             SEND_BYTE 00h
@@ -495,13 +505,13 @@ SD_Write_Do:
 SD_Write_Continue:
             mov cx, 512
             ; More efficient routine on NEC V20
-            db 60h          ; PUSHA
-            stc
-            jnc SD_Write_Loop
-            db 61h          ; POPA
-            mov dx, 00E0h
-            db 0F3h, 06Eh   ; REP OUTSB
-            jmp SD_Write_Finished
+;            db 60h          ; PUSHA
+;            stc
+;            jnc SD_Write_Loop
+;            db 61h          ; POPA
+;            mov dx, 00E0h
+;            db 0F3h, 06Eh   ; REP OUTSB
+;            jmp SD_Write_Finished
 SD_Write_Loop:
             lodsb
             out 0E0h, al
@@ -529,9 +539,13 @@ SD_Write_Wait:
             jmp SD_Write_Error
 
 SD_Write_Finish:
+            mov al, 0       ; Set bit PC0 to 0
+            out 23h, al
             clc
             jmp SD_Write_End
 SD_Write_Error:
+            mov al, 0       ; Set bit PC0 to 0
+            out 23h, al
             stc
 SD_Write_End:
             pop cx
