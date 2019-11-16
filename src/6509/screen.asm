@@ -29,7 +29,7 @@ PLOT = $fff0
 ;--------------------------------------------------------------------
 
     .word $0400
-    * = $0400
+    .org $0400
 
 ipc_buffer = $0805
 
@@ -100,14 +100,14 @@ screen_init_1:
     bpl screen_init_1    
     ldx #$0E
     stx CRTC_RegNo
-#ifdef NOCHAR
+.ifdef NOCHAR
     lda #$EF
     and CRTC_RegVal
-#endif
-#ifdef CHAR
+.endif
+.ifdef CHAR
     lda #$10
     ora CRTC_RegVal
-#endif
+.endif
     sta CRTC_RegVal
     and #$30
     ldx #$0C
@@ -154,10 +154,10 @@ screen_location:
     .byt $0C
     .byt $00
 
-    .dsb ($0500-*), $AA
+;    .res ($0500-*), $AA
 
 
-#ifdef NOCHAR
+.ifdef NOCHAR
 
 ;--------------------------------------------------------------------
 ; ASCII to PETSCII (standard char ROM)
@@ -181,9 +181,9 @@ petscii_table:
 	.byt $64, $64, $64, $64, $64, $64, $64, $64, $64, $64, $64, $64, $64, $64, $64, $64
 	.byt $64, $64, $64, $64, $64, $64, $64, $64, $64, $2a, $2a, $7a, $64, $64, $2a, $60
 
-#endif 
+.endif 
 
-#ifdef CHAR
+.ifdef CHAR
 
 ;--------------------------------------------------------------------
 ; ASCII to PETSCII (modified char ROM)
@@ -207,7 +207,7 @@ petscii_table:
 	.byt $5f, $5f, $5f, $5f, $5f, $5f, $5f, $5f, $5f, $5f, $5f, $5f, $5f, $5f, $5f, $5f
 	.byt $5f, $5f, $5f, $5f, $5f, $5f, $5f, $5f, $5f, $7c, $7c, $79, $5f, $5f, $74, $7f
 
-#endif 
+.endif 
 
 ;--------------------------------------------------------------------
 ; Attribute conversion (MDA to reverse bit)

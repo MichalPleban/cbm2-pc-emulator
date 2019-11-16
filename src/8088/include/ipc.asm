@@ -728,23 +728,23 @@ IPC_Stub_End:
 ; -----------------------------------------------------------------
 
 IPC_Params:
-			db 0, 4
-			db 0, 4
-			db 3, 2
-			db 3, 2
-			db 3, 2
-			db 0, 3
-			db 11, 4
-			db 11, 4
-			db 0, 4
-			db 0, 3
-			db 3, 2
-			db 5, 2
+			db 0, 4     ; 10 - keyboard peek
+			db 0, 4     ; 11 - keyboard get
+			db 3, 2     ; 12 - screen out
+			db 3, 2     ; 13 - printer out
 			db 0, 0
-			db 6, 5
-			db 4, 0
-			db 0, 4
 			db 0, 0
-			db 11, 4
+			db 11, 4    ; 96 - disk read
+			db 11, 4    ; 97 - disk write
+			db 0, 4     ; 18 - initialize
+			db 0, 3     ; 19 - serial in
+			db 3, 2     ; 1A - serial out
+			db 5, 2     ; 1B - serial config
+			db 0, 0
+			db 6, 5     ; 1D - console services
+			db 0, 0
+			db 0, 0
+			db 0, 0     ; 20 - keyboard clear
+			db 11, 4    ; 21 - disk format
 			
 

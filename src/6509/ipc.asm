@@ -75,7 +75,7 @@ PLOT = $fff0
 ;--------------------------------------------------------------------
 
     .word $0800
-    * = $0800
+    .org $0800
 
 ;--------------------------------------------------------------------
 ; Startup routine - sets interrupt vectors and starts 8088 processor.
@@ -141,7 +141,7 @@ disk_status:
 printer_flag:
 	.byt 0
 
-    .dsb ($0830-*), $AA
+    .res ($0830-*), $AA
         
 ;--------------------------------------------------------------------
 ; Jump table to IPC functions (only for function called from 8088).
@@ -305,12 +305,12 @@ vectors:
 ; The location of this table is hardcoded to $0910 in the KERNAL.
 ;--------------------------------------------------------------------        
 
-    .dsb ($0910-*), $AA
+    .res ($0910-*), $AA
     
-    .byt $00,$01,$02,$03,$04,$05,$06,$07,
+    .byt $00,$01,$02,$03,$04,$05,$06,$07
     .byt $08,$09,$0a,$0b,$0c,$0d,$0e,$0f
     .byt $40,$40,$23,$23,$23,$30,$4b,$4b
-    .byt $40,$30,$23,$25,$00,$56,$00,$00,
+    .byt $40,$30,$23,$25,$00,$56,$00,$00
     .byt $00,$4b
     
 ;--------------------------------------------------------------------
@@ -982,7 +982,7 @@ ipc_1d_console:
     jsr CHKOUT
     lda #$1b
     jsr BSOUT
-    lda #"q"            ; Esc+Q - erase to end of line
+    lda #$51            ; Esc+Q - erase to end of line
     jsr BSOUT
     sec
     jsr PLOT
@@ -998,7 +998,7 @@ ipc_1d_console:
 erase_loop:
     lda #$1b
     jsr BSOUT
-    lda #"i"            ; Esc+I - insert empty line
+    lda #$49            ; Esc+I - insert empty line
     jsr BSOUT
     dec tmp_val
     bne erase_loop
@@ -1037,9 +1037,9 @@ console_not02:
     bne console_not04
     
 ; Console function 04 - delete line at cursor position.
-    lda #"d"            ; Esc+D - delete line
+    lda #$44            ; Esc+D - delete line
     bne delete_line
-    lda #"i"
+    lda #$49
 delete_line:
     sta old_y
     lda CursorColumn

@@ -21,13 +21,19 @@ dist/prg/8088.prg: src/8088/ipc.asm $(COMMON)
 	nasm src/8088/ipc.asm -o dist/prg/8088.prg
 
 dist/prg/6509.prg: src/6509/ipc.asm
-	xa src/6509/ipc.asm -O PETSCII -o dist/prg/6509.prg
+	ca65 src/6509/ipc.asm
+	ld65 src/6509/ipc.o -C src/6509/6509.cfg -o dist/prg/6509.prg
+	rm src/6509/ipc.o
 
-dist/prg/screen_nochar.prg: src/6509/scr_memory.asm
-	xa -DNOCHAR=1 src/6509/scr_memory.asm -O PETSCII -o dist/prg/screen_nochar.prg
+dist/prg/screen_nochar.prg: src/6509/screen.asm
+	ca65 -D NOCHAR src/6509/screen.asm
+	ld65 src/6509/screen.o -C src/6509/6509.cfg -o dist/prg/screen_nochar.prg
+	rm src/6509/screen.o
 
-dist/prg/screen_char.prg: src/6509/scr_memory.asm
-	xa -DCHAR=1 src/6509/scr_memory.asm -O PETSCII -o dist/prg/screen_char.prg
+dist/prg/screen_char.prg: src/6509/screen.asm
+	ca65 -D CHAR src/6509/screen.asm
+	ld65 src/6509/screen.o -C src/6509/6509.cfg -o dist/prg/screen_char.prg
+	rm src/6509/screen.o
 
 dist/rom/card.bin: src/8088/rom.asm src/8088/include/rom.asm $(COMMON)
 	nasm src/8088/rom.asm -w-lock -w-number-overflow -o dist/rom/card.bin
