@@ -73,6 +73,10 @@ Screen_interrupt_NoRefresh:
 ; -----------------------------------------------------------------
 
 Screen_Refresh:
+            push ax
+            in al, 0E3h
+            test al, al
+            jz Screen_Refresh_Nothing
             push bx
             push dx
             mov byte [Data_Refresh], 00h
@@ -81,6 +85,9 @@ Screen_Refresh:
             call IPC_Video_Convert
             pop dx
             pop bx
+            in al, 0E3h
+Screen_Refresh_Nothing:
+            pop ax
             ret
 			
 ; -----------------------------------------------------------------
