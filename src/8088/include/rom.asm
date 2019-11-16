@@ -1,39 +1,41 @@
 
-;-----------------------------------------------------------------------------
-;     6525 ports
-;-----------------------------------------------------------------------------
-cia_pra		equ 20h			; port register A (data)
-cia_prb		equ 21h			; port register B (com/control)
-cia_prc		equ 22h			; port register C
-cia_ddra	equ 23h			; data direction register A
-cia_ddrb	equ 24h			; data direction register B
-cia_ddrc	equ 25h			; data direction register C
+cia_pra   equ 40h
+cia_prb   equ 40h
+cia_prc   equ 40h
+cia_ddra   equ 40h
 
-pbbus1		equ 01h			; prb0
-pbbus2		equ 02h			; prb1
-pbsem88		equ 04h			; prb2
-pbsem65		equ 08h			; prb3
-pbrtn		equ 40h			; prb6
+;-----------------------------------------------------------------------------
+;     8255 ports
+;-----------------------------------------------------------------------------
+ppi_porta	equ 20h			; port register A (inputs)
+ppi_portb	equ 21h			; port register B (data)
+ppi_portc	equ 22h			; port register C (outputs)
+ppi_ctrl	equ 23h			; control register
 
-semlo		equ pbrtn		; acknowledge low
-semhi		equ pbrtn+pbsem88	; acknowledge hi val
+data_in     equ 92h         ; Input data from 6509
+data_out    equ 90h         ; Output data to 6509
+
+pbbus1		equ 01h			; porta_0
+pbbus2		equ 02h			; porta_1
+pbsem65		equ 08h			; porta_3
+
+bit_sem88   equ 6           ; PC6 (was PB2)
+bit_int     equ 1           ; PC1 (was PB6)
+bit_bus     equ 5           ; PC5 (was PC5)
 
 
 ;-----------------------------------------------------------------------------
 ;     8259A ports
 ;-----------------------------------------------------------------------------
+
 inta00		equ 00h
 inta01		equ 01h
-
-;-----------------------------------------------------------------------------
-;     interrupt definitions
-;-----------------------------------------------------------------------------
-iwait		equ 40h			; go rom, free bus, wait
 
 
 ;-----------------------------------------------------------------------------
 ;     RAM data definitions
 ;-----------------------------------------------------------------------------
+
 start_code	equ 0
 warm		equ 8
 warmh		equ 9
@@ -42,12 +44,103 @@ ipctab		equ 01Ah
 int7		equ 7
 int7seg		equ 1Eh
 
+;-----------------------------------------------------------------------------
+;  Macros to operate on data bits
+;-----------------------------------------------------------------------------
 
+;  Test semaphore from the 6509
+%macro	SEM_TEST 0
+		in al, ppi_porta
+		test al, pbsem65
+%endmacro
+
+;  Raise the semaphore for the 6509
+%macro	SEM_RAISE 0
+		mov al, bit_sem88*2 + 1
+		out ppi_ctrl, al
+		nop
+%endmacro
+
+;  Clear the semaphore for the 6509
+%macro	SEM_CLEAR 0
+		mov al, bit_sem88*2 + 0
+		out ppi_ctrl, al
+		nop
+%endmacro
+
+;  Raise the interrupt pin for the 6526
+;  This causes IRQ due to rising edge on the FLAG pin
+%macro	INT_RAISE 0
+		mov al, bit_int*2 + 1
+		out ppi_ctrl, al
+%endmacro
+
+;  Clear the interrupt pin for the 6526
+%macro	INT_CLEAR 0
+		mov al, bit_int*2 + 0
+		out ppi_ctrl, al
+%endmacro
+
+;  Raise the bus release pin
+%macro	BUS_RAISE 0
+		lock mov al, bit_bus*2 + 1
+		lock out ppi_ctrl, al
+%endmacro
+
+;  Clear the bus release pin
+%macro	BUS_CLEAR 0
+		lock mov al, bit_bus*2 + 0
+		lock out ppi_ctrl, al
+%endmacro
+
+;  Free the memory bus by toggling the BUSY pin
+%macro  FREE_BUS 0
+        lock nop
+        BUS_RAISE
+        lock nop
+        lock nop
+        lock nop
+        BUS_CLEAR
+        lock nop
+%endmacro
+
+;  Cause the interrupt on the 6509
+%macro  INTERRUPT 0
+        INT_RAISE
+        times 10 nop
+        INT_CLEAR
+%endmacro
+
+; Set the data port direction = output
+%macro  DIRECTION_OUT 0
+        mov	al, data_out
+		out	ppi_ctrl, al
+%endmacro
+
+; Set the data port direction = input
+%macro  DIRECTION_IN 0
+        mov	al, data_in
+		out	ppi_ctrl, al
+%endmacro
+
+;  Read data from the 6509
+%macro  DATA_READ 0
+		in	al, ppi_portb
+%endmacro
+
+;  Write data to the 6509
+%macro  DATA_WRITE 0
+		out	ppi_portb, al
+%endmacro
+
+;-----------------------------------------------------------------------------
+;  Continue servicing request from the 6509
+;-----------------------------------------------------------------------------
 
 		jmp	rqst900
 
 ;-----------------------------------------------------------------------------
-; Issue IRQ request to 6509
+;  Issue IRQ request to 6509
 ;
 ;   enter:  CL = command byte
 ;           IpcBufr = holds input param bytes
@@ -55,176 +148,128 @@ int7seg		equ 1Eh
 ;   exit:   IpcBufr = holds output param bytes
 ;-----------------------------------------------------------------------------
 rqster:
-		push	ax
-		push	bx
-		push	cx
-		push	dx
-		push	si
-		push	es
-		push	ds
+		push ax
+		push bx
+		push cx
+		push dx
+		push si
+		push es
+		push ds
 
-		mov	ax,0
-		mov	ds,ax		; set up DS to interrupt area
+		mov	ax, 0
+		mov	ds, ax		    ; set up DS to interrupt area
 
-		mov	ax,[int7seg]	; get segment of ipctab from int 7 vector
-		mov	ds,ax
+		mov	ax, [int7seg]	; get segment of ipctab from int 7 vector
+		mov	ds, ax
 
-		mov	al,cl		; set dl-#bytes to send
-		and	al,7Fh		;     dh-#bytes to receive
-		mov	bl,6
-		mul	bl		; ax = reg * al
-		mov	si,ax
-		mov	dx,[si+1Ah]
+		mov	al, cl		    ; set dl-#bytes to send
+		and	al, 7Fh		    ;     dh-#bytes to receive
+		mov	bl, 6
+		mul	bl		        ; ax = reg * al
+		mov	si, ax
+		mov	dx, [si+1Ah]
 
 rqst000:
 ;
 ;   Initiate IRQ to 6509, sending CMD byte
 ;
-		in	al,cia_prb
-		test	al,pbsem65	; locked out?
-		jnz	rqst000		; yes, ->
+        SEM_TEST
+		jnz	rqst000		
 		
-		or	al,4		; lock sem8088
-		out	cia_prb,al
+        SEM_RAISE        
 
-		nop
+        SEM_TEST
+		jz rqst010
 
-		in	al,cia_prb	
-		test	al,pbsem65	; check for collision?
-		jz	rqst010		; no, ->
-
-		mov	al,40h		; locked out, clear sem8088
-		out	cia_prb,al
-		nop
+        SEM_CLEAR
 
 		jmp	short rqst000	;  and try again....
+
 rqst010:
-		mov	al,0FFh
-		out	cia_ddra,al	; port dir := out
+        DIRECTION_OUT
 
-		mov	al,cl
-		out	cia_pra,al	; write cmd to port
- 
-		in	al,cia_prb	
-		and	al,0BFh
-		out	cia_prb,al	; cause IRQ (lo -> hi transition)
+		mov	al, cl
+		DATA_WRITE
 
-		nop
-		nop
-		nop
+        INTERRUPT
 
-		or	al,40h
-		out	cia_prb,al
 rqst030:
-		in	al,cia_prb	
-		test	al,pbsem65	; IRQ received?
-		jz	rqst030		; no, -> wait
+        SEM_TEST
+		jz rqst030
 
-		mov	al,0
-		out	cia_ddra,al	; port dir := in
-
-		mov	si,0
-
+        DIRECTION_IN
+		
+		mov	si, 0
 		inc	dl
 		jmp	short rqst120
 		
-		db	90h
-
 ;
 ;  Send parameter bytes to 6509
 ;
 rqst100:
-		mov	al,0FFh
-		out	cia_ddra,al	; port dir := out
+        DIRECTION_OUT
 
-		mov	al,[ipcbufr+si]
-		out	cia_pra,al	; write data to port
+		mov	al, [ipcbufr+si]
+		DATA_WRITE
 
-		mov	al,semhi
-		out	cia_prb,al
+        SEM_RAISE        
 
-		nop
 rqst110:
-		in	al,cia_prb	
-		test	al,pbsem65	; data received?
-		jz	rqst110		; no, -> wait
+        SEM_TEST
+		jz rqst110
 
-		mov	al,0
-		out	cia_ddra,al	; port dir := in
+		DIRECTION_IN
 
 		inc	si
 rqst120:
-		dec	dl		; decrease count, more to send?
-		jz	rqst200		; no, -> ready
+		dec	dl		    ; decrease count, more to send?
+		jz rqst200		; no, -> ready
 
-		mov	al,semlo
-		out	cia_prb,al
+        SEM_CLEAR
 
-		nop
 rqst130:
-		in	al,cia_prb	
-		test	al,pbsem65	; wait for what ???
+        SEM_TEST
 		jnz	rqst130
 
-		jmp	short rqst100	; and repeat...
+		jmp	rqst100	    ; and repeat...
 		
 rqst200:
-		test	cl,80h		; need to give up data bus?
-		jz	rqst210	; no, ->
+		test cl, 80h	; need to give up data bus?
+		jz rqst210	    ; no, ->
 		
-; Free the bus
-		lock	nop
-		lock	mov	al,0DFh
-		lock	out	cia_prc,al
-		lock	nop
-		lock	nop
-		lock	nop
-		lock	or	al,20h
-		lock	out	cia_prc,al
+		FREE_BUS
+        SEM_CLEAR
 
-		mov	al,semlo
-		out	cia_prb,al	; signal to do cmd
-
-		nop
-rqstlp:
-		jmp	short rqstlp
+		hlt
 
 ;
 ;  Receive data bytes from 6509
 ;
 rqst210:
-		mov	al,semlo
-		out	cia_prb,al	; signal to do cmd
-		
-		nop
+        SEM_CLEAR		
+
 rqst220:
-		in	al,cia_prb	
-		test	al,pbsem65	; data available?
+        SEM_TEST
 		jnz	rqst220		; no, -> wait
-		
-		mov	si,0
+
+		mov	si, 0
 		inc	dh
 		jmp	short rqst350
 		
-		db	90h
 rqst310:
-		mov	al,semhi
-		out	cia_prb,al
-		nop
-rqst320:
-		in	al,cia_prb	
-		test	al,pbsem65	; sem8088 -> hi (data available)
-		jz	rqst320
+        SEM_RAISE        
 
-		in	al,cia_pra	; read data from port
+rqst320:
+        SEM_TEST
+		jz rqst320
+
+		DATA_READ
 		mov	[ipcbufr+si],al
 		
-		mov	al,semlo
-		out	cia_prb,al	; sem8088 -> lo (data received)
-		nop
+        SEM_CLEAR
+
 rqst330:
-		in	al,cia_prb	
-		test	al,pbsem65	; sem6509 -> lo (ack ack)
+        SEM_TEST
 		jnz	rqst330
 		
 		inc	si
@@ -246,9 +291,7 @@ rqst900:
 		pop	dx
 		pop	dx
 
-		mov	al,semlo
-		out	cia_prb,al	; terminate acknowledge
-		nop
+        SEM_CLEAR
 
 		pop	si
 		pop	ds
@@ -257,7 +300,7 @@ rqst900:
 		pop	cx
 		pop	bx
 		pop	ax
-		pop	ax		; pop unneeded IRQ return
+		pop	ax		    ; pop unneeded IRQ return
 		pop	ax
 		popf			; Pop flags
 
@@ -267,69 +310,62 @@ rqst900:
 ;  Service an IRQ from the 6509
 ;-----------------------------------------------------------------------------
 server:
-		push	ax
-		push	bx
-		push	cx
-		push	dx
-		push	es
-		push	ds
-		push	si
+		push ax
+		push bx
+		push cx
+		push dx
+		push es
+		push ds
+		push si
 
-		mov	ax,0
-		mov	ds,ax		; set up DS to interrupt area
+		mov	ax, 0
+		mov	ds, ax		    ; set up DS to interrupt area
 
-		mov	ax,[int7seg]	; get segment of ipctab from int 7 vector
-		mov	ds,ax
+		mov	ax, [int7seg]	; get segment of ipctab from int 7 vector
+		mov	ds, ax
 
 ;
 ;   Decode the command
 ;
-		in	al,cia_pra	; read cmd byte
-		and	al,7Fh
-		mov	bl,6		; calculate entry to index
-		mul	bl		; ax = reg * al
-		mov	si,ax		; get jump address, param counts
+		DATA_READ
+		and	al, 7Fh
+		mov	bl, 6		    ; calculate entry to index
+		mul	bl		        ; ax = reg * al
+		mov	si, ax		    ; get jump address, param counts
 
-		mov	cx,[ipctab+2+si]	; CX := jump address offset
-		mov	[start_code+4],cx	; move offset to RAM jump vector
-		mov	cx,[ipctab+4+si]	; CX := jump address segment
-		mov	[start_code+6],cx	; move segment to RAM jump vector
-		mov	dx,[ipctab+si]		; dl = # ins, dh = # outs
+		mov	cx, [ipctab+2+si]	; CX := jump address offset
+		mov	[start_code+4], cx	; move offset to RAM jump vector
+		mov	cx, [ipctab+4+si]	; CX := jump address segment
+		mov	[start_code+6], cx	; move segment to RAM jump vector
+		mov	dx, [ipctab+si]		; dl = # ins, dh = # outs
 
-		mov	al,semhi
-		out	cia_prb,al	; sem8088 -> hi
-		nop
+        SEM_RAISE        
+
 rqst050:
-		in	al,cia_prb	
-		test	al,pbsem65	;sem6509 -> lo (ack)
+        SEM_TEST
 		jnz	rqst050
 
 		mov	si,0
 		inc	dl
 		jmp	short serv130
-		db	90h
 
 ;
 ;  Get input parameter bytes
 ;
 serv100:
-		mov	al,semlo	; sem8088 -> lo (ack ack)
-		out	cia_prb,al
-		nop
-serv110:
-		in	al,cia_prb	
-		test	al,pbsem65	; sem6509 -> hi (data available)
-		jz	serv110
+        SEM_CLEAR
 
-		in	al,cia_pra	; read data
+serv110:
+        SEM_TEST
+		jz serv110
+
+		DATA_READ
 		mov	[ipcbufr+si],al	;  and store it
 
-		mov	al,semhi	; sem8088 -> hi
-		out	cia_prb,al
-		nop
+        SEM_RAISE        
+        
 serv120:
-		in	al,cia_prb	
-		test	al,pbsem65	; sem6509 -> lo (ack)
+        SEM_TEST
 		jnz	serv120
 
 		inc	si
@@ -340,15 +376,16 @@ serv130:
 ;
 ;   Process command
 ;
-		push	dx
-		push	cs
+		push dx
+		push cs
 
-;		mov	dl,low  offset serv220
-		mov	dl,61h
-;		mov	dh,high offset serv220
-		mov	dh,0F1h
+		mov dx, serv220
+;		mov	dl, low  offset serv220
+;		mov	dl,61h
+;		mov	dh, high offset serv220
+;		mov	dh,0F1h
 
-		push	dx		; push return on stack
+		push dx		; push return on stack
 		int	7		; gone!
 
 serv220:
@@ -362,42 +399,33 @@ serv220:
 ;   Send return parameter bytes
 ;
 serv300:
-		mov	al,semlo	; sem8088 -> lo (ack ack)
-		out	cia_prb,al
-		nop
-serv310:
-		in	al,cia_prb	
-		test	al,pbsem65	; sem6509 - > hi (ready to receive)
-		jz	serv310
+        SEM_CLEAR
 
-		mov	al,0FFh
-		out	cia_ddra,al	; port dir := out
+serv310:
+        SEM_TEST
+		jz serv310
+
+		DIRECTION_OUT
 
 		mov	al,[si+0Ah]
-		out	cia_pra,al	; send data byte
+		DATA_WRITE
 
-		mov	al,semhi	; sem8088 -> hi (data received)
-		out	cia_prb,al
+        SEM_RAISE        
 
-		nop
 serv320:
-		in	al,cia_prb	
-		test	al,pbsem65	; sem6509 -> lo (data received)
+        SEM_TEST
 		jnz	serv320
 
-		mov	al,0
-		out	cia_ddra,al	; port dir := in
+        DIRECTION_IN
 
 		inc	si
 
-		dec	dh		; decrease count, more?
+		dec	dh		    ; decrease count, more?
 		jnz	serv300		; yes, ->
 serv400:
-		cli			; Disable interrupts
+		cli			    ; Disable interrupts
 
-		mov	al,semlo
-		out	cia_prb,al	; terminating acknowledge
-		nop
+        SEM_CLEAR
 
 		pop	si
 		pop	ds
@@ -408,9 +436,6 @@ serv400:
 		pop	ax
 
 		iret			; Interrupt return
-
-xret:
-xerr:
 		retn
 
 ;----------------------------------------------------------------------------
@@ -419,53 +444,37 @@ xerr:
 startf:
 		cli			; Disable interrupts
 
-		mov	sp,0F000h
-
-		mov	al,semlo
-		out	cia_prb,al
-
-		mov	al,0FFh
-		out	cia_pra,al	; port dir := out
-		out	cia_prc,al
-
-		inc	al
-		out	cia_ddra,al
-
-		mov	al,44h
-		out	cia_ddrb,al	; pb4, pb6 = out
-
-		mov	al,20h
-		out	cia_ddrc,al	; pc5 = out
-
-; free bus, 0 -> 1 transition on pc5
-       	lock	nop
-        lock	mov	al,0DFh
-        lock	out	cia_prc,al
-        lock	nop
-        lock	nop
-        lock	nop
-        lock	or	al,20h
-        lock	out	cia_prc,al
+		mov	sp, 0F000h
 
 ;
-;   8259A initialization
+;  8255 initialization
 ;
-		mov	al,1Bh		; icw1: level, single, icw4
-		out	inta00,al
+        DIRECTION_IN
+;
+;  Release the memory bus for the 6509
+;
+		FREE_BUS
+		
+;
+;  8259A initialization
+;
+		mov	al, 1Bh		    ; icw1:level, single, icw4
+		out	inta00, al
 
-		mov	al,8		; icw2: interrupt address
+		mov	al, 8		    ; icw2: interrupt address
 		out	inta01,al
 
-		mov	al,1		; icw4: 8086 mode
-		out	inta01,al
+		mov	al, 1		    ; icw4: 8086 mode
+		out	inta01, al
 
-		mov	al,0FEh		; ocw: inhibit I7-I1
-		out	inta01,al
+		mov	al, 0FEh		; ocw: inhibit I7-I1
+		out	inta01, al
 
-		sti			    ; Enable interrupts
+		sti			        ; Enable interrupts
 
-self:
-		jmp	short self
+		hlt
+		
+		times 0F1E2h-($-$$) db 0FFh
 
 ;----------------------------------------------------------------------------
 ;  6509 - gen'd IRQ handler
@@ -473,25 +482,25 @@ self:
 ;             warm IRQ => do server, return to requester code.
 ;----------------------------------------------------------------------------
 intrpt:
-		push	ax
-		push	ds
+		push ax
+		push ds
 
-		mov	ax,0
-		mov	ds,ax
+		xor	ax, ax
+		mov	ds, ax
 
-		mov	ax,[int7seg]
-		mov	ds,ax
+		mov	ax, [int7seg]
+		mov	ds, ax
 
-		mov	al,20h
-		out	0,al		; EOI to 8259A
+		mov	al, 20h
+		out	0, al		; EOI to 8259A
 
-		in	al,cia_prb	
-		test	al,1		; 6509 off bus?
-		jz	quit		; no, ->
+		in al, ppi_porta	
+		test al, pbbus1		; 6509 off bus?
+		jz quit		; no, ->
 
-		in	al,cia_prb	
-		test	al,2
-		jz	nstart		; yes, ->
+		in al, ppi_porta	
+		test al, pbbus2
+		jz nstart		; yes, ->
 quit:
 		pop	ds
 		pop	ax
@@ -501,25 +510,17 @@ quit:
 
 		sti			; Enable interrupts
 
-		lock	nop
-		lock	mov	al,0DFh
-		lock	out	cia_prc,al
-		lock	nop
-		lock	nop
-		lock	nop
-		lock	or	al,20h
-		lock	out	cia_prc,al
-quitl:
-		jmp	short quitl	; free bus and sit
+		FREE_BUS
+        hlt
 
 nstart:
-		mov	al,0
-		out	cia_prc,al	; bsyclk low
+		xor al, al
+		out	ppi_portc, al	; bsyclk low
 
-		mov	al,0FFh		; test for warm/cold start
-		xor	al,[warm]
-		xor	al,[warmh]
-		jz	gowarm
+		mov	al, 0FFh		; test for warm/cold start
+		xor	al, [warm]
+		xor	al, [warmh]
+		jz gowarm
 
 		mov	ax,0A55Ah
 		mov	[warm],al
@@ -528,11 +529,11 @@ nstart:
 		pop	ds
 		pop	ax
 
-		pop	ax		; pop unneeded iret
+		pop	ax		    ; pop unneeded iret
 		pop	ax
 
 		popf			; Pop flags
-		int	7		; jump to OS entry
+		int	7		    ; jump to OS entry
 gowarm:
 		pop	ds
 		pop	ax

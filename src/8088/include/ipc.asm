@@ -130,43 +130,13 @@ INT_08_1:
 			int 1Ch
 			iret
 
-; --------------------------------------------------------------------------------------
-; Find segment where IPC table can be installed.
-; Output:
-;           BX - segment
-; --------------------------------------------------------------------------------------
-
-IPC_FindSegment:
-            push ax
-            push ds
-            
-            ; Try in MDA video memory, after the screen buffer
-            mov bx, 0B100h
-            mov ds, bx
-            mov ax, 0A55Ah
-            mov [0000h], ax
-            cmp ax, [0000h]
-            jne IPC_FindSegment_Fail
-            neg ax
-            mov [0000h], ax
-            cmp ax, [0000h]
-            jne IPC_FindSegment_Fail
-IPC_FindSegment_Ret:            
-            pop ds
-            pop ax
-            ret
-            
-            ; Return default 0030 if all else fails
-IPC_FindSegment_Fail:
-            mov bx, 0030h
-            jmp IPC_FindSegment_Ret
 
 ; --------------------------------------------------------------------------------------
-; Install IPC data at segment specified by previous function.
+; Install IPC data at the top memory location
 ; --------------------------------------------------------------------------------------
 
 IPC_Install:
-            call IPC_FindSegment
+            mov bx, 9FC0h           ; Top of the memory
 			push cs
 			pop ds
 			mov es, bx
@@ -184,9 +154,8 @@ IPC_Install:
 IPC_Install_Loop1:
 			mov ax, cx
 			stosw
-			xor ax, ax
-			stosw
 			mov ax, 0F000h
+			stosw
 			stosw
 			inc cx
 			cmp cx, 0010h
@@ -225,16 +194,12 @@ IPC_Install_Loop2:
 ;     AL - character code
 ; --------------------------------------------------------------------------------------
 
-%ifdef STANDALONE
-
 IPC_Reset:
 			IPC_Enter
 			IPC_Call 18h
 			IPC_Leave
 			ret
 			
-%endif
-
 ; --------------------------------------------------------------------------------------
 ; Peek into keyboard buffer.
 ; Output:
@@ -325,16 +290,6 @@ IPC_ScreenOutPC:
 			IPC_Leave
 			ret
 
-; --------------------------------------------------------------------------------------
-; Visually simulate that an operation is in progress 
-; --------------------------------------------------------------------------------------
-
-IPC_ShowProgress:
-			IPC_Enter
-			mov [IPCData+2], byte 7
-			IPC_Call 1Dh
-			IPC_Leave
-			ret
 
 ; --------------------------------------------------------------------------------------
 ; Output Escape sequence (Esc, then character) to the screen.
@@ -417,8 +372,6 @@ IPC_CursorGet:
 ;           DX - 
 ; --------------------------------------------------------------------------------------
 
-%ifdef SCREEN
-
 IPC_Video_Init:
             push ax
             push ds
@@ -440,8 +393,6 @@ IPC_Video_Init:
 			IPC_Leave
 			ret
 
-%endif 
-
 ; --------------------------------------------------------------------------------------
 ; Call the video screen conversion routine.
 ; Input:
@@ -449,8 +400,6 @@ IPC_Video_Init:
 ;     		DH - cursor row
 ;			DL - cursor column
 ; --------------------------------------------------------------------------------------
-
-%ifdef SCREEN
 
 IPC_Video_Convert:
             push bx
@@ -474,8 +423,6 @@ IPC_Video_Convert:
 			IPC_Enable_IRQ
 			IPC_Leave
 			ret
-
-%endif 
 
 ; --------------------------------------------------------------------------------------
 ; Output character to the printer.

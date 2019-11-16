@@ -55,69 +55,11 @@ console_not_05:
     bne console_not_06
     jsr screen_init
     lda #$FF
-    sta ipc_buffer+2
-    lda #0
     sta ipc_buffer+3
-    sta ipc_buffer+4
-    jmp screen_search
+    rts
 console_not_06:
-    cmp #$07
-    bne console_not_07
-    inc $D000+1999
-console_not_07:
     rts
 
-;--------------------------------------------------------------------
-; String to search for in video memory
-;--------------------------------------------------------------------
-
-screen_marker:
-    .byt $4d, $69, $43, $68, $41, $75
-
-;--------------------------------------------------------------------
-; Search for a magic string placed by the 8088
-;--------------------------------------------------------------------
-
-screen_search:
-    ldx #$01
-    stx CPU_ACCESS_BANK
-    inx
-    stx src_addr
-    ldx #$00
-    stx src_addr+1
-screen_search_1:
-    ldy #5
-screen_search_2:
-    lda (src_addr), y
-    cmp screen_marker, y
-    bne screen_search_3
-    dey
-    bpl screen_search_2
-    lda src_addr+1
-    sta screen_location+1
-    sta ipc_buffer+4
-    lda CPU_ACCESS_BANK
-    sta screen_location
-    sta ipc_buffer+3
-    rts
-screen_search_3:
-    inc src_addr+1
-    bne screen_search_2
-    ldx CPU_ACCESS_BANK
-    inx
-    stx CPU_ACCESS_BANK
-    cpx #$0D
-    bne screen_search_2
-    ldy #$0C
-    sty CPU_ACCESS_BANK
-screen_notfound:
-    lda (src_addr), y
-    sta $0180, y
-    dey
-    bpl screen_notfound
-    lda #$0F
-    sta CPU_ACCESS_BANK
-    rts
     
     
 ;--------------------------------------------------------------------
@@ -156,13 +98,21 @@ screen_init_1:
     sta PROC_ADDR,x
     dex
     bpl screen_init_1    
-	lda #$0e
-	sta CRTC_RegNo
-	lda CRTC_RegVal
-	and #$10
-	beq screen_init_2
-	inc screen_proc_src-screen_proc+PROC_ADDR+2
-screen_init_2:
+    ldx #$0E
+    stx CRTC_RegNo
+#ifdef NOCHAR
+    lda #$EF
+    and CRTC_RegVal
+#endif
+#ifdef CHAR
+    lda #$10
+    ora CRTC_RegVal
+#endif
+    sta CRTC_RegVal
+    and #$30
+    ldx #$0C
+    stx CRTC_RegNo
+    sta CRTC_RegVal
     rts
     
 ;--------------------------------------------------------------------
@@ -173,7 +123,7 @@ screen_proc:
     lda (src_addr),y
     tax
 screen_proc_src:
-    lda petscii_table_1,x
+    lda petscii_table,x
     sta tmp_byte
     inc src_addr
     bne screen_proc_page
@@ -181,7 +131,7 @@ screen_proc_src:
 screen_proc_page:
     lda (src_addr),y
     tax
-    lda petscii_table_3,x
+    lda petscii_table_2,x
     ora tmp_byte
 screen_proc_dst:
     sta $D000,y
@@ -201,17 +151,19 @@ screen_proc_end:
 ;--------------------------------------------------------------------
 
 screen_location:
-    .byt 4
-    .byt $80
+    .byt $0C
+    .byt $00
 
     .dsb ($0500-*), $AA
 
+
+#ifdef NOCHAR
 
 ;--------------------------------------------------------------------
 ; ASCII to PETSCII (standard char ROM)
 ;--------------------------------------------------------------------
 
-petscii_table_1:
+petscii_table:
 	.byt $60, $64, $64, $64, $64, $64, $64, $2a, $aa, $2a, $aa, $64, $64, $64, $64, $64
 	.byt $3e, $3c, $5d, $64, $64, $64, $62, $5d, $1e, $16, $3e, $3c, $64, $64, $1e, $16
 	.byt $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $2a, $2b, $2c, $2d, $2e, $2f
@@ -229,11 +181,15 @@ petscii_table_1:
 	.byt $64, $64, $64, $64, $64, $64, $64, $64, $64, $64, $64, $64, $64, $64, $64, $64
 	.byt $64, $64, $64, $64, $64, $64, $64, $64, $64, $2a, $2a, $7a, $64, $64, $2a, $60
 
+#endif 
+
+#ifdef CHAR
+
 ;--------------------------------------------------------------------
 ; ASCII to PETSCII (modified char ROM)
 ;--------------------------------------------------------------------
 	
-petscii_table_2:
+petscii_table:
 	.byt $7f, $5f, $5f, $5f, $5f, $5f, $5f, $7c, $7d, $7c, $7d, $5f, $5f, $5f, $5f, $5f
 	.byt $76, $75, $7a, $5f, $5f, $5f, $62, $7a, $77, $78, $76, $75, $5f, $5f, $77, $78
 	.byt $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $2a, $2b, $2c, $2d, $2e, $2f
@@ -251,11 +207,13 @@ petscii_table_2:
 	.byt $5f, $5f, $5f, $5f, $5f, $5f, $5f, $5f, $5f, $5f, $5f, $5f, $5f, $5f, $5f, $5f
 	.byt $5f, $5f, $5f, $5f, $5f, $5f, $5f, $5f, $5f, $7c, $7c, $79, $5f, $5f, $74, $7f
 
+#endif 
+
 ;--------------------------------------------------------------------
 ; Attribute conversion (MDA to reverse bit)
 ;--------------------------------------------------------------------
 	
-petscii_table_3:
+petscii_table_2:
 	.byt $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
 	.byt $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
 	.byt $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00

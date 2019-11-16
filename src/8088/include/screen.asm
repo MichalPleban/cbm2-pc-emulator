@@ -7,80 +7,15 @@ Screen_Segment  equ 0B000h
 
 Screen_Init:
             call IPC_Video_Init
-            cmp al, 0FFh
-            jnz Screen_Init_0
-            push ds
-            push ax
-            mov ax, Screen_Segment
-            mov ds, ax
-            mov [0FFEh], dx
-            xor ax, ax
-            mov ds, ax
-            mov [0040h], word Screen_INT
-            mov ax, cs
-            mov [0042h], ax
-            call Screen_INT_00
-            pop ax
-            pop ds
-Screen_Init_0:
             ret
 
-; --------------------------------------------------------------------------------------
-; Display information about screen memory emulation.
-; --------------------------------------------------------------------------------------
-
-Screen_ShowInfo:
-            push ds
-            push ax
-            push dx
-            xor ax, ax
-            mov ds, ax
-            cmp [0040h], word Screen_INT
-            jne Screen_ShowInfo_0
-            mov ax, Screen_Segment
-            mov ds, ax
-            mov dx, [0FFEh]
-            push cs
-            pop ds
-            mov si, Screen_Banner1
-            call Output_String
-            mov al, dl
-            and al, 0Fh
-            call Screen_Hex
-            mov al, dh
-            shr al, 1
-            shr al, 1
-            shr al, 1
-            shr al, 1
-            call Screen_Hex
-            push cs
-            pop ds
-            mov si, Screen_Banner2
-            call Output_String
-Screen_ShowInfo_0:
-            pop dx
-            pop ax
-            pop ds
-            ret
-
-Screen_Banner1:
-            db "Video memory buffer at $", 0
-Screen_Banner2:
-            db "000", 13, 10, 0
-
-Screen_Hex:
-			add al, 30h
-			cmp al, 39h
-			jbe Screen_Hex1
-			add al, 7
-Screen_Hex1:
-            jmp Screen_INT_0E
 
 ; -----------------------------------------------------------------
 ; INT 10 - screen functions.
 ; -----------------------------------------------------------------
 
 Screen_INT:
+			INT_Debug 10h
 			cmp ah, 0Fh
 			ja Screen_INT_Ret
 			push bp
@@ -222,7 +157,6 @@ Screen_INT_05:
 ; -----------------------------------------------------------------
 
 Screen_INT_06:
-;            db 0CCh
             call Screen_ScrollCalc
             mov bp, 0
             call Screen_ScrollPerform
@@ -374,8 +308,6 @@ Screen_INT_0A:
 ; -----------------------------------------------------------------
 
 Screen_INT_0E:
-			call INT_ClearDot
-
             push di
             push ax
             call Screen_Segments

@@ -1,10 +1,6 @@
 
 
 CHAR_CLRSCR	equ 147
-CHAR_RVSON	equ 18
-CHAR_RVSOFF	equ 146
-CHAR_DEL	equ	20
-CHAR_DOWN	equ	17
 
 ; -----------------------------------------------------------------
 ; Implements a jump table to select various interrupt routines.
@@ -27,328 +23,10 @@ INT_Unimplemented:
 			ret
 
 ; -----------------------------------------------------------------
-; INT 10 - screen functions.
+; INT 10 - screen functions moved to screen.asm
 ; -----------------------------------------------------------------
 
-INT_10:
-			INT_Debug 10h
-			cmp ah, 0Fh
-			ja INT_10_Ret
-			push bp
-			push es
-			mov bp, Data_Segment
-			mov es, bp
-			mov bp, INT_10_Functions
-			call INT_Dispatch
-			pop es
-			pop bp
 
-INT_10_Ret:
-			iret
-
-INT_10_Functions:
-			dw INT_10_00
-			dw INT_Unimplemented
-			dw INT_10_02
-			dw INT_10_03
-			dw INT_Unimplemented
-			dw INT_Unimplemented
-			dw INT_10_06
-			dw INT_10_07
-			dw INT_Unimplemented
-			dw INT_10_09
-			dw INT_10_0A
-			dw INT_Unimplemented
-			dw INT_Unimplemented
-			dw INT_Unimplemented
-			dw INT_10_0E
-			dw INT_10_0F
-			
-; -----------------------------------------------------------------
-; INT 10 function 00 - set video mode.
-; Outputs "clear screen" character.
-; -----------------------------------------------------------------
-			
-INT_10_00:
-			mov [es:Data_Boot], byte 00h
-			
-			; Make whole screen editable
-			call IPC_WindowRemove
-
-			; Output "clear screen" character
-			mov al, CHAR_CLRSCR
-			call IPC_ScreenOut
-			
-			; Cancel editing mode
-			mov al, 'O'
-			call IPC_ScreenEscape
-			
-			; Cancel screen reverse
-			mov al, 'N'
-			call IPC_ScreenEscape
-			
-			; Invalidate cursor position
-			mov [es:Data_CursorPhysical], byte 0FFh
-			
-			ret
-
-; -----------------------------------------------------------------
-; INT 10 function 02 - set cursor position
-; -----------------------------------------------------------------
-			
-INT_10_02:
-			; MS BASIC Compiler runtime calls this function with DX=FFFF ?
-			test dx, 8080h
-			jnz INT_10_02_Ret
-
-			; Check if row and column are within allowed bounds
-			cmp dh, 24
-			jl INT_10_02_RowOK
-			mov dh, 23
-INT_10_02_RowOK:
-			cmp dl, 80
-			jl INT_10_02_ColumnOK
-			mov dl, 79
-INT_10_02_ColumnOK:
-
-			mov [es:Data_CursorVirtual], dx
-			cmp dx, [es:Data_CursorPhysical]
-			je INT_10_02_Ret
-			
-			mov [es:Data_CursorPhysical], dx
-			call IPC_CursorSet
-
-INT_10_02_Ret:
-			ret
-
-; -----------------------------------------------------------------
-; INT 10 function 03 - get cursor position
-; -----------------------------------------------------------------
-			
-INT_10_03:
-			mov dx, [es:Data_CursorPhysical]
-			cmp dl, 0FFh
-			jne INT_10_03_OK
-			call IPC_CursorGet
-			mov [es:Data_CursorVirtual], dx
-			mov [es:Data_CursorPhysical], dx
-INT_10_03_OK:
-			mov cx, 0C0Dh
-			ret
-
-; -----------------------------------------------------------------
-; INT 10 function 06 - scroll screen up
-; INT 10 function 07 - scroll screen down
-; -----------------------------------------------------------------
-
-INT_10_06:
-INT_10_07:
-			push ax
-			call IPC_WindowSet
-			pop ax
-			
-			; 0 lines = clear screen
-			test al, al
-			jz INT_10_06_Clear
-			
-			; Scroll direction
-			cmp ah, 06h
-			jnz INT_10_06_Down
-			mov al, 'V'
-			jmp INT_10_06_Scroll
-INT_10_06_Down:
-			mov al, 'W'
-INT_10_06_Scroll:
-			call IPC_ScreenEscape
-			jmp IPC_WindowRemove
-
-INT_10_06_Clear:
-			mov al, CHAR_CLRSCR
-			call IPC_ScreenOut
-			jmp IPC_WindowRemove
-
-; -----------------------------------------------------------------
-; INT 10 function 09 - write character and attribute.
-; -----------------------------------------------------------------
-
-INT_10_09:
-			call INT_ClearDot
-			
-			; MS BASIC Compiler runtime calls this function with AL=00 ?
-			test al, al
-			jz INT_10_09_Ret
-			test cx, cx
-			jz INT_10_09_Ret
-			
-			; Check if cursor position has not changed
-			call INT_10_CursorCheck
-			
-			; Check if the attribute means "invert"
-			push bx
-			and bl, 77h
-			xor bl, 07h
-			cmp bl, 77h
-			jne INT_10_09_NoReverse1
-			push ax
-			mov al, CHAR_RVSON
-			call IPC_ScreenOut
-			pop ax
-INT_10_09_NoReverse1:
-			
-			; Output characters one by one
-			push cx
-			push ax
-			xor ah, ah
-INT_10_09_Loop:
-			call IPC_ScreenOutPC
-			loop INT_10_09_Loop
-			pop ax
-			pop cx
-			
-			; Cancel invert
-			cmp bl, 77h
-			jne INT_10_09_NoReverse2
-			push ax
-			mov al, CHAR_RVSOFF
-			call IPC_ScreenOut
-			pop ax
-INT_10_09_NoReverse2:
-			pop bx	
-			
-			call INT_10_CursorAdvance
-			
-INT_10_09_Ret:
-			ret
-
-; -----------------------------------------------------------------
-; INT 10 function 0A - write character only.
-; -----------------------------------------------------------------
-
-INT_10_0A:
-			push bx
-			xor bl, bl
-			call INT_10_09
-			pop bx
-			ret
-
-; -----------------------------------------------------------------
-; Checks if virtual and physical cursor positions match.
-; -----------------------------------------------------------------
-
-INT_10_CursorCheck:
-			push dx
-
-			cmp [es:Data_CursorPhysical], byte 0FFh
-			je INT_10_CursorCheck_Dirty
-
-			mov dx, [es:Data_CursorVirtual]
-			cmp dx, [es:Data_CursorPhysical]
-			je INT_10_CursorCheck_OK
-			mov [es:Data_CursorPhysical], dx
-			call IPC_CursorSet
-
-INT_10_CursorCheck_OK:
-			pop dx
-			ret
-
-INT_10_CursorCheck_Dirty:
-			call IPC_CursorGet
-			mov [es:Data_CursorVirtual], dx
-			mov [es:Data_CursorPhysical], dx
-			jmp INT_10_CursorCheck_OK
-
-; -----------------------------------------------------------------
-; Moves the virtual cursor position.
-; Input:
-;			CX - number of characters to move
-; -----------------------------------------------------------------
-
-INT_10_CursorAdvance:
-			push dx
-			mov dl, [es:Data_CursorPhysical]
-			xor dh, dh
-			add dx, cx
-
-INT_10_CursorAdvance_0:
-			cmp dx, 80
-			jl INT_10_CursorAdvance_Ret
-			inc byte [es:Data_CursorPhysical+1]
-			sub dx, 80
-			jmp INT_10_CursorAdvance_0
-			
-INT_10_CursorAdvance_Ret:
-			mov [es:Data_CursorPhysical], dl
-			pop dx
-			ret
-			
-; -----------------------------------------------------------------
-; INT 10 function 0E - teletype output.
-; -----------------------------------------------------------------
-
-INT_10_0E:
-			call INT_ClearDot
-			
-			push ax
-
-			; Check if cursor position has not changed
-			cmp [es:Data_CursorPhysical], byte 0FFh
-			je INT_10_0E_Dirty
-			call INT_10_CursorCheck
-INT_10_0E_Dirty:
-			
-			; Check control characters
-			cmp al, 20h
-			jl INT_10_0E_Control
-INT_10_0E_Output:
-			call IPC_ScreenOutPC
-			
-INT_10_0E_Finish:
-			; Invalidate cursor position
-			mov [es:Data_CursorPhysical], byte 0FFh
-
-			pop ax
-			ret
-			
-INT_10_0E_Output2:
-			call IPC_ScreenOut
-			jmp INT_10_0E_Finish
-
-			; Translate common control codes
-INT_10_0E_Control:
-			cmp al, 7	; Bell
-			jne INT_10_0E_Not07
-			call IPC_ScreenOut
-			pop ax
-			ret
-INT_10_0E_Not07:
-			cmp al, 8	; BackSpace
-			jne INT_10_0E_Not08
-			mov al, CHAR_DEL
-			jmp INT_10_0E_Output2
-INT_10_0E_Not08:
-			cmp al, 10	; LF
-			jne INT_10_0E_Not0A
-			mov al, CHAR_DOWN
-			jmp INT_10_0E_Output2
-INT_10_0E_Not0A:
-			cmp al, 13	; CR
-			jne INT_10_0E_Not0D
-			mov al, 'J'
-			call IPC_ScreenEscape
-			jmp INT_10_0E_Finish
-INT_10_0E_Not0D:
-			jmp INT_10_0E_Output
-			
-; -----------------------------------------------------------------
-; INT 10 function 0F - get video mode.
-; -----------------------------------------------------------------
-
-INT_10_0F:
-			; MDA text mode
-			mov al, 07h		
-			mov ah, 80
-			mov bh, 0
-			ret
 
 ; -----------------------------------------------------------------
 ; INT 11 - equipment list.
@@ -410,14 +88,7 @@ INT_11_CPU_NoV20:
 
 INT_12:
 			INT_Debug 12h
-			push ds
-			mov ax, Data_Segment
-			mov ds, ax
-			mov ax, [Data_MemSize]
-			xchg al, ah
-			shl ax, 1
-			shl ax, 1
-			pop ds
+			mov ax, 639     ; 639 kB (upper 1 kB reserved for ROM data structures)
 			iret
 
 
@@ -474,45 +145,10 @@ HD_Drive    equ 81h
 SD_Drive    equ 80h
 
 INT_13_HD:
-%ifdef SD
-			push ds
-			push ax
-			mov ax, Data_Segment
-			mov ds, ax
-			test byte [Data_SD], 01h
-			pop ax
-			pop ds
-			jz INT_13_HD_2
-            cmp dl, HD_Drive
-            jne INT_13_HD_Do
-            jmp SD_Handle
-INT_13_HD_2:
             cmp dl, SD_Drive
-            jne INT_13_HD_Do
+            jne INT_13_HD_1
             jmp SD_Handle
-INT_13_HD_Do:
-%endif
-			push ds
-			push ax
-			mov ax, 0F000h
-			mov ds, ax
-			cmp [000Eh], word "HD"
-			pop ax
-			pop ds
-			jz INT_13_HD_OK
-			stc
-			mov ah, 0FFh
-			ret		
-INT_13_HD_OK:
-%ifdef SD
-            cmp ah, 08h
-            jne INT_13_HD_Not08
-            call 0F000h:00008h
-            mov dl, 02h
-            ret
-INT_13_HD_Not08:
-%endif
-            call 0F000h:00008h
+INT_13_HD_1:
             ret
             
 
@@ -662,7 +298,6 @@ INT_13_Disk:
 			; Read physical sectors
 INT_13_Disk_Loop:
 			push ax
-			call INT_BootDot
 			call IPC_SectorCalc
 			call IPC_SectorAccess
 			cmp ax, 3030h
@@ -960,9 +595,7 @@ INT_16_Functions:
 ; -----------------------------------------------------------------
 
 INT_16_00:
-%ifdef SCREEN
 			call Screen_Interrupt
-%endif
 			call IPC_KbdPeek
 			jz INT_16_00
 			push ax
@@ -976,9 +609,7 @@ INT_16_00:
 ; -----------------------------------------------------------------
 
 INT_16_01:
-%ifdef SCREEN
 			call Screen_Interrupt
-%endif
 			call IPC_KbdPeek
 			jz INT_16_NoKey
 			push ax
@@ -1075,29 +706,14 @@ INT_18:
 INT_19:
 			INT_Debug 19h
 INT_19_Again:
-%ifndef SCREEN
-			call Init_Data
-%endif
             push cs
             pop ds
-%ifdef BIG
 			mov si, INT_19_Banner1
 			call Output_String
 INT_19_Loop:
             call INT_16_00
 			cmp ah, 3Ch ; F2
 			jz INT_19_Floppy
-			cmp ah, 3Dh ; F3
-			jnz INT_19_Loop2
-			push ds
-			push ax
-			mov ax, Data_Segment
-			mov ds, ax
-			mov byte [Data_SD], 01h
-			pop ax
-			pop ds
-			jmp INT_19_HD
-INT_19_Loop2:
 			cmp ah, 3Bh ; F1
 			jnz INT_19_Loop
             
@@ -1115,7 +731,6 @@ INT_19_HD:
 			jne INT_19_NoSystem
 			mov dl, 80h
 			jmp INT_19_Found
-%endif
 						
 INT_19_Floppy:
 			; Load two first 256-byte sectors from the floppy disk.
@@ -1137,12 +752,6 @@ INT_19_Floppy:
 INT_19_Found:
 			push dx
 
-%ifndef STANDALONE
-			mov bx, 0040h
-			call IPC_Install
-%endif
-			; At this point there is no return to underlying OS.
-			; It is safe to relocate the INT 07 vector and IRQs.
 			call IPC_Init
 		
 			; Jump to boot sector code.
@@ -1166,8 +775,6 @@ INT_19_Segments:
 			pop ds
 			ret
 			
-%ifdef BIG
-
 INT_19_Error:
 			call INT_19_Segments
 			mov si, INT_19_Banner4
@@ -1178,12 +785,9 @@ INT_19_Banner1:
 			db "Select your boot device:", 10, 13
 			db " F1 - SD card", 10, 13
 			db " F2 - Floppy disk", 10, 13
-			db " F3 - EPROM disk", 10, 13 
 			db 0
 INT_19_Banner4:
 			db "SD card not found, please try again.", 10, 13, 0		
-
-%endif
 
 INT_19_Banner2:
 			db "The system is coming up, please wait.", 10, 13, 0		
@@ -1191,16 +795,6 @@ INT_19_Banner2:
 INT_19_Banner3:
 			db "Insert a system disk and press any key.", 10, 13, 0		
 
-; -----------------------------------------------------------------
-; Dots printed on disk access when the system boots.
-; -----------------------------------------------------------------
-
-INT_BootDot:			
-            call IPC_ShowProgress
-			ret
-
-INT_ClearDot:
-			ret
 			
 ; -----------------------------------------------------------------
 ; INT 1A - Timer functions.
@@ -1212,7 +806,6 @@ INT_1A:
 			je INT_1A_00
 			cmp ah, 01
 			je INT_1A_01
-%ifdef I2C
 			cmp ah, 02
 			je INT_1A_02
 			cmp ah, 03
@@ -1221,7 +814,6 @@ INT_1A:
 			je INT_1A_04
 			cmp ah, 05
 			je INT_1A_05
-%endif
 			stc
 			xor dx, dx
 			xor cx, cx
@@ -1244,9 +836,7 @@ INT_1A_00:
 			push ax
 			push bx
 
-%ifdef I2C
             call INT_1A_02_Do
-            jc INT_1A_00_1
             mov al, dh
             call ConvertFromBCD
             mov ah, al          ; AH = Seconds
@@ -1259,12 +849,6 @@ INT_1A_00:
 			mov dh, al          ; DH = Hours
 			pop ax
 			xor al, al          ; AL = Microseconds
-			jmp INT_1A_00_2
-%endif
-
-INT_1A_00_1:
-            call IPC_TimeGet
-INT_1A_00_2:
 
 			; Calculate number of ticks in whole minutes
 			mov bx, ax
@@ -1335,11 +919,7 @@ INT_1A_01:
 			
 			mov dx, bx
 			push ax
-			push dx
-			call IPC_TimeSet
-			pop dx
 
-%ifdef I2C
             mov al, dh
             call ConvertToBCD
             mov ch, al
@@ -1351,15 +931,12 @@ INT_1A_01:
             call ConvertToBCD
             mov dh, al
             call INT_1A_03_Do
-%endif
 			
 			pop dx
 			pop cx
 			pop bx
 			pop ax
 			iret
-
-%ifdef I2C
 
 ; -----------------------------------------------------------------
 ; INT 1A function 02 - get RTC time.
@@ -1542,8 +1119,6 @@ INT_1A_05:
             pop ax
             clc
             retf 2
-
-%endif
 
 
 ; -----------------------------------------------------------------

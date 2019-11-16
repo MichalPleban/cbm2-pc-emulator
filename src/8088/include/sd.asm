@@ -65,11 +65,9 @@ SD_Dummy:
 
 SD_Func_08:
             mov dh, SD_HEADS-1
-            mov dl, 2
+            mov dl, 1
             mov cl, SD_SECTORS + (((SD_CYLINDERS-1)>>8)<<6)
             mov ch, (SD_CYLINDERS-1)&255
-;            mov cx, 0FFFFh ; 1024 cylinders, 63 sectors/cylinder
-;            mov dx, 00F02h ; 16 heads, 2 disks attached (second one is HDROM image)
             xor ah, ah
             clc
             ret
@@ -375,8 +373,6 @@ SD_Init_End:
 ; -----------------------------------------------------------------
 
 SD_Read:
-            call IPC_ShowProgress
-
             push bx
             push ax
             push dx
@@ -461,8 +457,6 @@ SD_Read_End:
 ; -----------------------------------------------------------------
 
 SD_Write:
-            call IPC_ShowProgress
-
             push bx
             push ax
             push dx

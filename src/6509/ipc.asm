@@ -162,8 +162,8 @@ printer_flag:
     .word ipc_1b_serial_config
     .word 0
     .word ipc_1d_console
-    .word ipc_1e_time_set
-    .word ipc_1f_time_get
+    .word 0
+    .word 0
     .word ipc_20_kbd_clear
     .word ipc_21_format
   
@@ -310,7 +310,7 @@ vectors:
     .byt $00,$01,$02,$03,$04,$05,$06,$07,
     .byt $08,$09,$0a,$0b,$0c,$0d,$0e,$0f
     .byt $40,$40,$23,$23,$23,$30,$4b,$4b
-    .byt $40,$30,$23,$25,$00,$56,$04,$40,
+    .byt $40,$30,$23,$25,$00,$56,$00,$00,
     .byt $00,$4b
     
 ;--------------------------------------------------------------------
@@ -363,127 +363,6 @@ ipc_1a_serial_out:
     jsr BSOUT
     jmp serial_checkstatus
     
-;--------------------------------------------------------------------
-; IPC function 1E - set time-of-day timer.
-;--------------------------------------------------------------------
-    
-ipc_1e_time_set:
-    ldy #$00
-time_set_1:
-    lda ipc_buffer,y
-    ldx #$ff
-    sec
-time_set_2:
-    inx
-    sbc #$0a
-    bcs time_set_2
-    adc #$0a
-    sta ipc_buffer,y
-    txa
-    asl
-    asl
-    asl
-    asl
-    ora ipc_buffer,y
-    sta ipc_buffer,y
-    iny
-    cpy #$04
-    bne time_set_1
-    lda ipc_buffer
-    cmp #$12
-    bcc time_set_3
-    sei
-    sed
-    sbc #$12
-    cld
-    cli
-    ora #$80
-    sta ipc_buffer
-time_set_3:
-    lda #$00
-    ror ipc_buffer+3
-    ror
-    ora ipc_buffer+2
-    pha
-    lda #$00
-    ror ipc_buffer+3
-    ror
-    ora ipc_buffer+1
-    tax
-    lda #$00
-    ror ipc_buffer+3
-    ror
-    ror ipc_buffer+3
-    ror
-    lsr
-    ora ipc_buffer
-    tay
-    pla
-    clc
-    jmp SETTIM
-    
-;--------------------------------------------------------------------
-; IPC function 1F - read time-of-day timer.
-;--------------------------------------------------------------------
-    
-ipc_1f_time_get:
-    jsr RDTIM
-    pha
-    and #$7f
-    sta ipc_buffer+2
-    tya
-    and #$9f
-    php
-    and #$1f
-    cmp #$12
-    bne time_get_1
-    lda #$00
-time_get_1:
-    plp
-    bpl time_get_2
-    sei
-    sed
-    clc
-    adc #$12
-    cld
-    cli
-time_get_2:
-    sta ipc_buffer
-    lda #$00
-    sta ipc_buffer+3
-    tya
-    rol
-    rol
-    rol ipc_buffer+3
-    rol
-    rol ipc_buffer+3
-    txa
-    rol
-    rol ipc_buffer+3
-    lsr
-    sta ipc_buffer+1
-    pla
-    rol
-    rol ipc_buffer+3
-    ldy #$03
-time_get_3:
-    lda ipc_buffer,y
-    pha
-    and #$f0
-    lsr
-    sta ipc_buffer,y
-    lsr
-    lsr
-    clc
-    adc ipc_buffer,y
-    sta ipc_buffer,y
-    pla
-    and #$0f
-    adc ipc_buffer,y
-    sta ipc_buffer,y
-    dey
-    bpl time_get_3
-    rts
     
 ;--------------------------------------------------------------------
 ; IPC function 96 - read disk sector.

@@ -20,10 +20,6 @@ Init_INT_0:
 			stosw
 			loop Init_INT_0
 			
-%ifdef I2C
-            call Init_RTC
-%endif
-			
 			ret
 
 ; -----------------------------------------------------------------
@@ -73,36 +69,6 @@ Init_Data:
             stosb
             
 			ret
-
-; -----------------------------------------------------------------
-; Calculate memory size
-; -----------------------------------------------------------------
-
-Init_CheckMem:
-			push ds
-			mov bx, 00FFh
-			mov ax, 5AA5h
-Init_CheckMemLoop:
-			mov ds, bx			
-			mov cx, [000Eh]
-			mov [000Eh], ax
-			cmp [000Eh], ax
-			jne Init_CheckMemFinish
-			xchg al, ah
-			mov [000Eh], ax
-			cmp [000Eh], ax
-			jne Init_CheckMemFinish
-			mov [000Eh], cx
-			add bx, 00100h
-			cmp bx, 0B000h
-			jb Init_CheckMemLoop
-Init_CheckMemFinish:	
-			and bx, 0FF00h
-			mov ax, Data_Segment
-			mov ds, ax
-			mov [Data_MemSize], bx
-			pop ds
-			ret
 			
 			
 ; -----------------------------------------------------------------
@@ -110,7 +76,7 @@ Init_CheckMemFinish:
 ; -----------------------------------------------------------------
 
 Init_INT_Table:
-			dw INT_10
+			dw Screen_INT
 			dw INT_11
 			dw INT_12
 			dw INT_13
@@ -144,67 +110,40 @@ Output_String:
 Output_String_End:
 			ret
 
+%ifndef ROM
 
 ; -----------------------------------------------------------------
-; Copy time from the RTC chip to the tick count.
+; Installs the software in the upper part of the memory.
 ; -----------------------------------------------------------------
 
-%ifdef I2C
-Init_RTC:
-            push ax
-            
-            ; Load time from the RTC
-            call INT_1A_02_Do
-            jc Init_RTC_1
-            mov al, dh
-            call ConvertFromBCD
-            mov ah, al          ; AH = Seconds
-			mov al, cl
-			call ConvertFromBCD
-			mov dl, al          ; DL = Minutes
-			mov al, ch
-			call ConvertFromBCD
-			mov dh, al          ; DH = Hours
-			xor al, al          ; AL = Microseconds
+Install_High:
+
+			call Init_Data
+
+			; Calculate the highest segment where the software will fit.
+			mov dx, Install_End - Install_Start
+			mov bx, dx
+			add bx, Install_Leave
+			mov ax, 0E000h
+			mov es, ax
+			mov [FinishVector+2], ax
+			mov di, Install_Start
+			mov si, di
+			mov cx, dx
+			rep movsb
+									
+			; Install software
+			call far [FinishVector]
 			
-			push ax
-			push dx
-			call IPC_TimeSet
-			pop dx
-			pop ax
-			
-			mov bl, dh          ; BL = Hours
-			mov al, ah          ; AL = Minutes
-			mov dh, al          ; DH = Seconds
-			
+			; Output banner
 			xor ah, ah
-			mov cl, 60
-			mul cl              ; AX = minutes * 60
-			add al, dh
-			adc ah, 0           ; AX = minutes * 60 + seconds
-			push ax
-			xor dx, dx
-			mov cx, 5
-			div cx              ; AX = (minutes * 60 + seconds) * 0.2
-			mov dx, ax
-            pop ax
-            mov ch, ah			
-			mov cl, 18
-			mul cl              ; AX = (minutes * 60 + seconds) * 18
-			add dx, ax          
-			mov al, ch
-			mul cl
-			add dh, al          ; DX = (minutes * 60 + seconds) * 18.2
+			int 10h
+			call Version_Output
 			
-			xor bh, bh
-			push ds
-			xor ax, ax
-			mov ds, ax
-			mov [046Ch], dx
-			mov [046Eh], bx
-			pop ds
-			
-Init_RTC_1:
-            pop ax
-            ret
+			ret
+
+FinishVector:
+			dw Init_Far
+			dw 0
+
 %endif

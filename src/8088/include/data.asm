@@ -1,6 +1,6 @@
 
 
-Data_Segment		equ 004Fh
+Data_Segment		equ 9FD0h
 
 ; -----------------------------------------------------------------
 ; Virtual cursor position.

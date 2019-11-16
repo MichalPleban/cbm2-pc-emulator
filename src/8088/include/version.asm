@@ -1,6 +1,6 @@
 
-%define VERSION_STRING		"0.74"
-VERSION_NUMBER		equ		74
+%define VERSION_STRING		"0.80"
+VERSION_NUMBER		equ		80
 
 
 Version_Banner:
@@ -17,8 +17,5 @@ Version_Output:
 			pop ds
 			mov si, Version_Banner
 			call Output_String
-%ifdef SCREEN
-            call Screen_ShowInfo
-%endif
 			ret
 

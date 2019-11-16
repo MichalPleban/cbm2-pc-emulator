@@ -1,10 +1,5 @@
 
 %undef ROM
-%define STANDALONE
-%define SD
-%define I2C
-%define SCREEN
-%define BIG
 
 [BITS 16]
 [CPU 8086]
@@ -39,7 +34,6 @@ Do_Install_Loop:
 			int 19h
 			jmp Do_Install_Loop
 
-%include 'src/8088/include/install.asm'
 %include 'src/8088/include/version.asm'
 
 ; Starting offest of the resident code.
@@ -52,7 +46,6 @@ Install_Leave equ 0
 %include 'src/8088/include/ipc.asm'
 %include 'src/8088/include/int.asm'
 %include 'src/8088/include/init.asm'
-%include 'src/8088/include/hdrom.asm'
 %include 'src/8088/include/sd.asm'
 %include 'src/8088/include/i2c.asm'
 %include 'src/8088/include/screen.asm'
