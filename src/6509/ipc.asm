@@ -141,7 +141,7 @@ disk_status:
 printer_flag:
 	.byt 0
 
-    .res ($0830-*), $AA
+    .res ($0830-*), $FF
         
 ;--------------------------------------------------------------------
 ; Jump table to IPC functions (only for function called from 8088).
@@ -166,6 +166,7 @@ printer_flag:
     .word 0
     .word ipc_20_kbd_clear
     .word ipc_21_format
+    .word ipc_22_dummy
   
 ;--------------------------------------------------------------------
 ; Variables used by the code.
@@ -261,6 +262,7 @@ ipc_10_kbd_peek:
     lda shift_buffer
     sta ipc_buffer+3
 ipc_10_end:
+ipc_22_dummy:
     clc
     jmp ipc_end
     
@@ -291,28 +293,28 @@ ipc_20_kbd_clear:
     rts
     
 ;--------------------------------------------------------------------
-; 8088 INT memory vectors
-;--------------------------------------------------------------------
-
-vectors:
-    .word $0000, $0050
-    .word $F1E2, $F000
-
-;--------------------------------------------------------------------
 ; Information about IPC function parameters. For every function:
 ;  * low nibble = number of input parameters.
 ;  * high nibble = number of output parameters.
 ; The location of this table is hardcoded to $0910 in the KERNAL.
 ;--------------------------------------------------------------------        
 
-    .res ($0910-*), $AA
+    .res ($0910-*), $FF
     
     .byt $00,$01,$02,$03,$04,$05,$06,$07
     .byt $08,$09,$0a,$0b,$0c,$0d,$0e,$0f
     .byt $40,$40,$23,$23,$23,$30,$4b,$4b
     .byt $40,$30,$23,$25,$00,$56,$00,$00
-    .byt $00,$4b
+    .byt $00,$4b,$0a
     
+;--------------------------------------------------------------------
+; 8088 INT memory vectors
+;--------------------------------------------------------------------
+
+vectors:
+    .word $FFF5, $F000
+    .word $F1E2, $F000
+
 ;--------------------------------------------------------------------
 ; IPC function 12 - write to screen.
 ;--------------------------------------------------------------------

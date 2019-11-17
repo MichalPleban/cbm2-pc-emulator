@@ -746,5 +746,6 @@ IPC_Params:
 			db 0, 0
 			db 0, 0     ; 20 - keyboard clear
 			db 11, 4    ; 21 - disk format
+			db 10, 0    ; 22 - load 6509 code
 			
 

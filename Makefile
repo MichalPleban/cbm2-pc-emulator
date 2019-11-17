@@ -11,7 +11,7 @@ PAYLOAD = src/8088/payload/data.asm src/8088/payload/init.asm src/8088/payload/i
 START = src/8088/rom/ipc.asm src/8088/rom/bootstrap.asm
 DEBUG = src/8088/include/debug.asm
 
-all: $(PRG) $(ROM) $(TRACK) $(DISK) $(EMPTY)
+all: $(PRG) $(ROM) $(TRACK) $(DISK) $(EMPTY) dist/prg/bootstrap.prg
 
 # Uncomment for interrupt debugging
 #dist/prg/8088.prg: src/8088/ipc.asm $(COMMON) $(DEBUG)
@@ -44,6 +44,11 @@ dist/rom/card.bin: src/8088/rom.asm dist/rom/payload.bin $(START)
 
 dist/rom/card_devel.bin: src/8088/rom.asm dist/rom/payload.bin $(START)
 	nasm src/8088/rom.asm -DDEVEL -w-lock -w-number-overflow -o dist/rom/card_devel.bin
+
+dist/prg/bootstrap.prg: src/6509/bootstrap.asm
+	ca65 src/6509/bootstrap.asm
+	ld65 src/6509/bootstrap.o -C src/6509/6509.cfg -o dist/prg/bootstrap.prg
+	rm src/6509/bootstrap.o
 
 util/360_d80.trk: src/track/360_d80.trk $(ONDISK) dist/prg/bamfix/bamfix-360.prg
 	util/insert.pl src/track/360_d80.trk util/360_d80.trk $(ONDISK) dist/prg/bamfix/bamfix-360.prg

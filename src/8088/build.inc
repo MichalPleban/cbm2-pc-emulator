@@ -1,11 +1,10 @@
 
 ; Software version (A = standard)
-SOFTWARE_VERSION equ "A"
+%define SOFTWARE_VERSION "A"
 
 ; Software build (starting with 1)
-SOFTWARE_BUILD equ 5
-SOFTWARE_BUILDS equ "5"
+%define SOFTWARE_BUILD 13
+%define SOFTWARE_BUILDS "13"
 
 db SOFTWARE_VERSION
 dw SOFTWARE_BUILD
-

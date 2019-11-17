@@ -85,4 +85,5 @@ File11End:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
             ; End of binary payload
+            db 0FFh
 PayloadEnd:
