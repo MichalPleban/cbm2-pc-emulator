@@ -149,6 +149,10 @@ int7seg		equ 1Eh
 ;-----------------------------------------------------------------------------
 rqster:
 		push ax
+		in al, 0E4h
+		push ax             ; Save old memory configuration
+		or al, 020h
+		out 0E4h, al        ; Enable ROM at F000
 		push bx
 		push cx
 		push dx
@@ -283,6 +287,8 @@ rqst400:
 		pop	dx
 		pop	cx
 		pop	bx
+		pop ax
+		out 0E4h, al        ; Restore memory configuration
 		pop	ax
 		retf			; Return far
 

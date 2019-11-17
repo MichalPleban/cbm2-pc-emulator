@@ -1,17 +1,17 @@
 
 PRG = dist/prg/6509.prg dist/prg/8088.prg dist/prg/screen_nochar.prg dist/prg/screen_char.prg
-ROM = dist/rom/card.bin
-MISC = dist/misc/reboot.com dist/misc/cls.com
+ROM = dist/rom/payload.bin dist/rom/card.bin dist/rom/card_devel.bin
 
 TRACK = util/360_d80.trk util/360_d82.trk util/720_d82.trk
 ONDISK = dist/prg/boot.prg $(PRG)
 DISK = dist/disk/freedos.d82 dist/disk/pcdos33.d82 dist/disk/pcdos33a.d80 dist/disk/pcdos33b.d80 dist/disk/pcdos32.d82 dist/disk/pcdos32a.d80 dist/disk/pcdos32b.d80
 EMPTY = dist/disk/empty/empty360.d80 dist/disk/empty/empty360.d82 dist/disk/empty/empty720.d82
 
-COMMON = src/8088/include/data.asm src/8088/include/init.asm src/8088/include/int.asm src/8088/include/ipc.asm src/8088/include/sd.asm src/8088/include/i2c.asm src/8088/include/screen.asm src/8088/include/version.asm
+PAYLOAD = src/8088/payload/data.asm src/8088/payload/init.asm src/8088/payload/int.asm src/8088/payload/ipc.asm src/8088/payload/sd.asm src/8088/payload/i2c.asm src/8088/payload/screen.asm
+START = src/8088/rom/ipc.asm src/8088/rom/bootstrap.asm
 DEBUG = src/8088/include/debug.asm
 
-all: $(PRG) $(ROM) $(MISC) $(TRACK) $(DISK) $(EMPTY)
+all: $(PRG) $(ROM) $(TRACK) $(DISK) $(EMPTY)
 
 # Uncomment for interrupt debugging
 #dist/prg/8088.prg: src/8088/ipc.asm $(COMMON) $(DEBUG)
@@ -35,14 +35,15 @@ dist/prg/screen_char.prg: src/6509/screen.asm
 	ld65 src/6509/screen.o -C src/6509/6509.cfg -o dist/prg/screen_char.prg
 	rm src/6509/screen.o
 
-dist/rom/card.bin: src/8088/rom.asm src/8088/include/rom.asm $(COMMON)
+dist/rom/payload.bin: src/8088/payload.asm $(PAYLOAD) $(PRG)
+	util/incbuild.pl src/8088/build.inc
+	nasm src/8088/payload.asm -w-lock -w-number-overflow -o dist/rom/payload.bin
+
+dist/rom/card.bin: src/8088/rom.asm dist/rom/payload.bin $(START)
 	nasm src/8088/rom.asm -w-lock -w-number-overflow -o dist/rom/card.bin
 
-dist/misc/reboot.com: src/misc/reboot.asm
-	nasm src/misc/reboot.asm -o dist/misc/reboot.com
-
-dist/misc/cls.com: src/misc/cls.asm
-	nasm src/misc/cls.asm -o dist/misc/cls.com
+dist/rom/card_devel.bin: src/8088/rom.asm dist/rom/payload.bin $(START)
+	nasm src/8088/rom.asm -DDEVEL -w-lock -w-number-overflow -o dist/rom/card_devel.bin
 
 util/360_d80.trk: src/track/360_d80.trk $(ONDISK) dist/prg/bamfix/bamfix-360.prg
 	util/insert.pl src/track/360_d80.trk util/360_d80.trk $(ONDISK) dist/prg/bamfix/bamfix-360.prg

@@ -147,3 +147,18 @@ FinishVector:
 			dw 0
 
 %endif
+
+
+Version_Banner:
+			db "PC Compatibility layer build ", SOFTWARE_VERSION, ".", SOFTWARE_BUILDS, " "
+			db "(C) 2017-2019 Micha", 9Ch, " Pleban", 10, 13, 0, '$'
+
+Version_Output:
+   			mov ax, Data_Segment
+			mov es, ax
+			push cs
+			pop ds
+			mov si, Version_Banner
+			call Output_String
+			ret
+
