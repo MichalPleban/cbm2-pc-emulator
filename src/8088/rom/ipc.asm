@@ -160,7 +160,7 @@ rqster:
 		push es
 		push ds
 
-		mov	ax, 0
+		xor	ax, ax
 		mov	ds, ax		    ; set up DS to interrupt area
 
 		mov	ax, [int7seg]	; get segment of ipctab from int 7 vector

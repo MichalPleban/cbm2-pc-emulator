@@ -7,14 +7,33 @@ CPU_ACCESS_BANK = $1
 ; Zeropage variables
 ;--------------------------------------------------------------------
 
-file_id = $40
-src_vector = $41
-src_end = $43
-dst_bank = $45
-dst_vector = $46
-file_ptr = $48
+file_id = $90
+src_vector = $91
+src_end = $93
+dst_bank = $95
+dst_vector = $96
+file_ptr = $98
 
 ipc_buffer = $0807
+
+
+;--------------------------------------------------------------------
+; KERNAL variables
+;--------------------------------------------------------------------
+
+QuoteSwitch = $d2
+InsertFlag = $d3
+WstFlag = $3fa
+
+
+;--------------------------------------------------------------------
+; KERNAL routines
+;--------------------------------------------------------------------
+
+RUNCOPRO = $ff72
+CHKOUT = $ffc9
+CLRCH = $ffcc
+BSOUT = $ffd2
 
 
 ;--------------------------------------------------------------------
@@ -24,19 +43,56 @@ ipc_buffer = $0807
 .word $C000
 .org $C000
 
-        ; Fake data
-        lda #$11
-        sta ipc_buffer
-        lda #$00
-        sta ipc_buffer+1
-        jmp BootstrapCopy
+        jsr BootstrapInit
+        jmp RUNCOPRO
 
+;--------------------------------------------------------------------
+; Initialize 8088 and 6509 code vectors
+;--------------------------------------------------------------------
 
+BootstrapInit:
+        ldy #$01
+        sty CPU_ACCESS_BANK
+        dey
+        sty src_vector+1
+        sty WstFlag
+        sty WstFlag+1
+        lda #$1C
+        sta src_vector
+BootstrapInit1:
+        lda Bootstrap8088, y        ; Copy 8088 INT 07 and INT 08 vectors
+        sta (src_vector), y
+        iny
+        cpy #8
+        bne BootstrapInit1
+        lda #$0F
+        sta CPU_ACCESS_BANK
+        
+        lda #<BootstrapPrint        ; Address of IPC routine 12
+        sta $0834
+        lda #>BootstrapPrint
+        sta $0835
+        lda #$23
+        sta $0922
+        lda #<BootstrapCopy         ; Address of IPC routine 12
+        sta $0854
+        lda #>BootstrapCopy
+        sta $0855
+        lda #$0A
+        sta $0932
+        rts
+
+Bootstrap8088:
+        .word $FFF5, $F000
+        .word $F1E2, $F000
+    
 ;--------------------------------------------------------------------
 ; Copy required files from bank 0
 ;--------------------------------------------------------------------
 
 BootstrapCopy:
+        php
+        sei
         ldx #0
         stx file_ptr
 BootstrapCopy1:
@@ -51,7 +107,7 @@ BootstrapCopy1:
 BootstrapCopy2:
         lda #$0F
         sta CPU_ACCESS_BANK
-        brk
+        plp
         rts
 
         
@@ -108,12 +164,14 @@ BootstrapLoad2:
         sta src_vector+1
         ldy #$00
         
-        sei
 BootstrapLoad3:
-        sty CPU_ACCESS_BANK     ; Copy one byte
+        lda #$00
+        sta CPU_ACCESS_BANK     ; Copy one byte
         lda (src_vector),y
-        ldx dst_bank
-        stx CPU_ACCESS_BANK
+        tax
+        lda dst_bank
+        sta CPU_ACCESS_BANK
+        txa
         sta (dst_vector),y
         inc src_vector          ; Move source pointer +1 byte
         bne BootstrapLoad3a
@@ -130,52 +188,25 @@ BootstrapLoad3b:
         cmp src_end
         bne BootstrapLoad3
         clc
-        cli
         rts
         
 BootstrapLoad9:
         sec
         rts
 
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
+;--------------------------------------------------------------------
+; Character output routine
+;--------------------------------------------------------------------
+
+BootstrapPrint:
+        ldx #$03
+        jsr CHKOUT
+        lda ipc_buffer
+        jsr BSOUT
+        lda #$00
+        sta QuoteSwitch
+        sta InsertFlag
+        jsr CLRCH
+        rts
+        
         

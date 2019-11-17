@@ -19,7 +19,7 @@ RomEnd:
     
     		times 0FFFAh-($-$$) db 0FFh
     		
-    		dw "PC"
-    		dw 80
+    		dw "Pc"
+    		dw 1
     		
     		dw 0FFFFh

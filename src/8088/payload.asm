@@ -37,6 +37,7 @@ RomLoop:
             int 19h
             jmp RomLoop
 
+
 %include 'src/8088/payload/init.asm'
 %include 'src/8088/payload/sd.asm'
 %include 'src/8088/payload/i2c.asm'
@@ -87,3 +88,6 @@ File11End:
             ; End of binary payload
             db 0FFh
 PayloadEnd:
+
+            ; Padding for cbmlink memory transfer
+    		times 16 db 0FFh	

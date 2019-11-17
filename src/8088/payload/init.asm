@@ -150,7 +150,7 @@ FinishVector:
 
 
 Version_Banner:
-			db "PC Compatibility layer build ", SOFTWARE_VERSION, ".", SOFTWARE_BUILDS, " "
+			db "PC Compatibility layer build ", SOFTWARE_VERSION, SOFTWARE_BUILDS, " "
 			db "(C) 2017-2019 Micha", 9Ch, " Pleban", 10, 13, 0, '$'
 
 Version_Output:

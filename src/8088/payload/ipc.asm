@@ -163,7 +163,7 @@ IPC_Install_Loop1:
 			
 			; Install parameters for outgoing functions
 			mov si, IPC_Params
-			mov cx, 12h
+			mov cx, 13h
 IPC_Install_Loop2:
 			movsw
 			add di, 4
@@ -512,40 +512,16 @@ IPC_SectorSet:
 			ret
 
 ; --------------------------------------------------------------------------------------
-; Set system timer.
+; Copy 6509 code from bank 0
 ; Input:
-;     DH - hour
-;     DL - minute
-;     AH - second
-;     AL - tenth of seconds
+;     		AL - screen driver ID
 ; --------------------------------------------------------------------------------------
 
-IPC_TimeSet:
+IPC_Load6509:
 			IPC_Enter
-			xchg dh, dl
-			mov [IPCData+0], dx
-			xchg ah, al
-			mov [IPCData+2], ax
-			IPC_Call 1Eh
-			IPC_Leave
-			ret
-
-; --------------------------------------------------------------------------------------
-; Get system timer.
-; Output:
-;     DH - hour
-;     DL - minute
-;     AH - second
-;     AL - tenth of seconds
-; --------------------------------------------------------------------------------------
-
-IPC_TimeGet:
-			IPC_Enter
-			IPC_Call 1Fh
-			mov dx, [IPCData+0]
-			xchg dh, dl
-			mov ax, [IPCData+2]
-			xchg ah, al
+			mov [IPCData+2], al
+			mov [IPCData+3], byte 0
+			IPC_Call 0A2h
 			IPC_Leave
 			ret
 
