@@ -202,6 +202,12 @@ BootstrapPrint:
         ldx #$03
         jsr CHKOUT
         lda ipc_buffer
+        cmp #13
+        beq BootstrapPrint2
+        cmp #147
+        beq BootstrapPrint2
+        jsr BootstrapConvert
+BootstrapPrint2:
         jsr BSOUT
         lda #$00
         sta QuoteSwitch
@@ -209,4 +215,24 @@ BootstrapPrint:
         jsr CLRCH
         rts
         
-        
+;--------------------------------------------------------------------
+; Change character case from ASCII to PETSCII
+;--------------------------------------------------------------------
+
+BootstrapConvert:
+        cmp #$41
+        bcc BootstrapConvert2
+        cmp #$5B
+        bcc BootstrapConvert1
+        cmp #$61
+        bcc BootstrapConvert2
+        cmp #$7B
+        bcs BootstrapConvert2
+BootstrapConvert1:
+        eor #$20
+BootstrapConvert2:
+        cmp #$60
+        bcc BootstrapConvert3
+        adc #$5F
+BootstrapConvert3:
+    	rts

@@ -5,13 +5,26 @@
 ; -----------------------------------------------------------------
 
 Bootstrap:
-            ; Copy the upper ROM & payload to RAM
+            push cs
+            pop ds
+            in al, 0E4h
+            or al, 020h
+            out 0E4h, al
+            
+            ; Copy the upper ROM to RAM
             call Bootstrap_Copy
             
+            ; Install IPC routines
             call Bootstrap_Init
-
-            mov al, CHAR_CLRSCR
-            call Bootstrap_IPC12
+            mov si, Bootstrap_String_Init
+            call Bootstrap_String
+            
+            ; Copy the payload to RAM
+            call Bootstrap_Load
+            
+            ; Load the 6509 code
+            mov si, Bootstrap_String_Boot
+            call Bootstrap_String
             mov al, 11h
             call Bootstrap_IPC22
             
@@ -108,13 +121,29 @@ Bootstrap_IPC22:
 			ret
 
 ; -----------------------------------------------------------------
-; Copy the ROM code to RAM
+; String output via IPC
+; Input:
+;           SI - adress of null-terminated string
+; -----------------------------------------------------------------
+
+Bootstrap_String:
+            push cs
+            pop ds
+Bootstrap_String1:
+            lodsb
+            test al, al
+            jz Bootstrap_String2
+            call Bootstrap_IPC12
+            jmp Bootstrap_String
+Bootstrap_String2:
+            ret
+
+
+; -----------------------------------------------------------------
+; Copy the upper ROM code (from F000:F000) to RAM
 ; -----------------------------------------------------------------
 
 Bootstrap_Copy:
-            in al, 0E4h
-            or al, 020h
-            out 0E4h, al
             mov ax, cs
             mov ds, ax
             mov es, ax
@@ -122,28 +151,60 @@ Bootstrap_Copy:
             mov di, si
             mov cx, RomEnd-RomStart
             rep movsb
+            ret
+
+; -----------------------------------------------------------------
+; Copy the payload from ROM to RAM
+; -----------------------------------------------------------------
+
+Bootstrap_Load:
 
 %ifdef DEVEL
             ; Development ROM: check if there is already code in RAM
             in al, 0E4h
             and al, 0DFh
             out 0E4h, al
-            cmp byte [0000h], 0EAh
-            jnz Bootstrap_Copy_1
-            cmp word [0001h], 0F000h
-            jnz Bootstrap_Copy_1
-            cmp word [0003h], 0F000h
-            jnz Bootstrap_Copy_1
+            cmp byte [cs:0000h], 0EAh
+            jnz Bootstrap_Load_1
+            cmp word [cs:0001h], 0F000h
+            jnz Bootstrap_Load_1
+            cmp word [cs:0003h], 0F000h
+            jnz Bootstrap_Load_1
+            mov si, Bootstrap_String_LoadRAM
+            call Bootstrap_String
             ret
 
-Bootstrap_Copy_1:
+Bootstrap_Load_1:
             in al, 0E4h
             or al, 020h
             out 0E4h, al
 %endif
+            mov ax, cs
+            mov ds, ax
+            mov es, ax
+            mov si, Bootstrap_String_LoadROM
+            call Bootstrap_String
             xor ax, ax
             mov si, ax
             mov di, ax
             mov cx, PayloadEnd
             rep movsb
             ret
+
+; -----------------------------------------------------------------
+; Strings to be output
+; -----------------------------------------------------------------
+
+Bootstrap_String_Init:
+            db CHAR_CLRSCR, "8088 boostrapper v0.10 (C) 2019 Michal Pleban", 13, 0
+
+Bootstrap_String_LoadROM:
+            db "Loading the payload from ROM...", 13, 0
+            
+%ifdef DEVEL
+Bootstrap_String_LoadRAM:
+            db "Payload already found in RAM.", 13, 0
+%endif
+            
+Bootstrap_String_Boot:
+            db "Loading the 6509 code...", 13, 0

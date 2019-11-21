@@ -60,7 +60,7 @@ Screen_Interrupt:
 			mov ax, Data_Segment
 			mov ds, ax
 			inc byte [Data_Refresh]
-            cmp byte [Data_Refresh], 50
+            cmp byte [Data_Refresh], 10
             jb Screen_interrupt_NoRefresh
             call Screen_Refresh
 Screen_interrupt_NoRefresh:
@@ -80,9 +80,11 @@ Screen_Refresh:
             push bx
             push dx
             mov byte [Data_Refresh], 00h
-            mov dx, [Data_CursorVirtual]
             mov bl, [Data_ScreenPage]
+            mov bh, al
             call IPC_Video_Convert
+            mov dx, [Data_CursorVirtual]
+            call IPC_Video_CursorSet
             pop dx
             pop bx
             in al, 0E3h
@@ -97,12 +99,15 @@ Screen_Refresh_Nothing:
 			
 Screen_INT_00:
             push ax
+            push dx
             call Screen_Segments
             xor ax, ax
 			mov [Data_CursorVirtual], ax
 			mov [Data_CursorPhysical], ax
 			call Screen_Clear
-			call Screen_Refresh
+			xor dx, dx
+			call IPC_Video_CursorSet
+			pop dx 
 			pop ax 
             ret
 
@@ -120,9 +125,9 @@ Screen_INT_02:
 			jnz Screen_INT_02_Ret
 
 			; Check if row and column are within allowed bounds
-			cmp dh, 24
+			cmp dh, 25
 			jl Screen_INT_02_RowOK
-			mov dh, 23
+			mov dh, 24
 Screen_INT_02_RowOK:
 			cmp dl, 80
 			jl Screen_INT_02_ColumnOK
@@ -420,6 +425,7 @@ Screen_Segments:
 Screen_CursorCalc:
             push cx
             push ax
+            push dx
             mov al, [Data_CursorVirtual+1]
             xor ah, ah
             mov cl, 80
@@ -428,6 +434,9 @@ Screen_CursorCalc:
             adc ah, 0
             shl ax, 1
             mov [Data_CursorPhysical], ax
+            mov dx, [Data_CursorVirtual]
+            call IPC_Video_CursorSet
+            pop dx
             pop ax
             pop cx
             ret
@@ -445,6 +454,8 @@ Screen_Clear:
 			mov al, 20h
 			mov cx, 2000
 			rep stosw
+            call IPC_Video_Clear
+			in al, 0E3h
 			pop ax
 			pop cx
 			pop di
@@ -478,7 +489,8 @@ Screen_CursorCheck:
             pop cx
             pop ax
             pop ds
+            call IPC_Video_ScrollUp
+            in al, 0E3h
             call Screen_CursorCalc
-            call Screen_Refresh
 Screen_CursorCheck_End:
             ret

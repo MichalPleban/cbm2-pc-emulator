@@ -275,65 +275,20 @@ IPC_ScreenOut:
 			IPC_Leave
 			ret
 
+
 ; --------------------------------------------------------------------------------------
-; Output CP437 character to the screen.
-; Input:
-;     		AL - character code
-;     		AH - reverse flag (80h = reverse)
+; Initialize the video driver.
 ; --------------------------------------------------------------------------------------
 
-IPC_ScreenOutPC:
+IPC_Video_Init:
 			IPC_Enter
-			mov [IPCData+2], byte 3
-			mov [IPCData+3], ax
-			IPC_Call 1Dh
+			mov [IPCData], byte 0
+			IPC_Disable_IRQ
+			mov cl, 94h
+			call IPC
+			IPC_Enable_IRQ
 			IPC_Leave
 			ret
-
-
-; --------------------------------------------------------------------------------------
-; Output Escape sequence (Esc, then character) to the screen.
-; Input:
-;     		AL - character code
-; --------------------------------------------------------------------------------------
-
-IPC_ScreenEscape:
-			push ax
-			mov al, 27
-			call IPC_ScreenOut
-			pop ax
-			call IPC_ScreenOut
-			ret
-
-; --------------------------------------------------------------------------------------
-; Set screen window (editable area).
-; Input:
-;			CL - X of upper left corner
-;			CH - Y of upper left corner
-;			DL - X of lower right corner
-;			DH - Y of lower right corner
-; --------------------------------------------------------------------------------------
-
-IPC_WindowSet:
-			push dx
-			mov dx, cx
-			call IPC_CursorSet
-			mov al, 'T'
-			call IPC_ScreenEscape
-			pop dx
-			call IPC_CursorSet
-			mov al, 'B'
-			call IPC_ScreenEscape
-			ret
-
-; --------------------------------------------------------------------------------------
-; Remove screen window - makes whole screen editable.
-; --------------------------------------------------------------------------------------
-
-IPC_WindowRemove:
-			xor cx, cx
-			mov dx, 184Fh
-			jmp IPC_WindowSet
 
 ; --------------------------------------------------------------------------------------
 ; Set cursor position on the screen.
@@ -342,54 +297,11 @@ IPC_WindowRemove:
 ;			DL - column
 ; --------------------------------------------------------------------------------------
 
-IPC_CursorSet:
+IPC_Video_CursorSet:
 			IPC_Enter
-			mov [IPCData+2], byte 1
-			mov [IPCData+3], dx
-			IPC_Call 1Dh
-			IPC_Leave
-			ret
-
-; --------------------------------------------------------------------------------------
-; Read cursor position on the screen.
-; Output:
-;     		DH - row
-;			DL - column
-; --------------------------------------------------------------------------------------
-
-IPC_CursorGet:
-			IPC_Enter
-			mov [IPCData+2], byte 2
-			IPC_Call 1Dh
-			mov dx, [IPCData+3]
-			IPC_Leave
-			ret
-
-; --------------------------------------------------------------------------------------
-; Initialize the video driver.
-; Output:
-;           AL -
-;           DX - 
-; --------------------------------------------------------------------------------------
-
-IPC_Video_Init:
-            push ax
-            push ds
-            mov ax, 0B000h
-            mov ds, ax
-            mov [0002h], word 0694Dh
-            mov [0004h], word 06843h
-            mov [0006h], word 07541h
-            pop ds
-            pop ax
-			IPC_Enter
-			mov [IPCData+2], byte 6
-			IPC_Disable_IRQ
-			mov cl, 9Dh
-			call IPC
-			IPC_Enable_IRQ
-			mov al, [IPCData+2]
-			mov dx, [IPCData+3]
+			mov [IPCData], byte 1
+			mov [IPCData+1], dx
+			IPC_Call 14h
 			IPC_Leave
 			ret
 
@@ -397,30 +309,49 @@ IPC_Video_Init:
 ; Call the video screen conversion routine.
 ; Input:
 ;           BL - video page
-;     		DH - cursor row
-;			DL - cursor column
+;           BH - flags describing changed screen areas
 ; --------------------------------------------------------------------------------------
 
 IPC_Video_Convert:
-            push bx
+            push dx
             push ax
             push ds
             mov ax, 0B000h
             add ah, bl
             mov ds, ax
-            mov ax, word [0000]
-            mov word [4000], ax
+            mov dx, word [0000]
             pop ds
             pop ax
-			pop bx
 			IPC_Enter
-			mov [IPCData+5], bl
+			mov [IPCData+1], bx
 			mov [IPCData+3], dx
-			mov [IPCData+2], byte 5
+			mov [IPCData], byte 2
 			IPC_Disable_IRQ
-			mov cl, 9Dh
+			mov cl, 94h
 			call IPC
 			IPC_Enable_IRQ
+			IPC_Leave
+			pop dx
+			ret
+
+; --------------------------------------------------------------------------------------
+; Clear screen
+; --------------------------------------------------------------------------------------
+
+IPC_Video_Clear:
+			IPC_Enter
+			mov [IPCData], byte 3
+			IPC_Call 14h
+			IPC_Leave
+			ret
+; --------------------------------------------------------------------------------------
+; Scroll screen one line up
+; --------------------------------------------------------------------------------------
+
+IPC_Video_ScrollUp:
+			IPC_Enter
+			mov [IPCData], byte 4
+			IPC_Call 14h
 			IPC_Leave
 			ret
 
@@ -511,19 +442,6 @@ IPC_SectorSet:
 			pop bx
 			ret
 
-; --------------------------------------------------------------------------------------
-; Copy 6509 code from bank 0
-; Input:
-;     		AL - screen driver ID
-; --------------------------------------------------------------------------------------
-
-IPC_Load6509:
-			IPC_Enter
-			mov [IPCData+2], al
-			mov [IPCData+3], byte 0
-			IPC_Call 0A2h
-			IPC_Leave
-			ret
 
 ; -----------------------------------------------------------------
 ; Calculate 8250 physical sector number from logical sector number.
@@ -708,7 +626,7 @@ IPC_Params:
 			db 0, 4     ; 11 - keyboard get
 			db 3, 2     ; 12 - screen out
 			db 3, 2     ; 13 - printer out
-			db 0, 0
+			db 6, 6     ; 14 - screen driver
 			db 0, 0
 			db 11, 4    ; 96 - disk read
 			db 11, 4    ; 97 - disk write
@@ -717,7 +635,7 @@ IPC_Params:
 			db 3, 2     ; 1A - serial out
 			db 5, 2     ; 1B - serial config
 			db 0, 0
-			db 6, 5     ; 1D - console services
+			db 0, 0
 			db 0, 0
 			db 0, 0
 			db 0, 0     ; 20 - keyboard clear

@@ -152,7 +152,7 @@ printer_flag:
     .word ipc_11_kbd_in
     .word ipc_12_screen_out
     .word ipc_13_printer_out
-    .word 0
+    .word ipc_14_screen_driver
     .word 0
     .word ipc_96_disk_read
     .word ipc_97_disk_write
@@ -161,7 +161,7 @@ printer_flag:
     .word ipc_1a_serial_out
     .word ipc_1b_serial_config
     .word 0
-    .word ipc_1d_console
+    .word 0
     .word 0
     .word 0
     .word ipc_20_kbd_clear
@@ -303,8 +303,8 @@ ipc_20_kbd_clear:
     
     .byt $00,$01,$02,$03,$04,$05,$06,$07
     .byt $08,$09,$0a,$0b,$0c,$0d,$0e,$0f
-    .byt $40,$40,$23,$23,$23,$30,$4b,$4b
-    .byt $40,$30,$23,$25,$00,$56,$00,$00
+    .byt $40,$40,$23,$23,$66,$00,$4b,$4b
+    .byt $40,$30,$23,$25,$00,$00,$00,$00
     .byt $00,$4b,$0a
     
 ;--------------------------------------------------------------------
@@ -323,6 +323,7 @@ ipc_12_screen_out:
     ldx #$03
     jsr CHKOUT
     lda ipc_buffer+2
+    jsr uppercase_convert
     jsr BSOUT
     lda #$00
     sta QuoteSwitch
@@ -970,93 +971,7 @@ ipc_1b_serial_config:
     sta rs232_secaddr
     jsr serial_reopen
     jmp ipc_end
-    
-;--------------------------------------------------------------------
-; IPC function 1D - console services.
-;--------------------------------------------------------------------
-    
-ipc_1d_console:
-    lda ipc_buffer+2
-    bne console_not00
 
-; Console function 00 - clear screen after & below cursor
-    ldx #$03
-    jsr CHKOUT
-    lda #$1b
-    jsr BSOUT
-    lda #$51            ; Esc+Q - erase to end of line
-    jsr BSOUT
-    sec
-    jsr PLOT
-    cpx #$18
-    beq erase_end
-    sty old_y
-    stx old_x
-    stx tmp_val
-    sec
-    lda #$18
-    sbc tmp_val
-    sta tmp_val
-erase_loop:
-    lda #$1b
-    jsr BSOUT
-    lda #$49            ; Esc+I - insert empty line
-    jsr BSOUT
-    dec tmp_val
-    bne erase_loop
-    ldx old_x
-    ldy old_y
-    clc
-    jsr PLOT
-erase_end:
-    jmp CLRCH
-
-console_not00:
-    cmp #$01
-    bne console_not01
-    
-; Console function 01 - set cursor position
-    lda ipc_buffer+3
-    tay
-    lda ipc_buffer+4
-    tax
-    clc
-    jmp PLOT
-
-console_not01:
-    cmp #$02
-    bne console_not02
-    
-; Console function 02 - read cursor position.
-    sec
-    jsr PLOT
-    stx ipc_buffer+4
-    sty ipc_buffer+3
-    jmp ipc_end
-
-console_not02:
-    cmp #$04
-    bne console_not04
-    
-; Console function 04 - delete line at cursor position.
-    lda #$44            ; Esc+D - delete line
-    bne delete_line
-    lda #$49
-delete_line:
-    sta old_y
-    lda CursorColumn
-    sta tmp_val
-    lda #$1b
-    jsr BSOUT
-    lda old_y
-    jsr BSOUT
-    ldx CursorLine
-    ldy tmp_val
-    clc
-    jmp PLOT
-
-console_not04:
-    jmp $0400
 
 ;--------------------------------------------------------------------
 ; Replacement function for GETIN.
@@ -1108,3 +1023,10 @@ uppercase_convert_2:
     adc #$5F
 uppercase_convert_3:
 	rts
+
+;--------------------------------------------------------------------
+; IPC function 14 - screen driver
+;--------------------------------------------------------------------
+    
+ipc_14_screen_driver:
+    jmp $0403

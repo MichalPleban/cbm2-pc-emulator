@@ -11,6 +11,8 @@ src_addr = $50
 page_count = $52
 tmp_byte = $53
 
+jmp_vector = $03FC;
+
 ;--------------------------------------------------------------------
 ; I/O chip ports
 ;--------------------------------------------------------------------
@@ -33,71 +35,39 @@ PLOT = $fff0
 
 ipc_buffer = $0805
 
-    jmp ipc_1d_console
     rts
+    nop
+    nop
+    jmp ipc_14_video
+
 
 ;--------------------------------------------------------------------
-; IPC function 1D (console services) additional handler.
+; IPC function 14 (video services) handler.
 ;--------------------------------------------------------------------
-    
-ipc_1d_console:
-    cmp #$05
-    bne console_not_05
-    jsr screen_convert
-    lda ipc_buffer+3
-    tay
-    lda ipc_buffer+4
-    tax
-    clc
-    jmp PLOT
-console_not_05:
-    cmp #$06
-    bne console_not_06
-    jsr screen_init
-    lda #$FF
-    sta ipc_buffer+3
-    rts
-console_not_06:
-    rts
 
-    
-    
-;--------------------------------------------------------------------
-; Convert the PC screen to video memory.
-;--------------------------------------------------------------------
-    
-screen_convert:
-    lda screen_location
-    sta CPU_ACCESS_BANK
-    lda #8
-    sta page_count
-    lda #$D0
-    sta screen_proc_dst-screen_proc+PROC_ADDR+2
-    lda ipc_buffer+5
-    asl 
-    asl 
-    asl 
+ipc_14_video:
+    lda ipc_buffer
     asl
-    ora screen_location+1
-    sta src_addr+1
-    ldy #$01
-    sty src_addr
-    jsr PROC_ADDR
-    lda #15
-    sta CPU_ACCESS_BANK
-    rts
+    tax
+    lda func_table,x
+    sta jmp_vector
+    lda func_table+1,x
+    sta jmp_vector+1
+    jmp (jmp_vector)
     
+
+func_table:
+    .word func_00_screen_init
+    .word func_01_set_cursor
+    .word func_02_screen_convert
+    .word func_03_clear_screen
+    .word func_04_scroll_up
+
 ;--------------------------------------------------------------------
-; Initialize the screen conversion routine.
+; Function 00: Initialize screen.
 ;--------------------------------------------------------------------
 
-screen_init:
-    ldx #screen_proc_end-screen_proc-1
-screen_init_1:
-    lda screen_proc,x
-    sta PROC_ADDR,x
-    dex
-    bpl screen_init_1    
+func_00_screen_init:
     ldx #$0E
     stx CRTC_RegNo
 .ifdef NOCHAR
@@ -116,13 +86,63 @@ screen_init_1:
     rts
     
 ;--------------------------------------------------------------------
-; Self-modifying screen conversion routine.
+; Function 01: Set cursor position
 ;--------------------------------------------------------------------
 
-screen_proc:
+func_01_set_cursor:
+    ldy ipc_buffer+1
+    ldx ipc_buffer+2
+    clc
+    jmp PLOT
+        
+;--------------------------------------------------------------------
+; Function 02: Convert the PC screen to video memory.
+;--------------------------------------------------------------------
+    
+func_02_screen_convert:
+    ; Calculate and initialize addresses
+    lda #$0C
+    sta CPU_ACCESS_BANK
+    lda #8
+    sta page_count
+    lda #$D0
+    sta screen_proc_dst+2
+    lda ipc_buffer+1
+    asl 
+    asl 
+    asl 
+    asl
+    sta src_addr+1
+    ldy #$01
+    sty src_addr
+    
+    ; Convert the screen
+    jsr screen_convert
+    lda #15
+    sta CPU_ACCESS_BANK
+    
+    ; Convert first byte
+    ldx ipc_buffer+3
+    lda petscii_table,x
+    sta tmp_byte
+    ldx ipc_buffer+4
+    lda petscii_table_2,x
+    ora tmp_byte
+    sta $D000
+    rts
+    
+;--------------------------------------------------------------------
+; Screen conversion routine.
+;--------------------------------------------------------------------
+
+screen_convert:
+    lsr ipc_buffer+2
+    bcs screen_convert_do
+    inc src_addr+1
+    bne screen_convert_skip
+screen_convert_do:
     lda (src_addr),y
     tax
-screen_proc_src:
     lda petscii_table,x
     sta tmp_byte
     inc src_addr
@@ -136,26 +156,93 @@ screen_proc_page:
 screen_proc_dst:
     sta $D000,y
     iny
-    bne screen_proc
+    bne screen_convert_do
+screen_convert_skip:
     inc src_addr+1
-    inc screen_proc_dst-screen_proc+PROC_ADDR+2
+    inc screen_proc_dst+2
     dec page_count
-    bne screen_proc
+    bne screen_convert
     lda $D7D0
     sta $D000
     rts
 screen_proc_end:
 
+
 ;--------------------------------------------------------------------
-; Location of the screen memory
+; Function 03: Clear screen
 ;--------------------------------------------------------------------
 
-screen_location:
-    .byt $0C
-    .byt $00
+func_03_clear_screen:
+    ldx #8
+    lda #$D0
+    sta screen_clear_dst+2
+    lda #$00
+    sta screen_clear_dst+1
+screen_clear_loop:
+    ldy #0
+    lda #$20
+screen_clear_dst:
+    sta $D000,y
+    iny 
+    cpy #250
+    bne screen_clear_dst
+    lda screen_clear_dst+1
+    clc
+    adc #250
+    sta screen_clear_dst+1
+    lda screen_clear_dst+2
+    adc #0
+    sta screen_clear_dst+2
+    dex
+    bne screen_clear_loop
+    rts
 
-;    .res ($0500-*), $AA
+;--------------------------------------------------------------------
+; Function 04: Scroll screen up
+;--------------------------------------------------------------------
 
+func_04_scroll_up:
+    ldx #8
+    lda #$D0
+    sta screen_scroll_src+2
+    sta screen_scroll_dst+2
+    lda #$00
+    sta screen_scroll_dst+1
+    lda #$50
+    sta screen_scroll_src+1
+screen_scroll_loop:
+    ldy #0
+screen_scroll_src:
+    lda $D050,y
+screen_scroll_dst:
+    sta $D000,y
+    iny 
+    cpy #240
+    bne screen_scroll_src
+    lda screen_scroll_src+1
+    clc
+    adc #240
+    sta screen_scroll_src+1
+    lda screen_scroll_src+2
+    adc #0
+    sta screen_scroll_src+2
+    lda screen_scroll_dst+1
+    clc
+    adc #240
+    sta screen_scroll_dst+1
+    lda screen_scroll_dst+2
+    adc #0
+    sta screen_scroll_dst+2
+    dex
+    bne screen_scroll_loop
+    ldy #79
+    lda #$20
+screen_scroll_clear:
+    sta $D780,y
+    dey
+    bpl screen_scroll_clear
+    rts
+    
 
 .ifdef NOCHAR
 
