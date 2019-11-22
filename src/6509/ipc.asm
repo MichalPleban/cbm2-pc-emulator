@@ -119,7 +119,7 @@ filename_08:
 
 ; Filename used to open the command channel.
 filename_15:
-    .byt "i"
+    .byt "I"
 
 ; Temporary variable used in address calculation.
 calc_tmp:
@@ -174,15 +174,15 @@ printer_flag:
 
 ; Command to read or write disk sector.    
 cmd_u1:
-    .byt "u1:8 0 ttt sss",$0d
+    .byt "U1:8 0 ttt sss",$0d
 
 ; Command to read or write disk buffer.
 cmd_br:
-    .byt "b-p 8 0",$0d
+    .byt "B-P 8 0",$0d
 
 ; Command to format disk.
 cmd_n:
-    .byt "n0:msdos disk,88",$0d
+    .byt "N0:MSDOS DISK,88",$0d
 
 ;--------------------------------------------------------------------
 ; IRQ handler function.
@@ -505,7 +505,7 @@ loop_u1:
     lda cmd_u1,x
     jsr BSOUT
     inx
-    cpx #$0f
+    cpx #$0F
     bne loop_u1
     jsr CLRCH
     jsr read_disk
