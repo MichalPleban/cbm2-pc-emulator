@@ -33,7 +33,7 @@ Screen_INT_Ret:
 
 Screen_INT_Functions:
 			dw Screen_INT_00
-			dw INT_Unimplemented
+			dw Screen_INT_01
 			dw Screen_INT_02
 			dw Screen_INT_03
 			dw INT_Unimplemented
@@ -112,6 +112,30 @@ Screen_INT_00:
             ret
 
 ; -----------------------------------------------------------------
+; INT 10 function 01 - set cursor shape
+; -----------------------------------------------------------------
+			
+Screen_INT_01:
+            push ax
+            push ds
+            mov ax, Data_Segment
+            mov ds, ax
+            test ch, 20h
+            jnz Screen_INT_01_Disable
+            cmp ch, cl
+            ja Screen_INT_01_Disable
+            xor al, al
+            jmp Screen_INT_01_Enable
+Screen_INT_01_Disable:
+            mov al, 80h
+Screen_INT_01_Enable:
+            mov [Data_CursorVisible], al
+            call IPC_Video_SetCursor
+            pop ds
+            pop ax
+            ret
+
+; -----------------------------------------------------------------
 ; INT 10 function 02 - set cursor position
 ; -----------------------------------------------------------------
 			
@@ -148,6 +172,7 @@ Screen_INT_03:
             mov dx, Data_Segment
             mov ds, dx
             mov dx, [Data_CursorVirtual]
+            mov cx, 000Fh
             ret
             
 ; -----------------------------------------------------------------
@@ -434,8 +459,12 @@ Screen_CursorCalc:
             adc ah, 0
             shl ax, 1
             mov [Data_CursorPhysical], ax
+            mov al, [Data_CursorVisible]
+            test al, al
+            jnz Screen_CursorCalc1
             mov dx, [Data_CursorVirtual]
             call IPC_Video_CursorSet
+Screen_CursorCalc1:
             pop dx
             pop ax
             pop cx

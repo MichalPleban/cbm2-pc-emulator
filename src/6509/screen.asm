@@ -1,7 +1,6 @@
 
 
 CPU_ACCESS_BANK = $1
-PROC_ADDR = $0100
 
 ;--------------------------------------------------------------------
 ; Zero page variables
@@ -11,14 +10,15 @@ src_addr = $50
 page_count = $52
 tmp_byte = $53
 
-jmp_vector = $03FC;
+CursorType = $D4
+jmp_vector = $03FC
 
 ;--------------------------------------------------------------------
 ; I/O chip ports
 ;--------------------------------------------------------------------
 
-CRTC_RegNo = $d800
-CRTC_RegVal = $d801
+CRTC_RegNo = $D800
+CRTC_RegVal = $D801
 
 ;--------------------------------------------------------------------
 ; KERNAL routines
@@ -62,6 +62,7 @@ func_table:
     .word func_02_screen_convert
     .word func_03_clear_screen
     .word func_04_scroll_up
+    .word func_05_set_cursor
 
 ;--------------------------------------------------------------------
 ; Function 00: Initialize screen.
@@ -243,6 +244,23 @@ screen_scroll_clear:
     bpl screen_scroll_clear
     rts
     
+
+;--------------------------------------------------------------------
+; Function 05: Set cursor
+;--------------------------------------------------------------------
+
+func_05_set_cursor:
+    lda ipc_buffer+1
+    bmi set_cursor_off
+    lda #$60
+    .byt $2c
+set_cursor_off:
+    lda #$20
+    ldx #$0A
+    stx CRTC_RegNo 
+    sta CRTC_RegVal
+    sta CursorType
+    rts
 
 .ifdef NOCHAR
 

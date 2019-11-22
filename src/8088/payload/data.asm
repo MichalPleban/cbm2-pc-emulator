@@ -17,22 +17,14 @@ Data_CursorVirtual:		equ 0000h
 Data_CursorPhysical:	equ 0002h
 
 ; -----------------------------------------------------------------
-; Number of 256-byte sectors in disk sector.
+; Cursor visibility (00 = visible, 80 = invisible).
 ; -----------------------------------------------------------------
 
-Data_SectorSize:	equ 0004h
+Data_CursorVisible:	    equ 0004h
 
-; -----------------------------------------------------------------
-; Number of sectors on track.
-; -----------------------------------------------------------------
+; Unused byte
 
-Data_TrackSize:		equ 0005h
-
-; -----------------------------------------------------------------
-; Number of disk heads.
-; -----------------------------------------------------------------
-
-Data_NumHeads:		equ 0006h
+; Unused byte
 
 ; -----------------------------------------------------------------
 ; Debug flag - valid only in in debug mode.

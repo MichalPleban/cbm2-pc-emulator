@@ -38,16 +38,12 @@ Init_Data:
 			dec ax
 			stosw
 			
-			; Disk drive parameters
-			mov al, 2
+			xor ax, ax
+			; Cursor visibilty
 			stosb
-			mov al, 9
-			stosb
-			mov al, 2
-			stosb
+			stosw
 			
 			; Debug flag
-			xor ax, ax
 			stosb
 			
 			; Memory size

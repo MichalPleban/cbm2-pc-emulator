@@ -238,10 +238,10 @@ INT_13_Logical:
 			mov ds, ax
             mov al, ch
             xor ah, ah
-            mov bl, [Data_NumHeads]
+            mov bl, 2
             mul bl
             add al, dh
-            mov bl, [Data_TrackSize]
+            mov bl, 9
             mul bl
             mov bl, cl
             dec bl
@@ -268,7 +268,7 @@ INT_13_Disk:
 			push ds
 			mov cx, Data_Segment
 			mov ds, cx
-			mov cl, [Data_SectorSize]
+			mov cl, 2
 			xor ch, ch
 			push dx
 			mul cx
@@ -339,11 +339,6 @@ INT_13_NotZero:
 			mov es, ax
 			pop ax
 			
-			; If reading sector 0, set correct drive parameters
-			test ax, ax
-			jnz INT_13_Disk_NoTest
-			call INT_13_ResetParams
-INT_13_Disk_NoTest:
 			inc ax
 			loop INT_13_Disk_Loop
 			pop ax
@@ -396,65 +391,6 @@ INT_13_Disk_NotWrite:
 			mov ch, 01h
 			jmp INT_13_Disk_Loop
 					
-; -----------------------------------------------------------------
-; Read parameters from MS-DOS boot sector
-; -----------------------------------------------------------------
-			
-INT_13_ResetParams:
-			push ds
-			push ax
-			mov ax, Data_Segment
-			mov ds, ax
-			
-			; Test for boot sector - is the first byte a JMP?
-			mov al, [es:bx-256+0]
-			cmp al, 0E9h
-			je INT_13_ResetParams_0
-			cmp al, 0EBh
-			jne INT_13_ResetParams_Default
-
-			; Do the disk parameters make sense?
-INT_13_ResetParams_0:
-			mov al, [es:bx-256+0Ch]
-			cmp al, 1
-			je INT_13_ResetParams_1
-			cmp al, 2
-			jne INT_13_ResetParams_Default
-INT_13_ResetParams_1:
-			mov al, [es:bx-256+18h]
-			cmp al, 8
-			je INT_13_ResetParams_2
-			cmp al, 9
-			je INT_13_ResetParams_2
-			cmp al, 15
-			jne INT_13_ResetParams_Default
-INT_13_ResetParams_2:
-			mov al, [es:bx-256+1Ah]
-			cmp al, 1
-			je INT_13_ResetParams_OK
-			cmp al, 2
-			jne INT_13_ResetParams_Default
-			
-			; Parameters seem OK, copy them to the data section
-INT_13_ResetParams_OK:
-			mov al, [es:bx-256+0Ch]
-			mov [Data_SectorSize], al
-			mov al, [es:bx-256+18h]
-			mov [Data_TrackSize], al
-			mov al, [es:bx-256+1Ah]
-			mov [Data_NumHeads], al
-			pop ax
-			pop ds
-			ret
-			
-			; Reset disk parameters to default values
-INT_13_ResetParams_Default:
-			mov [Data_SectorSize], byte 2
-			mov [Data_TrackSize], byte 9
-			mov [Data_NumHeads], byte 2
-			pop ax
-			pop ds
-			ret
 
 ; -----------------------------------------------------------------
 ; INT 13 function 08 - get drive parameters.
@@ -742,7 +678,6 @@ INT_19_Floppy:
 			mov ax, 0001h
 			call IPC_SectorAccess
 			mov bx, 7D00h
-			call INT_13_ResetParams
 			mov ax, 0101h
 			call IPC_SectorAccess
 			cmp [es:7DFEh], word 0AA55h

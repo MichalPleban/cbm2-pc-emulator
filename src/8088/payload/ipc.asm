@@ -344,6 +344,7 @@ IPC_Video_Clear:
 			IPC_Call 14h
 			IPC_Leave
 			ret
+
 ; --------------------------------------------------------------------------------------
 ; Scroll screen one line up
 ; --------------------------------------------------------------------------------------
@@ -351,6 +352,20 @@ IPC_Video_Clear:
 IPC_Video_ScrollUp:
 			IPC_Enter
 			mov [IPCData], byte 4
+			IPC_Call 14h
+			IPC_Leave
+			ret
+
+; --------------------------------------------------------------------------------------
+; Enable or disable cursor
+; Input:
+;           AL = 80 to disable cursor, 00 to enable
+; --------------------------------------------------------------------------------------
+
+IPC_Video_SetCursor:
+			IPC_Enter
+			mov [IPCData], byte 5
+			mov [IPCData+1], al
 			IPC_Call 14h
 			IPC_Leave
 			ret
