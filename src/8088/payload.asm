@@ -46,6 +46,7 @@ RomLoop:
 %include 'src/8088/payload/ipc.asm'
 %include 'src/8088/payload/screen.asm'
 %include 'src/8088/payload/int.asm'
+%include 'src/8088/payload/config.asm'
 
             ; End of file 80
 File80End:
@@ -53,7 +54,7 @@ File80End:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
             ; File type, load bank & address
-            db 00h
+            db 00h          ;  00 (6509 IPC library)
             db 0Fh
             dw 0800h
             ; Link to next file
@@ -64,7 +65,7 @@ File00End:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
             ; File type, load bank & address
-            db 10h
+            db 10h          ; 01 (standard screen driver_
             db 0Fh
             dw 0400h
             ; Link to next file
@@ -75,7 +76,7 @@ File10End:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
             ; File type, load bank & address
-            db 11h
+            db 11h           ; 11 (screen driver with PC font)
             db 0Fh
             dw 0400h
             ; Link to next file

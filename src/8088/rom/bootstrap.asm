@@ -19,6 +19,16 @@ Bootstrap:
             mov si, Bootstrap_String_Init
             call Bootstrap_String
             
+            ; Check & load RAM configuration
+            call Config_Read
+            call Config_CRC
+            jz Bootstrap1
+            mov si, Bootstrap_String_Corrupted
+            call Bootstrap_String
+            call Config_Zero
+            call Config_Write
+Bootstrap1:
+
             ; Copy the payload to RAM
             call Bootstrap_Load
             
@@ -208,3 +218,6 @@ Bootstrap_String_LoadRAM:
             
 Bootstrap_String_Boot:
             db "Loading the 6509 code...", 13, 0
+
+Bootstrap_String_Corrupted:
+            db "Initializing configuration data...", 13, 0
