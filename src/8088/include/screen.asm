@@ -178,9 +178,9 @@ Screen_INT_02:
 			jnz Screen_INT_02_Ret
 
 			; Check if row and column are within allowed bounds
-			cmp dh, 24
+			cmp dh, 25
 			jl Screen_INT_02_RowOK
-			mov dh, 23
+			mov dh, 24
 Screen_INT_02_RowOK:
 			cmp dl, 80
 			jl Screen_INT_02_ColumnOK
@@ -201,6 +201,7 @@ Screen_INT_03:
             mov dx, Data_Segment
             mov ds, dx
             mov dx, [Data_CursorVirtual]
+            mov cx, 000Fh
             ret
             
 ; -----------------------------------------------------------------
