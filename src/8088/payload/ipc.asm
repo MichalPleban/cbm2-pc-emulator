@@ -562,39 +562,39 @@ IPC_KbdConvert_Table:
 			dw 02827h, 02822h, 0FF00h, 0FF00h ; 3B - '
 			dw 05000h, 05032h, 09100h, 0A000h ; 3C - cursor down
 			dw 00D3Dh, 00D2Bh, 0FF00h, 08300h ; 3D - =
-			dw 02B5Ch, 02B7Ch, 02B1Ch, 02600h ; 3E - <-
+			dw 02B5Ch, 02B7Ch, 02B1Ch, 02600h ; 3E - <-             \|
 			dw 01B5Dh, 01B7Dh, 01B1Dh, 01B00h ; 3F - ]
 			dw 01C0Dh, 01C0Dh, 01C0Ah, 0A600h ; 40 - Return
-			dw 02960h, 0297Eh, 0FF00h, 0FF00h ; 41 - PI
+			dw 02960h, 0297Eh, 0FF00h, 0FF00h ; 41 - PI             `~
 			dw 04800h, 04838h, 08D00h, 09800h ; 42 - cursor up
 			dw 04B00h, 04B34h, 07300h, 09B00h ; 43 - cursor left
 			dw 04D00h, 04D36h, 07400h, 09D00h ; 44 - cursor right
-			dw 00E08h, 00E08h, 00E7Fh, 00E00h ; 45 - Ins Del
+			dw 00E08h, 00E08h, 00E7Fh, 00E00h ; 45 - Ins Del        BackSpace
 			dw 0FF00h, 0FF00h, 0FF00h, 0FF00h ; 46 - C=
 			dw 0FF00h, 0FF00h, 0FF00h, 0FF00h ; 47
-			dw 08500h, 08700h, 08900h, 08B00h ; 48 - Clr Home
-			dw 0353Fh, 0353Fh, 0FF00h, 0FF00h ; 49 - numerical ?
-			dw 04700h, 04737h, 07700h, 09700h ; 4A - numerical 7
-			dw 04B00h, 04B34h, 07300h, 09B00h ; 4B - numerical 4
-			dw 04F00h, 04F31h, 07500h, 09F00h ; 4C - numerical 1
-			dw 00B30h, 00B29h, 0FF00h, 08100h ; 4D - numerical 0
-			dw 08600h, 08800h, 08A00h, 08C00h ; 4E - Rvs Off
+			dw 08500h, 08700h, 08900h, 08B00h ; 48 - Clr Home       F11
+			dw 0353Fh, 0353Fh, 0FF00h, 0FF00h ; 49 - numerical ?    /
+			dw 04700h, 04737h, 07700h, 09700h ; 4A - numerical 7    Home
+			dw 04B00h, 04B34h, 07300h, 09B00h ; 4B - numerical 4    cursor left
+			dw 04F00h, 04F31h, 07500h, 09F00h ; 4C - numerical 1    End
+			dw 00B30h, 00B29h, 0FF00h, 08100h ; 4D - numerical 0    0
+			dw 08600h, 08800h, 08A00h, 08C00h ; 4E - Rvs Off        F12
 			dw 0FF00h, 0FF00h, 0FF00h, 0FF00h ; 4F - numerical CE
-			dw 04800h, 04838h, 08D00h, 09800h ; 50 - numerical 8
-			dw 04C35h, 04C35h, 08F00h, 0FF00h ; 51 - numerical 5
-			dw 05000h, 05032h, 09100h, 0A000h ; 52 - numerical 2
-			dw 05300h, 0532Eh, 09300h, 0A300h ; 53 - numerical .
-			dw 07200h, 07200h, 07200h, 07200h ; 54 - Norm Graph
-			dw 0372Ah, 0FF00h, 09600h, 03700h ; 55 - numerical *
-			dw 04900h, 04939h, 08400h, 09900h ; 56 - numerical 9
-			dw 04D00h, 04D36h, 07400h, 09D00h ; 57 - numerical 6
-			dw 05100h, 05133h, 07600h, 0A100h ; 58 - numerical 3
-			dw 05200h, 05230h, 09200h, 0A200h ; 59 - numerical 00
-			dw 02E03h, 02E03h, 02E03h, 02E03h ; 5A - Run Stop
-			dw 0352Fh, 0352Fh, 09500h, 0A400h ; 5B - numerical /
-			dw 04A2Dh, 04A2Dh, 08E00h, 04A00h ; 5C - numerical -
-			dw 04E2Bh, 04E2Bh, 0FF00h, 04E00h ; 5D - numerical +
-			dw 01C0Dh, 01C0Dh, 01C0Ah, 0A600h ; 5E - numerical Enter
+			dw 04800h, 04838h, 08D00h, 09800h ; 50 - numerical 8    cursor up
+			dw 04C35h, 04C35h, 08F00h, 0FF00h ; 51 - numerical 5    5
+			dw 05000h, 05032h, 09100h, 0A000h ; 52 - numerical 2    cursor down
+			dw 05300h, 0532Eh, 09300h, 0A300h ; 53 - numerical .    Del
+			dw 07200h, 07200h, 07200h, 07200h ; 54 - Norm Graph     Print Screen
+			dw 0372Ah, 0FF00h, 09600h, 03700h ; 55 - numerical *    *
+			dw 04900h, 04939h, 08400h, 09900h ; 56 - numerical 9    PageUp
+			dw 04D00h, 04D36h, 07400h, 09D00h ; 57 - numerical 6    cursor right
+			dw 05100h, 05133h, 07600h, 0A100h ; 58 - numerical 3    Page Down
+			dw 05200h, 05230h, 09200h, 0A200h ; 59 - numerical 00   Insert
+			dw 02E03h, 02E03h, 02E03h, 02E03h ; 5A - Run Stop       Ctrl+C
+			dw 0352Fh, 0352Fh, 09500h, 0A400h ; 5B - numerical /    /
+			dw 04A2Dh, 04A2Dh, 08E00h, 04A00h ; 5C - numerical -    -
+			dw 04E2Bh, 04E2Bh, 0FF00h, 04E00h ; 5D - numerical +    +
+			dw 01C0Dh, 01C0Dh, 01C0Ah, 0A600h ; 5E - numerical Enter Enter
 
 ; -----------------------------------------------------------------
 ; Data describing 8250 disk layout.

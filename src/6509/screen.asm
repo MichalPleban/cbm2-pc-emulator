@@ -84,6 +84,9 @@ func_00_screen_init:
     ldx #$0C
     stx CRTC_RegNo
     sta CRTC_RegVal
+    lda $DE06
+    and #$EF
+    sta $DE06
     rts
     
 ;--------------------------------------------------------------------
@@ -159,6 +162,8 @@ screen_proc_dst:
     iny
     bne screen_convert_do
 screen_convert_skip:
+    ldy #0
+    sty src_addr
     inc src_addr+1
     inc screen_proc_dst+2
     dec page_count
