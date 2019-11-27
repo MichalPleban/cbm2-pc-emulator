@@ -6,10 +6,12 @@
 
 Config_Zero:
             call Config_Segment
-            mov cx, 55
+            mov al, 010h
+            stosb
+            mov cx, 54
             xor al, al
             rep stosb
-            mov al, 0CAh
+            mov al, 0B0h
             stosb
             ret
 
