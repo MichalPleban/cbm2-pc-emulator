@@ -189,6 +189,16 @@ Bootstrap_Load_1:
             or al, 020h
             out 0E4h, al
 %endif
+            call EEPROM_Setup
+            cmp dl, 0EAh
+            jne Bootstrap_Load_2
+            mov si, Bootstrap_String_LoadEEPROM
+            call Bootstrap_String
+            call EEPROM_Read
+            mov al, 13
+            call Bootstrap_IPC12
+            ret
+Bootstrap_Load_2:
             mov ax, cs
             mov ds, ax
             mov es, ax
@@ -200,6 +210,75 @@ Bootstrap_Load_1:
             mov cx, PayloadEnd
             rep movsb
             ret
+            
+; -----------------------------------------------------------------
+; Initialize EEPROM read
+; -----------------------------------------------------------------
+
+EEPROM_Setup:
+            mov ax, 0F000h
+            mov es, ax
+            xor ax, ax
+            mov di, ax
+            call I2C_Start
+            mov al, 0A0h
+            call I2C_Send
+            xor al, al
+            call I2C_Send
+            xor al, al
+            call I2C_Send
+            call I2C_Start
+            mov al, 0A1h
+            call I2C_Send
+            clc
+            call I2C_Receive
+            mov dl, al
+            mov cx, 7
+EEPROM_Setup1:
+            clc
+            call I2C_Receive
+            loop EEPROM_Setup1
+            clc
+            call I2C_Receive
+            mov bl, al
+            clc
+            call I2C_Receive
+            mov bh, al
+            call I2C_Stop
+            ret
+
+; -----------------------------------------------------------------
+; Read data from EEPROM
+; -----------------------------------------------------------------
+
+EEPROM_Read:
+            call I2C_Start
+            mov al, 0A0h
+            call I2C_Send
+            xor al, al
+            call I2C_Send
+            xor al, al
+            call I2C_Send
+            call I2C_Start
+            mov al, 0A1h
+            call I2C_Send
+EEPROM_Read0:
+            cli
+            cmp di, bx
+            jbe EEPROM_Read1
+            call I2C_Stop
+            sti
+            ret
+EEPROM_Read1:
+            mov cx, 128
+EEPROM_Read2:
+            clc
+            call I2C_Receive
+            stosb
+            loop EEPROM_Read2
+            mov al, '.'
+            call Bootstrap_IPC12
+            jmp EEPROM_Read0
 
 ; -----------------------------------------------------------------
 ; Strings to be output
@@ -210,6 +289,9 @@ Bootstrap_String_Init:
 
 Bootstrap_String_LoadROM:
             db "Loading the payload from ROM...", 13, 0
+            
+Bootstrap_String_LoadEEPROM:
+            db "Loading the payload from EEPROM...", 13, 0
             
 %ifdef DEVEL
 Bootstrap_String_LoadRAM:

@@ -1,6 +1,7 @@
 
 PRG = dist/prg/6509.prg dist/prg/screen_nochar.prg dist/prg/screen_char.prg
 ROM = dist/rom/payload.bin dist/rom/card.bin dist/rom/card_devel.bin
+UPGRADE = dist/upgrade/upgrade.com
 
 TRACK = util/360_d80.trk util/360_d82.trk util/720_d82.trk
 ONDISK = dist/prg/boot.prg $(PRG)
@@ -9,7 +10,7 @@ PAYLOAD = src/8088/payload/data.asm src/8088/payload/init.asm src/8088/payload/i
 START = src/8088/rom/ipc.asm src/8088/rom/bootstrap.asm
 DEBUG = src/8088/include/debug.asm
 
-all: $(PRG) $(ROM) $(TRACK) $(DISK) $(EMPTY) dist/prg/bootstrap.prg
+all: $(PRG) $(ROM) $(TRACK) $(DISK) $(EMPTY) $(UPGRADE) dist/prg/bootstrap.prg
 
 dist/prg/6509.prg: src/6509/ipc.asm
 	ca65 src/6509/ipc.asm
@@ -41,3 +42,5 @@ dist/prg/bootstrap.prg: src/6509/bootstrap.asm
 	ld65 src/6509/bootstrap.o -C src/6509/6509.cfg -o dist/prg/bootstrap.prg
 	rm src/6509/bootstrap.o
 
+dist/upgrade/upgrade.com: src/8088/upgrade.asm dist/rom/payload.bin
+	nasm src/8088/upgrade.asm -o dist/upgrade/upgrade.com
