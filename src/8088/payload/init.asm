@@ -10,15 +10,24 @@ Init_INT:
 			; Write interrupt vectors
 			mov ax, cs
 			mov ds, ax
-			mov si, Init_INT_Table
 			xor bx, bx
 			mov es, bx
+			
+			mov si, Init_INT_Table
 			mov di, 0040h
 			mov cx, (Init_INT_Table_End-Init_INT_Table)/2
 Init_INT_0:
 			movsw
 			stosw
 			loop Init_INT_0
+
+			mov si, Init_INT_Table2
+			mov di, 0300h
+			mov cx, (Init_INT_Table2_End-Init_INT_Table2)/2
+Init_INT_1:
+			movsw
+			stosw
+			loop Init_INT_1
 			
 			ret
 
@@ -90,6 +99,10 @@ Init_INT_Table:
 			dw 0
 Init_INT_Table_End:
 
+Init_INT_Table2:
+			dw INT_C0
+Init_INT_Table2_End:
+
 ; -----------------------------------------------------------------
 ; Output zero-terminated string.
 ; Input:
@@ -106,44 +119,23 @@ Output_String:
 Output_String_End:
 			ret
 
-%ifndef ROM
 
 ; -----------------------------------------------------------------
-; Installs the software in the upper part of the memory.
+; Output a horizontal line.
 ; -----------------------------------------------------------------
 
-Install_High:
+Output_Line:
+            mov al, 0C4h
+            mov ah, 0Eh
+            mov cx, 80
+Output_Line1:            
+            int 10h
+            loop Output_Line1
+            ret
 
-			call Init_Data
-
-			; Calculate the highest segment where the software will fit.
-			mov dx, Install_End - Install_Start
-			mov bx, dx
-			add bx, Install_Leave
-			mov ax, 0E000h
-			mov es, ax
-			mov [FinishVector+2], ax
-			mov di, Install_Start
-			mov si, di
-			mov cx, dx
-			rep movsb
-									
-			; Install software
-			call far [FinishVector]
-			
-			; Output banner
-			xor ah, ah
-			int 10h
-			call Version_Output
-			
-			ret
-
-FinishVector:
-			dw Init_Far
-			dw 0
-
-%endif
-
+; -----------------------------------------------------------------
+; Output the version banner.
+; -----------------------------------------------------------------
 
 Version_Banner:
 			db "PC Compatibility layer build ", SOFTWARE_VERSION, SOFTWARE_BUILDS, " "

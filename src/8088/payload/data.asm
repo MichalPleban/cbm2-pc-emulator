@@ -1,6 +1,7 @@
 
+MemTop              equ 0A000h
 
-Data_Segment		equ 9FD0h
+Data_Segment		equ MemTop - 30h
 
 ; -----------------------------------------------------------------
 ; Virtual cursor position.

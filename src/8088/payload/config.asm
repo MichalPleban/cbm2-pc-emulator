@@ -110,10 +110,107 @@ Config_Write1:
 ; -----------------------------------------------------------------
 
 Config_Segment:
-            mov ax, 9FF0h
-            mov ds, ax
-            mov es, ax
-            mov ax, 0090h
-            mov si, ax
-            mov di, ax
+            mov bx, MemTop - 10h
+            mov ds, bx
+            mov es, bx
+            mov bx, 0090h
+            mov si, bx
+            mov di, bx
             ret
+
+; -----------------------------------------------------------------
+; Reset the CMOS configuration
+; -----------------------------------------------------------------
+
+Config_Reset:
+            call Config_Zero
+            call INT_19_Segments
+            mov si, Config_Banner1
+            call Output_String
+            hlt
+
+Config_Banner1:
+			db "CMOS configuration has been reset. Please reset your machine.", 10, 13, 0
+
+; -----------------------------------------------------------------
+; Modify the CMOS configuration
+; -----------------------------------------------------------------
+
+Config_Modify:
+            call Config_Read
+            mov dl, [0090h]
+            call INT_19_Segments
+            call Output_Line
+            mov si, Config_Banner2
+            call Output_String
+            mov si, Config_Banner3
+            mov bl, 0
+            call Config_Driver
+            mov si, Config_Banner4
+            mov bl, 1
+            call Config_Driver
+            mov si, Config_Banner5
+            call Output_String
+Config_Modify1:
+            call INT_16_00
+            cmp al, 1Bh
+            jz INT_19
+            jb Config_Modify1
+            cmp al, 31h
+            jb Config_Modify1
+            cmp al, 32h
+            ja Config_Modify1
+            call Config_Segment
+            sub al, 21h
+            mov [0090h], al
+            add al, 10h
+            mov [0091h], al
+            call Config_CRC
+            mov [00C7h], ah
+            call Config_Write
+            call INT_19_Segments
+            mov si, Config_Banner6
+            call Output_String
+            hlt
+            
+            
+Config_Driver:
+			mov ah, 0Eh
+            add bl, 10h
+            cmp bl, dl
+            jnz Config_Driver1
+            mov al, '['
+			int 10h
+            mov al, bl
+            add al, 21h
+			int 10h
+            mov al, ']'
+			int 10h
+            jmp Config_Driver2
+Config_Driver1:
+            mov al, ' '
+			int 10h
+            mov al, bl
+            add al, 21h
+			int 10h
+            mov al, ' '
+			int 10h
+Config_Driver2:
+            mov al, ' '
+			int 10h
+            mov al, '-'
+			int 10h
+            mov al, ' '
+			int 10h
+            jmp Output_String
+            
+Config_Banner2:
+			db "Select video driver:", 10, 13, 0
+Config_Banner3:
+			db "Inbuilt video (standard char ROM)", 10, 13, 0
+Config_Banner4:
+			db "Inbuilt video (PC char ROM)", 10, 13, 0
+Config_Banner5:
+			db "Esc - Return to main menu", 10, 13, 0
+Config_Banner6:
+			db "New configuration has been saved. Please reset your machine.", 10, 13, 0

@@ -88,7 +88,7 @@ INT_11_CPU_NoV20:
 
 INT_12:
 			INT_Debug 12h
-			mov ax, 639     ; 639 kB (upper 1 kB reserved for ROM data structures)
+			mov ax, (MemTop-40h)/64
 			iret
 
 
@@ -644,6 +644,7 @@ INT_19:
 INT_19_Again:
             push cs
             pop ds
+            call Output_Line
 			mov si, INT_19_Banner1
 			call Output_String
 INT_19_Loop:
@@ -651,10 +652,16 @@ INT_19_Loop:
 			cmp ah, 3Ch ; F2
 			jz INT_19_Floppy
 			cmp ah, 3Bh ; F1
-			jnz INT_19_Loop
+			jz INT_19_HD
+			cmp ah, 44h ; F10
+			jz Config_Modify
+			cmp ax, 02E03h ; Run/Stop
+			jz Config_Reset
+			jmp INT_19_Loop
             
 			; Try loading boot sector from hard disk
 INT_19_HD:
+            call Output_Line
 			mov dx, 0080h
 			mov ax, 0201h
 			xor cx, cx
@@ -669,6 +676,7 @@ INT_19_HD:
 			jmp INT_19_Found
 						
 INT_19_Floppy:
+            call Output_Line
 			; Load two first 256-byte sectors from the floppy disk.
 			xor bx, bx
 			mov es, bx
@@ -717,9 +725,11 @@ INT_19_Error:
 			jmp INT_19_Again
 
 INT_19_Banner1:
-			db "Select your boot device:", 10, 13
-			db " F1 - SD card", 10, 13
-			db " F2 - Floppy disk", 10, 13
+			db "Select an option:", 10, 13
+			db " F1       - Boot from SD card", 10, 13
+			db " F2       - Boot from floppy disk", 10, 13
+			db " F10      - Modify configuration", 10, 13
+			db " Run/Stop - Reset configuration", 10, 13
 			db 0
 INT_19_Banner4:
 			db "SD card not found, please try again.", 10, 13, 0		

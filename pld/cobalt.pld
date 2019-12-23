@@ -1,0 +1,411 @@
+Name     8088_ram;
+PartNo   ;
+Date     2019.10.14;
+Revision ;
+Designer Michau;
+Company  ;
+Assembly ;
+Location ;
+Device	  f1508ispplcc84;
+
+$DEFINE $VERSION 'H'01
+
+property   atmel {cascade_logic=off};
+property   atmel {xor_synthesis=on};
+property   atmel {output_fast=off};
+property   atmel {preassign=keep};
+/*
+property   atmel {output_fast=off};
+property   atmel {pin_keep=off};
+property   atmel {security=off};
+*/
+
+pin 11 = !EPROM;
+pin 10 = !BUSY1;
+pin 9 = SP_EN;
+/*
+pin 8 = !AMWC;
+*/
+pin 8 = !MWTC;
+pin 6 = !MRDC;
+pin 5 = !INT0;
+pin 4 = PC5;
+pin 2 = OSC;
+pin 1 = !RESET;
+pin 84 = !WR;
+pin 83 = !RD;
+pin 81 = ALE;
+pin 80 = IR0;
+pin 79 = PA1;
+pin 77 = !CS_8259;
+pin 76 = !CS_8255;
+pin 75 = DEN;
+
+pin 31 = AD0;
+pin 30 = AD1;
+pin 29 = AD2;
+pin 28 = AD3;
+pin 27 = AD4;
+pin 25 = AD5;
+pin 24 = AD6;
+pin 22 = AD7;
+pin 21 = SCL;
+pin 20 = SDA;
+pin 18 = SCK;
+pin 17 = MOSI;
+pin 16 = MISO;
+pin 15 = !G;
+pin 12 = RES;
+
+pin 54 = R_W;
+pin 55 = !BUSY2;
+pin 56 = !OE;
+pin 57 = !WE;
+pin 58 = READY;
+pin 60 = !REG7;
+pin 61 = IA11;
+pin 63 = IA10;
+pin 64 = IA8;
+pin 65 = IA9;
+pin 67 = IA16;
+pin 68 = IA17;
+pin 69 = IA18;
+pin 70 = IA19;
+pin 73 = CLK;
+pin 74 = !NMI;
+
+pin 33 = A19;
+pin 34 = A18;
+pin 35 = A17;
+pin 36 = A16;
+pin 37 = A15;
+pin 39 = A14;
+pin 40 = A13;
+pin 41 = A12;
+pin 44 = !IORDY;
+pin 45 = !CAS;
+pin 46 = !RAM1;
+pin 48 = !RAM2;
+pin 49 = !EPROM1;
+pin 50 = !EPROM2;
+pin 51 = !EPROM3;
+pin 52 = !EPROM4;
+
+
+/*************************************************************
+ * 8284 RESET signal
+ *************************************************************/
+
+RES.D = RESET;
+RES.CK = CLK;
+
+
+/*************************************************************
+ * 8284 clock generator (divide by 3)
+ *************************************************************/
+
+/*
+pinnode = CLK0;
+CLK0.D = !CLK0 & !CLK;
+CLK0.CK = OSC;
+
+CLK.D = CLK0;
+CLK.CK = OSC;
+*/
+
+/* Alternate clock generator (divide by 2) */
+CLK.D = !CLK;
+CLK.CK = OSC;
+
+
+/*************************************************************
+ * NMI signal (currently always 1)
+ *************************************************************/
+
+READY = 'B'1;
+
+/*************************************************************
+ * IPC interface signals
+ *************************************************************/
+
+IR0.D = INT0;
+IR0.CK = OSC;
+
+pinnode = DRAM_ENABLE;
+
+DRAM_ENABLE.CK = PC5;
+DRAM_ENABLE.D = 'B'0;
+DRAM_ENABLE.AP = INT0;
+DRAM_ENABLE.AR = BUSY1;
+PA1 = !DRAM_ENABLE;
+
+BUSY2.CK = CLK;
+BUSY2.D = DRAM_ENABLE;
+BUSY2.AP = INT0;
+BUSY2.AR = RESET;
+
+
+/*************************************************************
+ * Address latches
+ *************************************************************/
+
+pinnode = [IA0..7];
+
+[IA0..7].D = [AD0..7];
+[IA0..7].CK = !ALE;
+
+
+/*************************************************************
+ * Memory decoding singals
+ *************************************************************/
+
+pinnode = [CONFIG0..7];
+pinnode = IO;
+pinnode = MEMORY;
+pinnode = DRAM;
+
+IO = WR # RD;
+
+MEMORY = MWTC # MRDC;
+
+EPROM = MEMORY & MRDC & ((IA19 & IA18 & IA17 & IA16 & CONFIG5) # !DRAM_ENABLE);
+
+DRAM = MEMORY & !EPROM;
+
+CS_8259 = IO & !IA9 & !IA8 & !IA7 & !IA6 & !IA5;
+CS_8255 = IO & !IA9 & !IA8 & !IA7 & !IA6 &  IA5;
+
+G = !EPROM & !IO & DEN & SP_EN;
+
+OE = (!BUSY2 & R_W) # (BUSY2 & MRDC);
+WE = (!BUSY2 & !R_W) # (BUSY2 & MWTC);
+
+
+/*************************************************************
+ * Bank number - add + 1
+ *************************************************************/
+
+pinnode = [C0..2];
+A16 = !IA16;
+C0 = IA16;
+A17 = IA17 $ C0;
+C1 = IA17 & C0;
+A18 = IA18 $ C1;
+C2 = IA18 & C1;
+A19 = IA19 $ C2;
+
+[A16..19].OE = DRAM_ENABLE;
+
+
+/*************************************************************************************************
+ * DRAM chip select signals
+ *************************************************************************************************/
+
+pinnode = BANK0;
+
+BANK0 = !BUSY2 # ((MWTC & CONFIG6) $ !CONFIG5);
+
+RAM1 = ( (!BUSY2 & CAS) # (DRAM & DRAM_ENABLE) ) &
+	( ( !A19.IO & !A18.IO & !A17.IO & !A16.IO & BANK0) #	/* 0000 - bank 0  */
+	  ( !A19.IO & !A18.IO & !A17.IO &  A16.IO) #		/* 0001 - bank 1  */
+	  ( !A19.IO & !A18.IO &  A17.IO & !A16.IO) #		/* 0010 - bank 2  */
+	  ( !A19.IO & !A18.IO &  A17.IO &  A16.IO) #		/* 0011 - bank 3  */
+	  ( !A19.IO &  A18.IO & !A17.IO & !A16.IO) #		/* 0100 - bank 4  */
+	  ( !A19.IO &  A18.IO & !A17.IO &  A16.IO) #		/* 0101 - bank 5  */
+	  ( !A19.IO &  A18.IO &  A17.IO & !A16.IO) #		/* 0110 - bank 6  */
+	  ( !A19.IO &  A18.IO &  A17.IO &  A16.IO) );		/* 0111 - bank 7  */
+
+RAM2 = ( (!BUSY2 & CAS) # (DRAM & DRAM_ENABLE) ) &
+	( (  A19.IO & !A18.IO & !A17.IO & !A16.IO) #		/* 1000 - bank 8  */
+	  (  A19.IO & !A18.IO & !A17.IO &  A16.IO) #		/* 1001 - bank 9  */
+	  (  A19.IO & !A18.IO &  A17.IO & !A16.IO) #		/* 1010 - bank 10 */
+	  (  A19.IO & !A18.IO &  A17.IO &  A16.IO & (!BUSY2 # CONFIG0)) #		/* 1011 - bank 11 */
+	  (  A19.IO &  A18.IO & !A17.IO & !A16.IO & (!BUSY2 # CONFIG1)) #		/* 1100 - bank 12 */
+	  (  A19.IO &  A18.IO & !A17.IO &  A16.IO & (!BUSY2 # CONFIG2)) #		/* 1101 - bank 13 */
+	  (  A19.IO &  A18.IO &  A17.IO & !A16.IO & (!BUSY2 # CONFIG3)) #		/* 1110 - bank 14 */
+	  ( A19.IO &  A18.IO &  A17.IO &  A16.IO & BUSY2 & CONFIG4));	/* 1111 - bank 15 - only 8088 */
+
+/*************************************************************************************************
+ * EPROM chip select signals
+ *************************************************************************************************/
+
+EPROM1 = ( (A16.IO & A17.IO & A18.IO & A19.IO) # BUSY2) & 
+	!A15 &  A14 &  A13; 						/* $6000 */
+
+EPROM2 = ( (A16.IO & A17.IO & A18.IO & A19.IO) # BUSY2) & 
+	!A15 &  A14 & !A13; 						/* $4000 */
+
+EPROM3 = ( (A16.IO & A17.IO & A18.IO & A19.IO) # BUSY2) & 
+	!A15 & !A14 &  A13; 						/* $2000 */
+
+EPROM4 = ( (A16.IO & A17.IO & A18.IO & A19.IO) # BUSY2) & 
+	 A15 &  A14 & !A13 & !A12; 					/* $C000 */
+
+
+/*************************************************************
+ * Test signals
+ *************************************************************/
+
+/*
+MOSI = G;
+MOSI = DRAM;
+SCK = AMWC2;
+SDA = MRDC2;
+*/
+
+
+/*************************************************************
+ * IO port decoding
+ *************************************************************/
+
+pinnode = IO_SEL;
+pinnode = REG_SPI1;
+pinnode = REG_SPI2;
+pinnode = REG_VERSION;
+
+IO_SEL = (WR # RD) & (!IA9 & !IA8 & IA7 & IA6 & IA5 & !IA4);  /* Ex */
+REG_SPI1 =    IO_SEL & (!IA3 & !IA2 & !IA1 & !IA0);	/* 0 */
+REG_SPI2 =    IO_SEL & (!IA3 & !IA2 & !IA1 &  IA0);	/* 1 */
+REG_IO =      IO_SEL & (!IA3 & !IA2 &  IA1 & !IA0);	/* 2 */
+REG_VIDEO =   IO_SEL & (!IA3 & !IA2 &  IA1 &  IA0);	/* 3 */
+REG_CONFIG =  IO_SEL & (!IA3 &  IA2 & !IA1 & !IA0);	/* 4 */
+REG_LATCH1 =  IO_SEL & (!IA3 &  IA2 & !IA1 &  IA0);	/* 5 */
+REG_LATCH2 =  IO_SEL & (!IA3 &  IA2 &  IA1 & !IA0);	/* 6 */
+REG_EXTERN =  IO_SEL & (!IA3 &  IA2 &  IA1 &  IA0);	/* 7 */
+REG_VERSION = IO_SEL & ( IA3 &  IA2 &  IA1 &  IA0);	/* F */
+
+
+/*************************************************************
+ * SPI shift registers and clock generator
+ *************************************************************/
+
+pinnode = SPI_CLK;
+pinnode = SPI_RUNNING;
+pinnode = [SPI_OUT0..7];
+pinnode = [SPI_IN0..7];
+pinnode = [SPI_CNT0..4];
+
+/* Clock generator */
+
+SPI_CLK.D = !SPI_CLK;
+SPI_CLK.CK = CLK & SPI_RUNNING;
+SPI_CLK.AR = (REG_SPI1 & WR) # REG_SPI2;
+SCK = SPI_CLK & SPI_RUNNING;
+
+/* Bit counter - limit output to 8 bits */
+
+[SPI_CNT0..3].AR = (REG_SPI1 & WR) # REG_SPI2;
+[SPI_CNT0..3].D = ![SPI_CNT0..3];
+SPI_CNT0.CK = SPI_CLK & SPI_RUNNING;
+SPI_CNT1.CK = !SPI_CNT0;
+SPI_CNT2.CK = !SPI_CNT1;
+SPI_CNT3.CK = !SPI_CNT2;
+
+SPI_RUNNING.D = 'B'1;
+SPI_RUNNING.CK = !((REG_SPI1 & WR) # REG_SPI2);
+SPI_RUNNING.AR = SPI_CNT3;
+
+/* Input shift register */
+
+[SPI_IN0..7].CK = SPI_CLK & SPI_RUNNING;
+[SPI_IN1..7].D = [SPI_IN0..6];
+SPI_IN0.D = MISO;
+
+/* Output shift register */
+
+[SPI_OUT0..7].AP = REG_SPI1 & WR & [AD0..7];
+[SPI_OUT0..7].AR = REG_SPI1 & WR & ![AD0..7];
+[SPI_OUT1..7].D = [SPI_OUT0..6];
+[SPI_OUT0..7].CK = !SPI_CLK # !SPI_RUNNING;
+SPI_OUT0.D = 'B'1;
+
+MOSI = SPI_OUT7;
+
+
+/*************************************************************
+ * I2C pins
+ *************************************************************/
+
+pinnode = [IOREG0..1];
+
+[IOREG0..1].D = ![AD0..1];
+[IOREG0..1].CK = !(REG_IO & WR);
+[IOREG0..1].AR = RESET;
+
+SDA = 'B'0;
+SDA.OE = IOREG0;
+SCL = 'B'0;
+SCL.OE = IOREG1;
+
+
+/*************************************************************
+ * Video access latch
+ *************************************************************/
+
+pinnode = [VIDEO0..7];
+pinnode = VIDACCESS;
+
+VIDACCESS = DRAM & DRAM_ENABLE & MWTC & IA19 & !IA18 & IA17 & IA16 & CLK;   /* segment Bxxx */
+
+[VIDEO0..7].D = 'B'0;
+[VIDEO0..7].CK = !(RD & IO_SEL & REG_VIDEO);
+[VIDEO0..7].AR = RESET;
+
+VIDEO0.AP = VIDACCESS & !IA11 & !IA10 & !IA9;
+VIDEO1.AP = VIDACCESS & !IA11 & !IA10 &  IA9;
+VIDEO2.AP = VIDACCESS & !IA11 &  IA10 & !IA9;
+VIDEO3.AP = VIDACCESS & !IA11 &  IA10 &  IA9;
+VIDEO4.AP = VIDACCESS &  IA11 & !IA10 & !IA9;
+VIDEO5.AP = VIDACCESS &  IA11 & !IA10 &  IA9;
+VIDEO6.AP = VIDACCESS &  IA11 &  IA10 & !IA9;
+VIDEO7.AP = VIDACCESS &  IA11 &  IA10 &  IA9;
+
+
+/*************************************************************
+ * Address configuration
+ *************************************************************/
+
+[CONFIG0..7].D = [AD0..7];
+[CONFIG0..7].CK = (REG_CONFIG & WR) & CLK;
+[CONFIG0..4].AR = RESET;
+CONFIG5.AP = RESET;
+[CONFIG6..7].AR = RESET;
+
+
+/*************************************************************
+ * NMI on I/O access
+ *************************************************************/
+
+pinnode = IO_EXTERNAL;
+pinnode = [IO_LATCH0..12];
+
+IO_EXTERNAL = (RD # WR) & !IO_SEL;
+
+[IO_LATCH0..11].D = [IA0..11];
+IO_LATCH12.D = WR;
+[IO_LATCH0..12].CK = !(IO_EXTERNAL & CLK);
+
+NMI.AR = RESET # (!RD & !WR);
+NMI.D = CONFIG7;
+NMI.CK = !(IO_EXTERNAL & CLK);
+
+
+/*************************************************************
+ * Register 7
+ *************************************************************/
+
+REG7 = REG_EXTERN & CLK;
+
+/*************************************************************
+ * IO data read back
+ *************************************************************/
+
+[AD0..7].OE = RD & IO_SEL;
+
+[AD0..7] = ((REG_SPI1 # REG_SPI2) & [SPI_IN0..7]) #
+	    (REG_IO & [SDA.IO,SCL.IO,'B'X,'B'X,'B'X,'B'X,'B'X,'B'X]) #
+	    (REG_VIDEO & [VIDEO0..7]) #
+	    (REG_CONFIG & [CONFIG0..7]) #
+	    (REG_LATCH1 & [IO_LATCH0..7]) #
+	    (REG_LATCH2 & [IO_LATCH8..12],'B'X,'B'X,'B'X) #
+	    (REG_VERSION & $VERSION);

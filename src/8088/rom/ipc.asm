@@ -151,6 +151,7 @@ rqster:
 		push ax
 		in al, 0E4h
 		push ax             ; Save old memory configuration
+		and al, 01Fh
 		or al, 020h
 		out 0E4h, al        ; Enable ROM at F000
 		push bx

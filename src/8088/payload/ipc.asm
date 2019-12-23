@@ -23,6 +23,10 @@ IPCData		equ 000Ah				; Offset of the data trasfer area (16 bytes)
 			pushf
 			cli
 			push ax
+			in al, 0E4h
+			push ax
+			and al, 07Fh
+			out 0E4h, al
 			in al, 01h
 			push ax
 			mov al, 0FEh
@@ -34,6 +38,8 @@ IPCData		equ 000Ah				; Offset of the data trasfer area (16 bytes)
 			cli
 			pop ax
 			out 01h, al
+			pop ax
+			out 0E4h, al
 			pop ax
 			popf
 %endmacro
@@ -98,8 +104,21 @@ IPC_Init:
 
 IPC_IRQ7:
 			push ax
+			push ds
+			xor ax, ax
+			mov ds, ax
+			mov [0008h], word Virtual_Handle
+			mov ax, cs
+			mov [000Ah], ax
+			pop ds
+			in al, 0E4h
+			mov ah, al
+			and al, 7Fh
+			out 0E4h, al
 			mov al, 20h
 			out 00h, al
+			mov al, ah
+			out 0E4h, al
 
 			int 08h
 
@@ -136,7 +155,7 @@ INT_08_1:
 ; --------------------------------------------------------------------------------------
 
 IPC_Install:
-            mov bx, 9FC0h           ; Top of the memory
+            mov bx, MemTop-40h           ; Top of the memory
 			push cs
 			pop ds
 			mov es, bx
@@ -406,6 +425,17 @@ IPC_SerialOut:
 			IPC_Enter
 			mov [IPCData+2], al
 			IPC_Call 1Ah
+			IPC_Leave
+			ret
+
+; --------------------------------------------------------------------------------------
+; Reset the computer.
+; --------------------------------------------------------------------------------------
+
+IPC_ResetComputer:
+			IPC_Enter
+			mov [IPCData+2], al
+			IPC_Call 12h
 			IPC_Leave
 			ret
 

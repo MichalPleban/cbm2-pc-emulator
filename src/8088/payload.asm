@@ -29,10 +29,12 @@ RomInit:
             call IPC_Reset
             call Init_Data
             call Init_INT
+            call Hardware_Init
             call Screen_Init
             xor ah, ah
             int 10h
             call Version_Output
+            call Hardware_Check
 RomLoop:
             int 19h
             jmp RomLoop
@@ -47,6 +49,8 @@ RomLoop:
 %include 'src/8088/payload/screen.asm'
 %include 'src/8088/payload/int.asm'
 %include 'src/8088/payload/config.asm'
+%include 'src/8088/payload/hardware.asm'
+%include 'src/8088/payload/virtual.asm'
 
             ; End of file 80
 File80End:
@@ -56,7 +60,7 @@ File80End:
             ; File type, load bank & address
             db 00h          ;  00 (6509 IPC library)
             db 0Fh
-            dw 0800h
+            dw 0820h
             ; Link to next file
             dw File00End
 incbin 'dist/prg/6509.prg'

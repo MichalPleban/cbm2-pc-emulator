@@ -74,32 +74,10 @@ PLOT = $fff0
 ; Load address for the PRG file
 ;--------------------------------------------------------------------
 
-    .word $0800
-    .org $0800
+    .word $0820
+    .org $0820
 
-;--------------------------------------------------------------------
-; Startup routine - sets interrupt vectors and starts 8088 processor.
-;--------------------------------------------------------------------
-
-ipc_buffer = *+5
-
-    ldy #$01
-    sty CPU_ACCESS_BANK
-    dey
-    sty load_addr+1
-    sty WstFlag
-    sty WstFlag+1
-    lda #$1C
-    sta load_addr
-vector_loop:
-    lda vectors, y
-    sta (load_addr), y
-    iny
-    cpy #8
-    bne vector_loop
-    lda #$0F
-    sta CPU_ACCESS_BANK
-    jmp RUNCOPRO
+ipc_buffer = $0805
 
 ;--------------------------------------------------------------------
 ; Some variables moved here to save space.
@@ -160,7 +138,7 @@ printer_flag:
     .word ipc_19_serial_in
     .word ipc_1a_serial_out
     .word ipc_1b_serial_config
-    .word 0
+    .word ipc_1c_exit
     .word 0
     .word 0
     .word 0
@@ -659,10 +637,12 @@ init_diskno:
     stx buffer_size
     stx KeybufIndex
     jsr SETLFS
+    clc
     jsr OPEN
     lda #$03
     tax
     jsr SETLFS
+    clc
     jsr OPEN
     jsr printer_reopen
     lda #$60
@@ -1030,3 +1010,6 @@ uppercase_convert_3:
     
 ipc_14_screen_driver:
     jmp $0403
+
+ipc_1c_exit:
+    jmp ($FFFC)

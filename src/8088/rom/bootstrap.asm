@@ -8,7 +8,7 @@ Bootstrap:
             push cs
             pop ds
             in al, 0E4h
-            or al, 020h
+            or al, 060h
             out 0E4h, al
             
             ; Copy the upper ROM to RAM
@@ -35,11 +35,10 @@ Bootstrap1:
             ; Load the 6509 code
             mov si, Bootstrap_String_Boot
             call Bootstrap_String
-            mov al, 11h
             call Bootstrap_IPC22
             
             in al, 0E4h
-            and al, 0DFh
+            and al, 09Fh
             out 0E4h, al
          
     		jmp	RomInit
@@ -51,7 +50,7 @@ Bootstrap1:
 
 Bootstrap_Init:
             ; Segment for the IPC table
-            mov bx, 9FF0h
+            mov bx, MemTop-10h
 			push cs
 			pop ds
 			mov es, bx
@@ -105,7 +104,7 @@ Bootstrap_Stub_End:
 Bootstrap_IPC12:
 			push cx
 			push ds
-			mov cx, 9FF0h
+			mov cx, MemTop-10h
 			mov ds, cx
 			mov [000Ah+2], al
 			mov cl, 12h
@@ -117,10 +116,15 @@ Bootstrap_IPC12:
 Bootstrap_IPC22:
 			push cx
 			push ds
-			mov cx, 9FF0h
+			mov cx, MemTop-10h
 			mov ds, cx
-			mov [000Ah+2], al
-			mov [000Ah+3], byte 0
+			mov ax, [0090h]
+			mov [000Ah+2], ax
+			mov ax, [0092h]
+			mov [000Ah+4], ax
+			mov ax, [0094h]
+			mov [000Ah+6], ax
+			mov [000Ah+7], byte 0
 			pushf
 			sti
 			mov cl, 0A2h
@@ -285,7 +289,7 @@ EEPROM_Read2:
 ; -----------------------------------------------------------------
 
 Bootstrap_String_Init:
-            db CHAR_CLRSCR, "8088 boostrapper v0.10 (C) 2019 Michal Pleban", 13, 0
+            db CHAR_CLRSCR, "8088 boostrapper v1.10 (C) 2019 Michal Pleban", 13, 0
 
 Bootstrap_String_LoadROM:
             db "Loading the payload from ROM...", 13, 0

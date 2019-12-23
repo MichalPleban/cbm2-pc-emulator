@@ -205,6 +205,10 @@ SD_Init:
             push dx
             push ax
             push bx
+            in al, 0E4h
+            push ax
+            and al, 07Fh
+            out 0E4h, al
             
             ; Step 1 - send dummy pulses with card deselected
             stc
@@ -358,6 +362,8 @@ SD_Init_OK:
 SD_Init_Error:
             stc
 SD_Init_End:
+            pop ax
+            out 0E4h, al
             pop bx
             pop ax
             pop dx
