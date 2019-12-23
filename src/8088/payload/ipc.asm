@@ -23,10 +23,7 @@ IPCData		equ 000Ah				; Offset of the data trasfer area (16 bytes)
 			pushf
 			cli
 			push ax
-			in al, 0E4h
-			push ax
-			and al, 07Fh
-			out 0E4h, al
+			out 0E8h, al
 			in al, 01h
 			push ax
 			mov al, 0FEh
@@ -38,8 +35,7 @@ IPCData		equ 000Ah				; Offset of the data trasfer area (16 bytes)
 			cli
 			pop ax
 			out 01h, al
-			pop ax
-			out 0E4h, al
+			out 0E9h, al
 			pop ax
 			popf
 %endmacro
@@ -111,14 +107,10 @@ IPC_IRQ7:
 			mov ax, cs
 			mov [000Ah], ax
 			pop ds
-			in al, 0E4h
-			mov ah, al
-			and al, 7Fh
-			out 0E4h, al
+			out 0E8h, al
 			mov al, 20h
 			out 00h, al
-			mov al, ah
-			out 0E4h, al
+			out 0E9h, al
 
 			int 08h
 

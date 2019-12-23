@@ -122,7 +122,8 @@ CLK.CK = OSC;
  * NMI signal (currently always 1)
  *************************************************************/
 
-READY = 'B'1;
+READY = !IORDY;
+
 
 /*************************************************************
  * IPC interface signals
@@ -272,6 +273,8 @@ REG_CONFIG =  IO_SEL & (!IA3 &  IA2 & !IA1 & !IA0);	/* 4 */
 REG_LATCH1 =  IO_SEL & (!IA3 &  IA2 & !IA1 &  IA0);	/* 5 */
 REG_LATCH2 =  IO_SEL & (!IA3 &  IA2 &  IA1 & !IA0);	/* 6 */
 REG_EXTERN =  IO_SEL & (!IA3 &  IA2 &  IA1 &  IA0);	/* 7 */
+REG_DISABLE = IO_SEL & ( IA3 & !IA2 & !IA1 & !IA0);	/* 8 */
+REG_ENABLE  = IO_SEL & ( IA3 & !IA2 & !IA1 &  IA0);	/* 9 */
 REG_VERSION = IO_SEL & ( IA3 &  IA2 &  IA1 &  IA0);	/* F */
 
 
@@ -378,6 +381,12 @@ CONFIG5.AP = RESET;
 
 pinnode = IO_EXTERNAL;
 pinnode = [IO_LATCH0..12];
+pinnode = IO_ENABLE;
+
+IO_ENABLE.D = 'B'1;
+IO_ENABLE.CK = 'B'1;
+IO_ENABLE.AP = RESET # (REG_ENABLE & WR);
+IO_ENABLE.AR = REG_DISABLE & WR;
 
 IO_EXTERNAL = (RD # WR) & !IO_SEL;
 
@@ -386,7 +395,7 @@ IO_LATCH12.D = WR;
 [IO_LATCH0..12].CK = !(IO_EXTERNAL & CLK);
 
 NMI.AR = RESET # (!RD & !WR);
-NMI.D = CONFIG7;
+NMI.D = CONFIG7 & IO_ENABLE;
 NMI.CK = !(IO_EXTERNAL & CLK);
 
 
@@ -396,6 +405,7 @@ NMI.CK = !(IO_EXTERNAL & CLK);
 
 REG7 = REG_EXTERN & CLK;
 
+
 /*************************************************************
  * IO data read back
  *************************************************************/
@@ -403,7 +413,7 @@ REG7 = REG_EXTERN & CLK;
 [AD0..7].OE = RD & IO_SEL;
 
 [AD0..7] = ((REG_SPI1 # REG_SPI2) & [SPI_IN0..7]) #
-	    (REG_IO & [SDA.IO,SCL.IO,'B'X,'B'X,'B'X,'B'X,'B'X,'B'X]) #
+	    (REG_IO & [SDA.IO,SCL.IO,'B'X,'B'X,'B'X,'B'X,'B'X,IO_ENABLE]) #
 	    (REG_VIDEO & [VIDEO0..7]) #
 	    (REG_CONFIG & [CONFIG0..7]) #
 	    (REG_LATCH1 & [IO_LATCH0..7]) #

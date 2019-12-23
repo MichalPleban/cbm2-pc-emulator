@@ -205,10 +205,7 @@ SD_Init:
             push dx
             push ax
             push bx
-            in al, 0E4h
-            push ax
-            and al, 07Fh
-            out 0E4h, al
+            out 0E8h, al
             
             ; Step 1 - send dummy pulses with card deselected
             stc
@@ -362,8 +359,7 @@ SD_Init_OK:
 SD_Init_Error:
             stc
 SD_Init_End:
-            pop ax
-            out 0E4h, al
+            out 0E9h, al
             pop bx
             pop ax
             pop dx
@@ -387,6 +383,7 @@ SD_Read:
             push ax
             push dx
                         
+            out 0E8h, al
             mov al, 1       ; Set bit PC0 to 1
             out 23h, al
             
@@ -449,6 +446,7 @@ SD_Read_Error:
             out 23h, al
             stc
 SD_Read_End:
+            out 0E9h, al
             pop cx
             pop dx
             pop ax
@@ -471,6 +469,7 @@ SD_Write:
             push ax
             push dx
             
+            out 0E8h, al
             mov al, 1       ; Set bit PC0 to 1
             out 23h, al
 
@@ -548,6 +547,7 @@ SD_Write_Error:
             out 23h, al
             stc
 SD_Write_End:
+            out 0E9h, al
             pop cx
             pop dx
             pop ax
