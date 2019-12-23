@@ -1,6 +1,6 @@
 
 PRG = dist/prg/6509.prg dist/prg/screen_nochar.prg dist/prg/screen_char.prg
-ROM = dist/rom/payload.bin dist/rom/card.bin dist/rom/card_devel.bin
+ROM = dist/rom/payload.bin dist/rom/8088.bin dist/rom/8088_devel.bin
 UPGRADE = dist/upgrade/upgrade.com
 
 TRACK = util/360_d80.trk util/360_d82.trk util/720_d82.trk
@@ -31,11 +31,11 @@ dist/rom/payload.bin: src/8088/payload.asm $(PAYLOAD) $(PRG)
 	util/incbuild.pl src/8088/build.inc
 	nasm src/8088/payload.asm -w-lock -w-number-overflow -o dist/rom/payload.bin
 
-dist/rom/card.bin: src/8088/rom.asm dist/rom/payload.bin $(START)
-	nasm src/8088/rom.asm -w-lock -w-number-overflow -o dist/rom/card.bin
+dist/rom/8088.bin: src/8088/rom.asm dist/rom/payload.bin $(START)
+	nasm src/8088/rom.asm -w-lock -w-number-overflow -o dist/rom/8088.bin
 
-dist/rom/card_devel.bin: src/8088/rom.asm dist/rom/payload.bin $(START)
-	nasm src/8088/rom.asm -DDEVEL -w-lock -w-number-overflow -o dist/rom/card_devel.bin
+dist/rom/8088_devel.bin: src/8088/rom.asm dist/rom/payload.bin $(START)
+	nasm src/8088/rom.asm -DDEVEL -w-lock -w-number-overflow -o dist/rom/8088_devel.bin
 
 dist/upgrade/upgrade.com: src/8088/upgrade.asm dist/rom/payload.bin
 	nasm src/8088/upgrade.asm -o dist/upgrade/upgrade.com
