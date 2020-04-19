@@ -289,7 +289,7 @@ Screen_INT_07:
             call Screen_ScrollCalc
             xchg si, di
             mov cl, bh
-            dec cl
+            sub cl, dh
             dec cl
             test cl, cl
             jz Screen_INT_07_Doit
