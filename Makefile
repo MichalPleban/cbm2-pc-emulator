@@ -35,7 +35,7 @@ dist/rom/8088.bin: src/8088/rom.asm dist/rom/payload.bin $(START)
 	nasm src/8088/rom.asm -w-lock -w-number-overflow -o dist/rom/8088.bin
 
 dist/rom/8088_devel.bin: src/8088/rom.asm dist/rom/payload.bin $(START)
-	nasm src/8088/rom.asm -DDEVEL -w-lock -w-number-overflow -o dist/rom/8088_devel.bin
+	nasm src/8088/rom.asm -DDEVEL -w-lock -w-number-overflow -l test.lst -o dist/rom/8088_devel.bin
 
 dist/upgrade/upgrade.com: src/8088/upgrade.asm dist/rom/payload.bin
 	nasm src/8088/upgrade.asm -o dist/upgrade/upgrade.com

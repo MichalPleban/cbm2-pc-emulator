@@ -11,10 +11,12 @@ IPCData		equ 000Ah				; Offset of the data trasfer area (16 bytes)
 %macro		IPC_Enter	0
 			push cx
 			push ds
+			out 0E8h, al
 			call IPC_GetSeg
 %endmacro
 
 %macro		IPC_Leave	0
+			out 0E9h, al
 			pop ds
 			pop cx
 %endmacro
@@ -23,7 +25,6 @@ IPCData		equ 000Ah				; Offset of the data trasfer area (16 bytes)
 			pushf
 			cli
 			push ax
-			out 0E8h, al
 			in al, 01h
 			push ax
 			mov al, 0FEh
@@ -35,7 +36,6 @@ IPCData		equ 000Ah				; Offset of the data trasfer area (16 bytes)
 			cli
 			pop ax
 			out 01h, al
-			out 0E9h, al
 			pop ax
 			popf
 %endmacro
