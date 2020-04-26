@@ -444,6 +444,9 @@ SD_Read_Finished:
 SD_Read_Error:
             mov al, 0       ; Set bit PC0 to 0
             out 23h, al
+			mov ax, Data_Segment
+			mov ds, ax
+            mov byte [Data_SD], 00h
             stc
 SD_Read_End:
             out 0E9h, al
@@ -545,6 +548,9 @@ SD_Write_Finish:
 SD_Write_Error:
             mov al, 0       ; Set bit PC0 to 0
             out 23h, al
+			mov ax, Data_Segment
+			mov ds, ax
+            mov byte [Data_SD], 00h
             stc
 SD_Write_End:
             out 0E9h, al

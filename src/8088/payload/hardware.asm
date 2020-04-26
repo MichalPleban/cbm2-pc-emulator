@@ -98,10 +98,21 @@ Hardware_Check3a:
             out 0EAh, al
             jmp Hardware_Check4
 Hardware_Check3b:
+            db 60h          ; PUSHA
+            stc
+            jnc Hardware_Check3c
+            db 61h          ; POPA
             mov si, Hardware_Banner3b
             call Output_String
             in al, 0EAh
             or al, 02h
+            out 0EAh, al
+            jmp Hardware_Check4
+Hardware_Check3c:
+            mov si, Hardware_Banner3c
+            call Output_String
+            in al, 0EAh
+            and al, 0FDh
             out 0EAh, al
 
 Hardware_Check4:
@@ -116,6 +127,8 @@ Hardware_Banner1:
 Hardware_Banner2:
             db "ERROR: EEPROM chip not present", 10, 13, 0
 Hardware_Banner3a:
-            db "8087 coprocessor detected, setting clock to 8MHz", 10, 13, 0
+            db "8087 coprocessor detected, setting clock to 8 MHz", 10, 13, 0
 Hardware_Banner3b:
-            db "No coprocessor detected, setting clock to 12MHz", 10, 13, 0
+            db "V20 processor detected, setting clock to 12 MHz", 10, 13, 0
+Hardware_Banner3c:
+            db "8088 processor detected, setting clock to 8 MHz", 10, 13, 0

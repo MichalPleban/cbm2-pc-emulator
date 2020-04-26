@@ -41,6 +41,18 @@ EEPROM_Setup:
             xor ax, ax
             mov si, ax
             mov bx, [ds:0008h]
+            
+            xor ah, ah
+            int 0C0h
+            mov ah, 02h
+            mov al, 0A0h
+            mov dh, al
+            int 0C0h
+            jnc EEPROM_Setup1
+            mov dh, 0A2h
+EEPROM_Setup1:
+            mov ah, 01h
+            int 0C0h
             ret
 
 EEPROM_Program:
@@ -51,7 +63,7 @@ EEPROM_Program:
             xor ah, ah
             int 0C0h
             mov ah, 02h
-            mov al, 0A0h
+            mov al, dh
             int 0C0h
             mov ah, 02h
             xor al, al
@@ -72,7 +84,7 @@ EEPROM_Program1:
             xor ah, ah
             int 0C0h
             mov ah, 02h
-            mov al, 0A0h
+            mov al, dh
             int 0C0h
             mov ax, si
             mov al, ah
@@ -102,7 +114,7 @@ EEPROM_Wait:
             xor ah, ah
             int 0C0h
             mov ah, 02h
-            mov al, 0A0h
+            mov al, dh
             int 0C0h
             pushf
             mov ah, 01h
