@@ -101,6 +101,7 @@ Init_INT_Table_End:
 
 Init_INT_Table2:
 			dw INT_C0
+			dw INT_C1
 Init_INT_Table2_End:
 
 ; -----------------------------------------------------------------

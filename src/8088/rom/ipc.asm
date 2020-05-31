@@ -479,7 +479,7 @@ startf:
 
 		sti			        ; Enable interrupts
 
-		hlt
+		jmp led_main
 		
 		times 0F1E2h-($-$$) db 0FFh
 
@@ -493,6 +493,7 @@ intrpt:
 		push ds
 
 		xor	ax, ax
+		out 023h, al
 		mov	ds, ax
 
 		mov	ax, [int7seg]
@@ -546,3 +547,50 @@ gowarm:
 		pop	ax
 		jmp	server
 
+
+;----------------------------------------------------------------------------
+; Visual LED flasher, because we can.
+;----------------------------------------------------------------------------
+
+led_main:
+        mov bh, 50
+        mov dx, 1
+led_main1:
+        mov ah, bh
+led_flash0:
+        mov cx, dx
+        mov al, 01h
+        out 23h, al
+led_flash1:
+        loop led_flash1
+        mov al, 00h
+        out 23h, al
+        mov cx, 100
+        sub cx, dx
+led_flash2:
+        loop led_flash2
+        dec ah
+        jnz led_flash0
+        inc dx
+        cmp dx, 99
+        jne led_main1
+led_main2:
+        mov ah, bh
+led_flash3:
+        mov cx, dx
+        mov al, 01h
+        out 23h, al
+led_flash4:
+        loop led_flash4
+        mov al, 00h
+        out 23h, al
+        mov cx, 100
+        sub cx, dx
+led_flash5:
+        loop led_flash5
+        dec ah
+        jnz led_flash3
+        dec dx
+        cmp dx, 1
+        jnz led_main2
+        jmp led_main

@@ -510,6 +510,7 @@ INT_15:
 
 INT_16:
 			INT_Debug 16h
+			and ah, 0EFh
 			cmp ah, 03h
 			ja INT_16_Ret
 			push bp

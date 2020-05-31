@@ -6,7 +6,8 @@ Screen_Segment  equ 0B000h
 ; --------------------------------------------------------------------------------------
 
 Screen_Init:
-            call IPC_Video_Init
+            xor ah, ah
+            int 0C1h
             ret
 
 
@@ -82,9 +83,11 @@ Screen_Refresh:
             mov byte [Data_Refresh], 00h
             mov bl, [Data_ScreenPage]
             mov bh, al
-            call IPC_Video_Convert
+            mov ah, 02h
+            int 0C1h
             mov dx, [Data_CursorVirtual]
-            call IPC_Video_CursorSet
+            mov ah, 01h
+            int 0C1h
             pop dx
             pop bx
             in al, 0E3h
@@ -106,7 +109,8 @@ Screen_INT_00:
 			mov [Data_CursorPhysical], ax
 			call Screen_Clear
 			xor dx, dx
-			call IPC_Video_CursorSet
+            mov ah, 01h
+            int 0C1h
 			pop dx 
 			pop ax 
             ret
@@ -130,7 +134,8 @@ Screen_INT_01_Disable:
             mov al, 80h
 Screen_INT_01_Enable:
             mov [Data_CursorVisible], al
-            call IPC_Video_SetCursor
+            mov ah, 05h
+            int 0C1h
             pop ds
             pop ax
             ret
@@ -463,7 +468,8 @@ Screen_CursorCalc:
             test al, al
             jnz Screen_CursorCalc1
             mov dx, [Data_CursorVirtual]
-            call IPC_Video_CursorSet
+            mov ah, 01h
+            int 0C1h
 Screen_CursorCalc1:
             pop dx
             pop ax
@@ -483,7 +489,8 @@ Screen_Clear:
 			mov al, 20h
 			mov cx, 2000
 			rep stosw
-            call IPC_Video_Clear
+            mov ah, 03h
+            int 0C1h
 			in al, 0E3h
 			pop ax
 			pop cx
@@ -518,8 +525,89 @@ Screen_CursorCheck:
             pop cx
             pop ax
             pop ds
-            call IPC_Video_ScrollUp
+            mov ah, 04h
+            int 0C1h
             in al, 0E3h
             call Screen_CursorCalc
 Screen_CursorCheck_End:
+            ret
+
+            
+; -----------------------------------------------------------------
+; INT C1 - video driver
+; -----------------------------------------------------------------
+
+INT_C1:
+			cmp ah, 06h
+			ja INT_C1_Ret
+			push bp
+			mov bp, INT_C1_Functions
+			call INT_Dispatch
+			pop bp
+			retf 2
+INT_C1_Ret:
+			iret
+
+INT_C1_Functions:
+			dw INT_C1_00
+			dw INT_C1_01
+			dw INT_C1_02
+			dw INT_C1_03
+			dw INT_C1_04
+			dw INT_C1_05
+
+; -----------------------------------------------------------------
+; Initialize video screen
+; -----------------------------------------------------------------
+
+INT_C1_00:
+            call IPC_Video_Init
+            ret
+
+; --------------------------------------------------------------------------------------
+; Set cursor position on the screen.
+; Input:
+;     		DH - row
+;			DL - column
+; --------------------------------------------------------------------------------------
+
+INT_C1_01:
+            call IPC_Video_CursorSet
+            ret
+
+; --------------------------------------------------------------------------------------
+; Convert PC vieo screen to 6509 screen
+; Input:
+;           BL - video page
+;           BH - flags describing changed screen areas
+; --------------------------------------------------------------------------------------
+
+INT_C1_02:
+            call IPC_Video_Convert
+            ret
+
+; --------------------------------------------------------------------------------------
+; Clear screen
+; --------------------------------------------------------------------------------------
+
+INT_C1_03:
+            call IPC_Video_Clear
+            ret
+            
+; --------------------------------------------------------------------------------------
+; Scroll screen one line up
+; --------------------------------------------------------------------------------------
+
+INT_C1_04:
+            call IPC_Video_ScrollUp
+            ret
+            
+; --------------------------------------------------------------------------------------
+; Enable or disable cursor
+; Input:
+;           AL = 80 to disable cursor, 00 to enable
+; --------------------------------------------------------------------------------------
+
+INT_C1_05:
+            call IPC_Video_SetCursor
             ret
