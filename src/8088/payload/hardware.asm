@@ -49,6 +49,8 @@ Hardware_Check1:
             int 10h
 
             ; Check if the RTC chip is present
+            mov cx, 100
+Hardware_Check2a:
             call I2C_Start
             mov al, 0D0h
             call I2C_Send
@@ -56,6 +58,7 @@ Hardware_Check1:
             call I2C_Stop
             popf
             jnc Hardware_Check2
+            loop Hardware_Check2a
             mov si, Hardware_Banner1
             call Output_String
             hlt

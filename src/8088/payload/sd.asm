@@ -423,13 +423,13 @@ SD_Read_Continue:
             SEND_BYTE 0FFh
             mov cx, 512
             ; More efficient routine on NEC V20
-;            db 60h          ; PUSHA
-;            stc
-;            jnc SD_Read_Loop
-;            db 61h          ; POPA
-;            mov dx, 00E1h
-;            db 0F3h, 06Ch   ; REP INSB
-;            jmp SD_Read_Finished
+            db 60h          ; PUSHA
+            stc
+            jnc SD_Read_Loop
+            db 61h          ; POPA
+            mov dx, 00E1h
+            db 0F3h, 06Ch   ; REP INSB
+            jmp SD_Read_Finished
 SD_Read_Loop:
             in al, 0E1h
             stosb
@@ -507,13 +507,13 @@ SD_Write_Do:
 SD_Write_Continue:
             mov cx, 512
             ; More efficient routine on NEC V20
-;            db 60h          ; PUSHA
-;            stc
-;            jnc SD_Write_Loop
-;            db 61h          ; POPA
-;            mov dx, 00E0h
-;            db 0F3h, 06Eh   ; REP OUTSB
-;            jmp SD_Write_Finished
+            db 60h          ; PUSHA
+            stc
+            jnc SD_Write_Loop
+            db 61h          ; POPA
+            mov dx, 00E0h
+            db 0F3h, 06Eh   ; REP OUTSB
+            jmp SD_Write_Finished
 SD_Write_Loop:
             lodsb
             out 0E0h, al
