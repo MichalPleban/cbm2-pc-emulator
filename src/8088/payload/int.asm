@@ -137,15 +137,9 @@ INT_13_Functions:
 			dw INT_13_Error
 			dw INT_13_Error
 
-; -----------------------------------------------------------------
-; Check whether there is HD image in the ROM.
-; -----------------------------------------------------------------
-
-HD_Drive    equ 81h
-SD_Drive    equ 80h
 
 INT_13_HD:
-            cmp dl, SD_Drive
+            cmp dl, 080h
             jne INT_13_HD_1
             jmp SD_Handle
 INT_13_HD_1:
@@ -770,14 +764,14 @@ INT_1A:
 ; -----------------------------------------------------------------
 
 INT_1A_00:
-;            push ds
-;            xor cx, cx
-;            mov ds, cx
-;            mov dx, [046Ch]
-;            mov cx, [046Eh]
-;            pop ds
-;            clc
-;            retf 2
+            push ds
+            xor cx, cx
+            mov ds, cx
+            mov dx, [046Ch]
+            mov cx, [046Eh]
+            pop ds
+            clc
+            retf 2
             
 			push ax
 			push bx
@@ -837,6 +831,17 @@ INT_1A_00:
 ; -----------------------------------------------------------------
 
 INT_1A_01:
+			push ax
+            push ds
+            xor ax, ax
+            mov ds, ax
+            mov [046Ch], dx
+            mov [046Eh], cx
+            pop ds
+            pop ax
+            clc
+            retf 2
+            
 			push ax
 			push bx
 			push cx

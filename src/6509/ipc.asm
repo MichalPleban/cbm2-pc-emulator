@@ -131,7 +131,7 @@ printer_flag:
     .word ipc_12_screen_out
     .word ipc_13_printer_out
     .word ipc_14_screen_driver
-    .word 0
+    .word ipc_15_counter_read
     .word ipc_96_disk_read
     .word ipc_97_disk_write
     .word ipc_18_init
@@ -281,7 +281,7 @@ ipc_20_kbd_clear:
     
     .byt $00,$01,$02,$03,$04,$05,$06,$07
     .byt $08,$09,$0a,$0b,$0c,$0d,$0e,$0f
-    .byt $40,$40,$23,$23,$66,$00,$4b,$4b
+    .byt $40,$40,$23,$23,$66,$40,$4b,$4b
     .byt $40,$30,$23,$25,$00,$00,$00,$00
     .byt $00,$4b,$0a
     
@@ -672,6 +672,11 @@ init_diskno:
     sta $db06
     lda #$17
     sta $db0f
+    lda #$FF
+    sta $db05
+    sta $db04
+    lda #$B1
+    sta $db0e
     jmp ipc_end
     
 ;--------------------------------------------------------------------
@@ -1013,3 +1018,19 @@ ipc_14_screen_driver:
 
 ipc_1c_exit:
     jmp ($FFFC)
+    
+;--------------------------------------------------------------------
+; IPC function 15 - read CIA counter A
+;--------------------------------------------------------------------
+    
+ipc_15_counter_read:
+    lda $db04
+    eor #$FF
+    sta ipc_buffer+2
+    lda $db05
+    eor #$FF
+    sta ipc_buffer+3
+    lda #$B1
+    sta $db0e
+    clc
+    jmp ipc_end

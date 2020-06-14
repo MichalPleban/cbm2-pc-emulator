@@ -111,7 +111,7 @@ IPC_IRQ7:
 			mov al, 20h
 			out 00h, al
 			out 0E9h, al
-
+			
 			int 08h
 
 			pop ax
@@ -126,8 +126,8 @@ INT_08:
             push ds
             xor ax, ax
             mov ds, ax
-            mov ax, [046Ch]
-            add ax, 1
+            call IPC_CounterRead
+            add ax, [046Ch]
             mov [046Ch], ax
             mov ax, [046Eh]
             adc ax, 0
@@ -195,9 +195,62 @@ IPC_Install_Loop2:
 			mov [es:046Ch], ax            ; Tick count low word
 			mov [es:046Eh], ax            ; Tick count high word
 			mov [es:048Ah], byte 01       ; Display combination code
+			call Clock_Init
 			
 			ret
 			
+; --------------------------------------------------------------------------------------
+; Set tick counter according to the I2C clock
+; --------------------------------------------------------------------------------------
+
+Clock_Init:
+            call INT_1A_02_Do
+            mov al, dh
+            call ConvertFromBCD
+            mov ah, al          ; AH = Seconds
+            push ax
+			mov al, cl
+			call ConvertFromBCD
+			mov dl, al          ; DL = Minutes
+			mov al, ch
+			call ConvertFromBCD
+			mov dh, al          ; DH = Hours
+			pop ax
+			xor al, al          ; AL = Microseconds
+
+			; Calculate number of ticks in whole minutes
+			mov bx, ax
+			mov al, dh
+			mov cl, 60
+			mul cl
+			xor dh, dh
+			add ax, dx
+			mov cx, 1092 ; Ticks per minute
+			mul cx
+			push dx
+			push ax
+			
+			; Calculate number of ticks in seconds
+			mov al, bh
+			mov cl, 10
+			mul cl
+			xor bh, bh
+			add ax, bx
+			mov cx, 182
+			mul cx
+			mov cx, 100
+			div cx
+			
+			; Add them together
+			pop cx
+			add cx, ax
+			pop dx
+			xor ax, ax
+			adc dx, ax
+			
+            mov [es:046Ch], cx
+            mov [es:046Eh], dx
+			ret
 			
 ; --------------------------------------------------------------------------------------
 ; Output character to the printer.
@@ -404,6 +457,19 @@ IPC_SerialIn:
 			IPC_Enter
 			IPC_Call 19h
 			mov al, [IPCData+2]
+			IPC_Leave
+			ret
+
+; --------------------------------------------------------------------------------------
+; Read and reset 18Hz counter value
+; Output:
+;     AL - character code
+; --------------------------------------------------------------------------------------
+
+IPC_CounterRead:
+			IPC_Enter
+			IPC_Call 15h
+			mov ax, [IPCData+2]
 			IPC_Leave
 			ret
 
@@ -664,7 +730,7 @@ IPC_Params:
 			db 3, 2     ; 12 - screen out
 			db 3, 2     ; 13 - printer out
 			db 6, 6     ; 14 - screen driver
-			db 0, 0
+			db 0, 4     ; 15 - counter read
 			db 11, 4    ; 96 - disk read
 			db 11, 4    ; 97 - disk write
 			db 0, 4     ; 18 - initialize
