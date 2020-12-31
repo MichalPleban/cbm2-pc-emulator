@@ -80,6 +80,7 @@ IPC_Init:
 			mov [0022h], word ax
 			
 			; Rebase interrupts to 58h, enable IRQ0 and IRQ7
+			out 0E8h, al
 			mov al, 13h
 			out 00h, al
 			mov al, 58h
@@ -88,6 +89,7 @@ IPC_Init:
 			out 01h, al
 			mov al, 07Eh
 			out 01h, al
+			out 0E9h, al
 			
 			pop ds
 			sti

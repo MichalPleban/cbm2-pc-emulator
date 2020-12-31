@@ -289,21 +289,21 @@ EEPROM_Read2:
 ; -----------------------------------------------------------------
 
 Bootstrap_String_Init:
-            db CHAR_CLRSCR, "8088 boostrapper v1.10 (C) 2019 Michal Pleban", 13, 0
+            db CHAR_CLRSCR, 13, 0
 
 Bootstrap_String_LoadROM:
-            db "Loading the payload from ROM...", 13, 0
+            db "loading the payload from rom...", 13, 0
             
 Bootstrap_String_LoadEEPROM:
-            db "Loading the payload from EEPROM...", 13, 0
+            db "loading the payload from eeprom...", 13, 0
             
 %ifdef DEVEL
 Bootstrap_String_LoadRAM:
-            db "Payload already found in RAM.", 13, 0
+            db "payload already found in ram.", 13, 0
 %endif
             
 Bootstrap_String_Boot:
-            db "Loading the 6509 code...", 13, 0
+            db "loading the 6509 code...", 13, 0
 
 Bootstrap_String_Corrupted:
-            db "Initializing configuration data...", 13, 0
+            db "initializing configuration data...", 13, 0

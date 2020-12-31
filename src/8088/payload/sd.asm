@@ -210,14 +210,14 @@ SD_Init:
             ; Step 1 - send dummy pulses with card deselected
             stc
             SEL_HI
-            mov cx, 10
+            mov cx, 100
 SD_Init_Loop_1:
             SEND_BYTE 0FFh
             loop SD_Init_Loop_1
             SEL_LO
             
             ; Step 2 - send dummy pulses with card selected
-            mov cx, 600
+            mov cx, 5000
 SD_Init_Loop_2:
             SEND_BYTE 0FFh
             loop SD_Init_Loop_2
@@ -256,7 +256,7 @@ SD_Init_Loop_2:
 SD_Init_Skip:
             READ_BYTE
 
-            mov cx, 10000
+            mov cx, 50000
 SD_Init_New:
             ; Step 5a - send CMD55
             SEND_BYTE 77h
