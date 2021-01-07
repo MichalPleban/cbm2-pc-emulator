@@ -46,6 +46,8 @@ WstFlag = $3fa
 CRTC_RegNo = $d800
 CRTC_RegVal = $d801
 TPI1_ActIntReg = $de07
+ACIA_Command = $DD02
+
 
 ;--------------------------------------------------------------------
 ; KERNAL routines
@@ -1014,7 +1016,16 @@ uppercase_convert_3:
 ;--------------------------------------------------------------------
     
 ipc_14_screen_driver:
-    jmp $0403
+;    lda ACIA_Command
+;    ora #$09
+;    sta ACIA_Command
+;    cli
+    jsr $0403
+;    sei
+;    lda ACIA_Command
+;    and #$F6
+;    sta ACIA_Command
+    rts
 
 ipc_1c_exit:
     jmp ($FFFC)

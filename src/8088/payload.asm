@@ -31,6 +31,7 @@ RomInit:
             call Init_INT
             call Hardware_Init
             call Screen_Init
+            call Virtual_Init
             xor ah, ah
             int 10h
             call Version_Output

@@ -1,7 +1,7 @@
 
 PRG = dist/prg/6509.prg dist/prg/screen_nochar.prg dist/prg/screen_char.prg
 ROM = dist/rom/payload.bin dist/rom/8088.bin dist/rom/8088_devel.bin
-UPGRADE = dist/upgrade/upgrade.com dist/upgrade/upgrade.b64
+UPGRADE = dist/upgrade/upgrade.com
 
 TRACK = util/360_d80.trk util/360_d82.trk util/720_d82.trk
 ONDISK = dist/prg/boot.prg $(PRG)
@@ -39,6 +39,3 @@ dist/rom/8088_devel.bin: src/8088/rom.asm dist/rom/payload.bin $(START)
 
 dist/upgrade/upgrade.com: src/8088/upgrade.asm dist/rom/payload.bin
 	nasm src/8088/upgrade.asm -o dist/upgrade/upgrade.com
-
-dist/upgrade/upgrade.b64: dist/upgrade/upgrade.com
-	util/mime dist\upgrade\upgrade.com dist\upgrade\upgrade.b64 -e
