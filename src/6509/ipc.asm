@@ -141,7 +141,7 @@ printer_flag:
     .word ipc_1a_serial_out
     .word ipc_1b_serial_config
     .word ipc_1c_exit
-    .word 0
+    .word ipc_1d_sid_control
     .word 0
     .word 0
     .word ipc_20_kbd_clear
@@ -170,6 +170,9 @@ cmd_n:
 ;--------------------------------------------------------------------
     
 my_irq:
+    lda ACIA_Command
+    and #$F7
+    sta ACIA_Command
     lda #>irq_handler
     pha
     lda #<irq_handler
@@ -222,6 +225,9 @@ clear_buffer:
 irq_end:
     lda #$00
     sta KeybufIndex
+    lda ACIA_Command
+    ora #$08
+    sta ACIA_Command
     pla
     tay
     pla
@@ -247,6 +253,39 @@ ipc_22_dummy:
     jmp ipc_end
     
 ;--------------------------------------------------------------------
+; IPC function 20 - clear keyboard buffer.
+;--------------------------------------------------------------------    
+    
+ipc_20_kbd_clear:
+    lda #$00
+    sta buffer_size
+    sta KeybufIndex
+    rts
+
+;--------------------------------------------------------------------
+; Information about IPC function parameters. For every function:
+;  * low nibble = number of input parameters.
+;  * hight nibble = number of output parameters.
+; The location of this table is hardcoded to $0910 in the KERNAL.
+;--------------------------------------------------------------------        
+
+    .res ($0910-*), $FF
+    
+    .byt $00,$01,$02,$03,$04,$05,$06,$07
+    .byt $08,$09,$0a,$0b,$0c,$0d,$0e,$0f
+    .byt $40,$40,$23,$23,$66,$40,$4b,$4b
+    .byt $40,$30,$23,$25,$00,$25,$00,$00
+    .byt $00,$4b,$0a
+    
+;--------------------------------------------------------------------
+; 8088 INT memory vectors
+;--------------------------------------------------------------------
+
+vectors:
+    .word $FFF5, $F000
+    .word $F1E2, $F000
+
+;--------------------------------------------------------------------
 ; IPC function 11 - read from keyboard.
 ;--------------------------------------------------------------------
     
@@ -261,40 +300,7 @@ ipc_11_loop:
     jsr CLRCH
     clc
     jmp ipc_end
-
-;--------------------------------------------------------------------
-; IPC function 20 - clear keyboard buffer.
-;--------------------------------------------------------------------    
     
-ipc_20_kbd_clear:
-    lda #$00
-    sta buffer_size
-    sta KeybufIndex
-    rts
-    
-;--------------------------------------------------------------------
-; Information about IPC function parameters. For every function:
-;  * low nibble = number of input parameters.
-;  * high nibble = number of output parameters.
-; The location of this table is hardcoded to $0910 in the KERNAL.
-;--------------------------------------------------------------------        
-
-    .res ($0910-*), $FF
-    
-    .byt $00,$01,$02,$03,$04,$05,$06,$07
-    .byt $08,$09,$0a,$0b,$0c,$0d,$0e,$0f
-    .byt $40,$40,$23,$23,$66,$40,$4b,$4b
-    .byt $40,$30,$23,$25,$00,$00,$00,$00
-    .byt $00,$4b,$0a
-    
-;--------------------------------------------------------------------
-; 8088 INT memory vectors
-;--------------------------------------------------------------------
-
-vectors:
-    .word $FFF5, $F000
-    .word $F1E2, $F000
-
 ;--------------------------------------------------------------------
 ; IPC function 12 - write to screen.
 ;--------------------------------------------------------------------
@@ -319,6 +325,10 @@ ipc_12_screen_out:
 ipc_19_serial_in:
     ldx #$02
     jsr CHKIN
+    ; Release the RTS line so that serial data can arrive
+    lda ACIA_Command
+    ora #$08
+    sta ACIA_Command
 serial_read:
     jsr DO_GETIN
     sta ipc_buffer+2
@@ -327,6 +337,10 @@ serial_read:
     bne serial_read
 serial_checkstatus:
     jsr CLRCH
+    ; Assert the RTS line again
+    lda ACIA_Command
+    and #$F7
+    sta ACIA_Command
     lda RS232Status
     clc
     and #$77
@@ -668,6 +682,7 @@ init_diskno:
     sta GETINVec
     lda #>my_getin
     sta GETINVec+1
+    ; Initialize 18.2 Hz counter
     lda #$D6
     sta $db07
     lda #$93
@@ -679,6 +694,20 @@ init_diskno:
     sta $db04
     lda #$B1
     sta $db0e
+    ; Initialize SID second voice
+    lda #$0F
+    sta $DA18
+    lda #$00
+    sta $DA07
+    sta $DA08
+    sta $DA09
+    sta $DA0C
+    lda #$08
+    sta $DA0A
+    lda #$F0
+    sta $DA0D
+    lda #$20
+    sta $DA0B
     jmp ipc_end
     
 ;--------------------------------------------------------------------
@@ -764,9 +793,9 @@ serial_reopen:
     lda #$ff
     sta SysMemTop
     lda #$0f
-    sta SysMemTop+1
     sta SysMemTop+2
     lda #$02
+    sta SysMemTop+1
     tax
     ldy rs232_secaddr
     jsr SETLFS
@@ -779,7 +808,10 @@ serial_reopen:
     lda #$02
     ldx #$40
     jsr SETNAM
-    jmp my_OPEN
+    jsr my_OPEN
+    ldx #$02
+    jsr CHKIN
+    jmp DO_GETIN
     
 ;--------------------------------------------------------------------
 ; IPC function 13 - write to printer.
@@ -1016,15 +1048,7 @@ uppercase_convert_3:
 ;--------------------------------------------------------------------
     
 ipc_14_screen_driver:
-;    lda ACIA_Command
-;    ora #$09
-;    sta ACIA_Command
-;    cli
     jsr $0403
-;    sei
-;    lda ACIA_Command
-;    and #$F6
-;    sta ACIA_Command
     rts
 
 ipc_1c_exit:
@@ -1043,5 +1067,24 @@ ipc_15_counter_read:
     sta ipc_buffer+3
     lda #$B1
     sta $db0e
+    clc
+    jmp ipc_end
+
+;--------------------------------------------------------------------
+; IPC function 1D - read CIA counter A
+;--------------------------------------------------------------------
+    
+ipc_1d_sid_control:
+    lda ipc_buffer+2
+    sta $0FFD
+    sta $DA07
+    lda ipc_buffer+3
+    sta $0FFE
+    sta $DA08
+    lda ipc_buffer+4
+    and #$01
+    ora #$20
+    sta $0FFF
+    sta $DA0B
     clc
     jmp ipc_end

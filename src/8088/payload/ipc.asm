@@ -500,6 +500,21 @@ IPC_ResetComputer:
 			ret
 
 ; --------------------------------------------------------------------------------------
+; Play a tone using the SID chip.
+; Input:
+;     		AX - frequency
+;           DL - 01 = sound enable, 00 = sound disable
+; --------------------------------------------------------------------------------------
+
+IPC_Sound:
+			IPC_Enter
+			mov [IPCData+2], ax
+			mov [IPCData+4], dl
+			IPC_Call 1Dh
+			IPC_Leave
+			ret
+
+; --------------------------------------------------------------------------------------
 ; Read or write disk sector.
 ; Input:
 ;			AH - physical sector number
@@ -739,8 +754,8 @@ IPC_Params:
 			db 0, 3     ; 19 - serial in
 			db 3, 2     ; 1A - serial out
 			db 5, 2     ; 1B - serial config
-			db 0, 0
-			db 0, 0
+			db 0, 0     ; 1C - exit
+			db 5, 2     ; 1D - sound output
 			db 0, 0
 			db 0, 0
 			db 0, 0     ; 20 - keyboard clear

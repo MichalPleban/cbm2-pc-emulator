@@ -7,6 +7,7 @@ TRACK = util/360_d80.trk util/360_d82.trk util/720_d82.trk
 ONDISK = dist/prg/boot.prg $(PRG)
 
 PAYLOAD = src/8088/payload/data.asm src/8088/payload/init.asm src/8088/payload/int.asm src/8088/payload/ipc.asm src/8088/payload/sd.asm src/8088/payload/i2c.asm src/8088/payload/screen.asm src/8088/payload/config.asm src/8088/payload/hardware.asm src/8088/payload/virtual.asm
+VIRTUAL = src/8088/virtual/speaker.asm
 START = src/8088/rom/ipc.asm src/8088/rom/bootstrap.asm
 DEBUG = src/8088/include/debug.asm
 
@@ -27,7 +28,7 @@ dist/prg/screen_char.prg: src/6509/screen.asm
 	ld65 src/6509/screen.o -C src/6509/6509.cfg -o dist/prg/screen_char.prg
 	rm src/6509/screen.o
 
-dist/rom/payload.bin: src/8088/payload.asm $(PAYLOAD) $(PRG)
+dist/rom/payload.bin: src/8088/payload.asm $(PAYLOAD) $(VIRTUAL) $(PRG)
 	util/incbuild.pl src/8088/build.inc
 	nasm src/8088/payload.asm -w-lock -w-number-overflow -o dist/rom/payload.bin
 
