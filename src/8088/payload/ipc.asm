@@ -47,6 +47,12 @@ IPCData		equ 000Ah				; Offset of the data trasfer area (16 bytes)
 IPC:
 			call 0F000h:0F003h
 			ret
+			push cx
+			mov cx, 20
+IPC_No_Handshake2:
+			loop IPC_No_Handshake2
+			pop cx
+			ret
 
 IPC_GetSeg:
 			xor cx, cx
@@ -255,9 +261,7 @@ Clock_Init:
 			ret
 			
 ; --------------------------------------------------------------------------------------
-; Output character to the printer.
-; Input:
-;     AL - character code
+; Initialize the IPC library.
 ; --------------------------------------------------------------------------------------
 
 IPC_Reset:
@@ -485,17 +489,6 @@ IPC_SerialOut:
 			IPC_Enter
 			mov [IPCData+2], al
 			IPC_Call 1Ah
-			IPC_Leave
-			ret
-
-; --------------------------------------------------------------------------------------
-; Reset the computer.
-; --------------------------------------------------------------------------------------
-
-IPC_ResetComputer:
-			IPC_Enter
-			mov [IPCData+2], al
-			IPC_Call 12h
 			IPC_Leave
 			ret
 

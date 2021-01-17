@@ -121,6 +121,10 @@ disk_status:
 printer_flag:
 	.byt 0
 
+; Flag for interrupt nesting.
+nesting_flag:
+    .byt 1
+	
     .res ($0830-*), $FF
         
 ;--------------------------------------------------------------------
@@ -140,7 +144,7 @@ printer_flag:
     .word ipc_19_serial_in
     .word ipc_1a_serial_out
     .word ipc_1b_serial_config
-    .word ipc_1c_exit
+    .word 0
     .word ipc_1d_sid_control
     .word 0
     .word 0
@@ -170,18 +174,7 @@ cmd_n:
 ;--------------------------------------------------------------------
     
 my_irq:
-    lda ACIA_Command
-    and #$F7
-    sta ACIA_Command
-    lda #>irq_handler
-    pha
-    lda #<irq_handler
-    pha
-    php
-    pha
-    pha
-    pha
-    jmp (old_irq)
+    jmp new_irq
     
 ;--------------------------------------------------------------------
 ; Actual interrupt handler function.
@@ -225,16 +218,7 @@ clear_buffer:
 irq_end:
     lda #$00
     sta KeybufIndex
-    lda ACIA_Command
-    ora #$08
-    sta ACIA_Command
-    pla
-    tay
-    pla
-    tax
-    pla
-    cli
-    rti
+    rts
     
 ;--------------------------------------------------------------------
 ; IPC function 10 - check scancode in keyboard buffer.
@@ -263,29 +247,6 @@ ipc_20_kbd_clear:
     rts
 
 ;--------------------------------------------------------------------
-; Information about IPC function parameters. For every function:
-;  * low nibble = number of input parameters.
-;  * hight nibble = number of output parameters.
-; The location of this table is hardcoded to $0910 in the KERNAL.
-;--------------------------------------------------------------------        
-
-    .res ($0910-*), $FF
-    
-    .byt $00,$01,$02,$03,$04,$05,$06,$07
-    .byt $08,$09,$0a,$0b,$0c,$0d,$0e,$0f
-    .byt $40,$40,$23,$23,$66,$40,$4b,$4b
-    .byt $40,$30,$23,$25,$00,$25,$00,$00
-    .byt $00,$4b,$0a
-    
-;--------------------------------------------------------------------
-; 8088 INT memory vectors
-;--------------------------------------------------------------------
-
-vectors:
-    .word $FFF5, $F000
-    .word $F1E2, $F000
-
-;--------------------------------------------------------------------
 ; IPC function 11 - read from keyboard.
 ;--------------------------------------------------------------------
     
@@ -300,6 +261,22 @@ ipc_11_loop:
     jsr CLRCH
     clc
     jmp ipc_end
+
+;--------------------------------------------------------------------
+; Information about IPC function parameters. For every function:
+;  * low nibble = number of input parameters.
+;  * hight nibble = number of output parameters.
+; The location of this table is hardcoded to $0910 in the KERNAL.
+;--------------------------------------------------------------------        
+
+    .res ($0910-*), $FF
+    
+    .byt $00,$01,$02,$03,$04,$05,$06,$07
+    .byt $08,$09,$0a,$0b,$0c,$0d,$0e,$0f
+    .byt $40,$40,$23,$23,$66,$40,$4b,$4b
+    .byt $40,$30,$23,$25,$00,$25,$00,$00
+    .byt $00,$4b,$0a
+    
     
 ;--------------------------------------------------------------------
 ; IPC function 12 - write to screen.
@@ -594,7 +571,6 @@ calc_drive:
 
 ; Calculate address from 8088 segment and offset.
 calc_addr:
-    cli
     sta TPI1_ActIntReg
     lda ipc_buffer+10
     sta load_addr
@@ -1016,7 +992,6 @@ getin_loop:
     dec buffer_size
     pla
     ldx #$03
-    cli
 getin_end:
     clc
     rts
@@ -1051,9 +1026,6 @@ ipc_14_screen_driver:
     jsr $0403
     rts
 
-ipc_1c_exit:
-    jmp ($FFFC)
-    
 ;--------------------------------------------------------------------
 ; IPC function 15 - read CIA counter A
 ;--------------------------------------------------------------------
@@ -1084,7 +1056,62 @@ ipc_1d_sid_control:
     lda ipc_buffer+4
     and #$01
     ora #$20
-    sta $0FFF
     sta $DA0B
     clc
     jmp ipc_end
+
+;--------------------------------------------------------------------
+; New IRQ Handler
+;--------------------------------------------------------------------
+
+new_irq:
+    lda $01
+    pha
+    cld
+    ; Check TPI interrupt source
+    lda $DE07
+    bne new_irq_1
+    sta $DE07
+    jmp $FCA2
+new_irq_1:
+    ; IRQ from the 8088? If yes, redirect to our handler.
+    cmp #$08
+    beq new_irq_2
+    ; IRQ from 50Hz timer? If yes, redirect to our handler.
+    cmp #$01
+    beq new_irq_5
+    ; Redirect to normal IRQ handler.
+    jmp $FBF5
+new_irq_2:
+    ; Clear IRQ flag at the CIA
+    lda $DB0D
+    ; Decrease nesting level
+    dec nesting_flag
+    ; Nested interrupt? If yes then exit.
+    bit nesting_flag
+    bmi new_irq_4
+new_irq_3:
+    lda ACIA_Command
+    and #$F7
+    sta ACIA_Command
+    cli
+    lda #$00
+    sta $DB02
+    lda $DB00
+    jsr $FD48
+    inc nesting_flag
+    ; Nested interrupt arrived in the meantime? If yes then repeat.
+    lda nesting_flag
+    cmp #1
+    bne new_irq_3
+new_irq_4:
+    lda ACIA_Command
+    ora #$08
+    sta ACIA_Command
+    jsr irq_handler
+    jmp $FC9F
+new_irq_5:
+    jsr $E013
+    jsr $F979
+    jsr irq_handler
+    jmp $FC9F
