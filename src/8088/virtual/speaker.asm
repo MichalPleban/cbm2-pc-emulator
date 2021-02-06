@@ -49,6 +49,11 @@ V_Speaker_Do:
         div cx
         pop cx
         mov dl, [V_Port_61]
+        and dl, 03h
+        cmp dl, 03h
+        jz V_Speaker_Do_1
+        xor dl, dl
+V_Speaker_Do_1:
         call IPC_Sound
 V_Speaker_Do_End:
         ret

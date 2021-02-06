@@ -255,7 +255,7 @@ REG_VERSION = IO_SEL & ( IA3 &  IA2 &  IA1 &  IA0);	/* F */
 pinnode = SPI_CLK;
 pinnode = SPI_RUNNING;
 pinnode = [SPI_OUT0..7];
-pinnode = [SPI_IN0..7];
+pinnode = SPI_IN0;
 pinnode = [SPI_CNT0..4];
 
 /* Clock generator */
@@ -280,8 +280,7 @@ SPI_RUNNING.AR = SPI_CNT3;
 
 /* Input shift register */
 
-[SPI_IN0..7].CK = SPI_CLK & SPI_RUNNING;
-[SPI_IN1..7].D = [SPI_IN0..6];
+SPI_IN0.CK = SPI_CLK & SPI_RUNNING;
 SPI_IN0.D = MISO;
 
 /* Output shift register */
@@ -290,7 +289,10 @@ SPI_IN0.D = MISO;
 [SPI_OUT0..7].AR = REG_SPI1 & WR & ![AD0..7];
 [SPI_OUT1..7].D = [SPI_OUT0..6];
 [SPI_OUT0..7].CK = !SPI_CLK # !SPI_RUNNING;
+/*
 SPI_OUT0.D = 'B'1;
+*/
+SPI_OUT0.D = SPI_IN0;
 
 MOSI = SPI_OUT7;
 
@@ -344,7 +346,7 @@ VIDACCESS = DRAM & DRAM_ENABLE & MWTC & IA19 & !IA18 & IA17 & IA16 & CLK;   /* s
 [VIDEO0..7].CK = !(RD & IO_SEL & REG_VIDEO);
 [VIDEO0..7].AR = RESET;
 
-VIDEO0.AP = VIDACCESS & ((!HARDWARE2 & !IA11 & !IA10 & !IA9) # HARDWARE2);
+VIDEO0.AP = VIDACCESS & ((!HARDWARE2 & !IA11 & !IA10 & !IA9));
 VIDEO1.AP = VIDACCESS & ((!HARDWARE2 & !IA11 & !IA10 &  IA9));
 VIDEO2.AP = VIDACCESS & ((!HARDWARE2 & !IA11 &  IA10 & !IA9));
 VIDEO3.AP = VIDACCESS & ((!HARDWARE2 & !IA11 &  IA10 &  IA9));
@@ -418,7 +420,7 @@ RES.CK = CLK;
 pinnode = SPI_BLOCK;
 
 SPI_BLOCK = SPI_RUNNING & (!SPI_CNT2 # !SPI_CNT1) & HARDWARE1;
-READY.CK = CLK;
+READY.CK = !OSC;
 READY.D = !IORDY & !SPI_BLOCK;
 
 
@@ -428,7 +430,7 @@ READY.D = !IORDY & !SPI_BLOCK;
 
 [AD0..7].OE = RD & IO_SEL;
 
-[AD0..7] = ((REG_SPI1 # REG_SPI2) & [SPI_IN0..7]) #
+[AD0..7] = ((REG_SPI1 # REG_SPI2) & [SPI_OUT0..7]) #
 	    (REG_IO & [SDA.IO,SCL.IO,'B'X,'B'X,'B'X,'B'X,'B'X,IO_ENABLE]) #
 	    (REG_VIDEO & [VIDEO0..7]) #
 	    (REG_CONFIG & [CONFIG0..6],'B'X) #

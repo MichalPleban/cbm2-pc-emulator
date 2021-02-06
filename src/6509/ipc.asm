@@ -88,11 +88,7 @@ ipc_buffer = $0805
 ; Filename to open RS-232 channel.
 rs232_param:
     .byt $1e,$00
-    
-; Secondary address to open RS-232 channel.
-rs232_secaddr:
-    .byt $03
-    
+        
 ; Filename used to open the data channel.
 filename_08:
     .byt "#"
@@ -303,9 +299,6 @@ ipc_19_serial_in:
     ldx #$02
     jsr CHKIN
     ; Release the RTS line so that serial data can arrive
-    lda ACIA_Command
-    ora #$08
-    sta ACIA_Command
 serial_read:
     jsr DO_GETIN
     sta ipc_buffer+2
@@ -315,9 +308,6 @@ serial_read:
 serial_checkstatus:
     jsr CLRCH
     ; Assert the RTS line again
-    lda ACIA_Command
-    and #$F7
-    sta ACIA_Command
     lda RS232Status
     clc
     and #$77
@@ -770,10 +760,10 @@ serial_reopen:
     sta SysMemTop
     lda #$0f
     sta SysMemTop+2
-    lda #$02
     sta SysMemTop+1
+    lda #$02
     tax
-    ldy rs232_secaddr
+    ldy #$03
     jsr SETLFS
     lda #<rs232_param
     ldx #>rs232_param
@@ -962,8 +952,6 @@ ipc_1b_serial_config:
     sta rs232_param
     lda ipc_buffer+3
     sta rs232_param+1
-    lda ipc_buffer+4
-    sta rs232_secaddr
     jsr serial_reopen
     jmp ipc_end
 
@@ -1091,9 +1079,6 @@ new_irq_2:
     bit nesting_flag
     bmi new_irq_4
 new_irq_3:
-    lda ACIA_Command
-    and #$F7
-    sta ACIA_Command
     cli
     lda #$00
     sta $DB02
@@ -1105,13 +1090,10 @@ new_irq_3:
     cmp #1
     bne new_irq_3
 new_irq_4:
-    lda ACIA_Command
-    ora #$08
-    sta ACIA_Command
-    jsr irq_handler
     jmp $FC9F
 new_irq_5:
     jsr $E013
     jsr $F979
+    sei
     jsr irq_handler
     jmp $FC9F

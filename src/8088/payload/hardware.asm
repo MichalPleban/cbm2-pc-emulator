@@ -119,6 +119,10 @@ Hardware_Check3c:
             out 0EAh, al
 
 Hardware_Check4:
+            ; Enable virtual hardware
+            in al, 0EAh
+            or al, 01h
+            out 0EAh, al
             ret
                         
 Hardware_Banner0a:
