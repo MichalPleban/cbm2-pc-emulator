@@ -1,74 +1,96 @@
-# PC emulation layer
+# CBM-II PC emulation layer
 
-This software allows you to run IBM PC software on a Commodore 710 equipped with the 8088 card. The card has a dedicated MS-DOS 1.25 port that runs on it, but there is very little software that could be used with that old version. The computer is also not PC-compatible, so even the few software titles that support MS-DOS 1.x don't work.
+## Warning!
 
-The aim of the project is to emulate as much of the PC architecture in software as possible, to allow booting PC versions of MS-DOS and running PC software. Currently, PC-DOS versions 2.00 and 3.30 have been successfully booted using the emulation layer.
+Starting with the 0.8.0 release, the software is meant to work on the new 8088 CPU board:
+
+https://github.com/MichalPleban/cbm2-8088-ram-board
+
+If you want to use the original 8088 board, you need the latest 0.7x release. Please note that new features are only added to the 0.8 branch.
+
+More information about the project can be found at:
+
+http://www.cbm-ii.com/
+
+## About the project
+
+This software allows you to run IBM PC software on a Commodore CBM-II (such as 710 or 610) equipped with the 8088 card. The card has a dedicated MS-DOS 1.25 port that runs on it, but there is very little software that could be used with that old version. The aim of the project is to emulate as much of the PC architecture in software as possible, to allow booting PC versions of MS-DOS and running PC software. Currently modern versions of MS-DOS and FreeDOS are booting on the card without any problems.
 
 A PC-compatible font is also supplied, allowing to display characters that are not present in the PETSCII character set (such as \ | {} or CP437 graphics characters).
 
-## Quick start guide
-
-Use `cbmlink` (or other tool) to create a Commodore 8250 disk from the image `dist/disk/pcdos33.d82` (if you do not have the 8250 drive, you can use `pcdos33a.d80` instead).
-
-Optionally, burn a 2764 EPROM with the contents of the `dist/rom/charset.bin` file and replace your computer's character ROM with it. It is not necessary, but doing so will enable the PC display font.
-
-Insert the diskette in drive 0 and hit Shift+Run to start the system. If you burned the custom character ROM, you can press space while the sotware is booting, to enable the PC font. If the character ROM is installed successfullty, you should see the back arrow character in the startup message changing into the underscore character.
-
-The boot file loads the emulation layer libraries and transfers control to the 8088 processor, which reads the boot sector from the diskette and executes it. Loading the PC-DOS 3.30 system takes about 2 minutes, due to slow speed of the IEEE drive. If you want to do something faster, you can use the image `dist/disk/pcdos11.d82` which contains PC-DOS 1.10 and boots under 20 seconds.
-
-Loaded system runs inside the PC emulation layer. You can try different DOS commands - everything that is not tied directly to PC hardware (like GRAFTABL) should work.
-
 ## How does it work?
 
-The emulation layer consists of two modules:
+The PC compatibility software layer works on the hardware 8088 card and contains routines that emulate the PC BIOS and other aspects of the PC architecture to achieve a high degree of PC compatibility. The software consists of the following functional parts:
 
- * `6509.prg`, which contains the 6509 code implementing I/O functions. The 8088 processor has no access to the I/O, therefore it calls this module for every I/O operation.
- * `8088.prg`, which contains the 8088 code of the emulation layer.
+### PC BIOS emulation
 
-The second file is roughly divided into the following parts:
+The software contains around 40 BIOS functions of INT 10h, INT 13h, INT 16h and so on (see the table below complete list). The functions serve as a bridge between the PC BIOS interface and the IPC library that runs on the 6509 CPU. For example, INT 16h function 00h (read from keyboard buffer) is implemented as a wrapper for the IPC library function $11, which in turn calls the GETIN function in the Commodore KERNAL to read the input buffer. 
 
- * High-level interrupt emulation routines, implementing part of the PC BIOS interrupts. This part is located in the `int.asm` file.
- * Low-level I/O routines, which interface to the 6509 processor and I/O services provided by it. This part is located in the `ipc.asm` file.
+Some BIOS functions are simple wrappers like that, while others require more sophisticated processing. For example, INT 13h functions are used to simulate a PC disk drive with an 8050 or 8250 Commodore drive. This requires sector position recalculation because the PC disk geometry is vastly different than that of the 8050, plus simulating 512 byte PC disk sectors with two 256 byte Commodore disk sectors.
 
-The high-level routines are fairly system-independent and could be adapted to another machine. The low-level routines are specific to the CBM-II.
+Additionally, an 18.2 Hz timer interrupt is implemented on INT 8 just like on the PC, by programming the CIA timers A and B to generate a square wave. Because the IRQs are assigned differently on the 8088 card than on the PC (for example, the timer interrupt is IRQ0 on the PC but IRQ7 on the card), the interrupt vectors are remapped into INT 50h-57h and code was added to call appropriate PC interrupt vectors from IRQ handler routines.
 
-### What is emulated?
+### Video memory emulation
 
-The emulation layer presents itself as an IBM PC with a MDA graphics card, one serial and one parallel port. It provides the following services:
+Most PC software does not use BIOS for screen output, because direct manipulation of the video memory at segment 0B000h is much faster. To maintain compatibility with these applications, a software emulation of video memory was added which periodically copies the contents of this memory area into the Commodore video memory at $D000. 
 
-* INT 10 - functions 00, 02, 03, 06, 07, 09, 0A, 0E, 0F
+This routine is run periodically when the CPU is idle, for example waiting for keyboard input. It converts the PC video characters into appropriate PETSCII equivalents and sets the reverse bit according to the character attributes, thus emulating an MDA text adapter closely. A hardware latch register was added to the board, which latches bits when a specific region of the video memory is written by the CPU; this way, the routine works much faster because it can refresh only the modified screen regions.
+
+### Hardware virtualization
+
+To allow compatibility with PC applications that access the PC hardware directly, the concept of hardware virtualization was created. It works as follows: whenever the applications tries to access a hardware device using IN or OUT instructions, a NMI interrupt is generated. The address if the I/O port is latched, so that the NMI handler routine can see which hardware device is being accessed. It can then perform necessary actions to simulate the workings of this hardware device.
+
+As an example, an emulation of the PC speaker was created by hooking up code on accesses to ports 41h and 61h. This code checks the frequency of the sound that’s being generated and uses the specifically created IPC $1D function which programs the SID chip on the Commodore side to play the same sound.
+
+### Card hardware support
+
+The card contains several hardware features that need software support, for example:
+-	The SPI interface is used to attach a memory card. This card is visible to the PC applications via the INT 13h interface as an 8 GB hard disk, which can be used to boot DOS.
+-	The I2C interface is used to attach a real time clock, which is visible to the PC applications via the INT 1Ah interface.
+-	The card configuration registers are used to select the system clock frequency. The card boots with the 8 MHz clock, but if the NEC V20 processor is detected, it is switched to faster 12 MHz clock.
+
+The software also re-implements a portion of the original Commodore KERNAL to fix a race condition bug which occurs when the RS-232 port is being used with the card.
+
+## What is emulated?
+
+The emulation layer presents itself to the applicatins as an IBM PC with a MDA graphics card, one serial and one parallel port. It provides the following services, which are sufficient to run MS-DOS and other PC software which does not rely on accessing PC hardware directly.
+
+### BIOS interrupts
+
+The following BIOS functions are provided by the software:
+
+* INT 10 - functions 00, 02, 03, 05, 06, 07, 09, 0A, 0E, 0F
 * INT 11
 * INT 12
-* INT 13 - functions 00, 01, 02, 03, 04, 08, 15, 16
+* INT 13 - functions 00, 01, 02, 03, 04, 08, 0C, 0D, 10, 15, 16
 * INT 14 - functions 00, 01, 02, 03
 * INT 16 - functions 00, 01, 02
 * INT 17 - functions 00, 01, 02
-* INT 18 and INT 19
-* INT 1A - functions 00, 01
+* INT 18
+* INT 19
+* INT 1A - functions 00, 01, 02, 03, 04, 05
 
-These services are sufficient to run MS-DOS and other software which does not rely on accessing PC hardware directly.
+### Disk access
 
-PC disk access is possible with the 8050 or 8250 drive; a script converting IMG files to D80 or D82 images is provided. These images need to be written to the Commodore diskette using software such as `cbmlink` - CBM drives cannot read PC disks directly due to different format (MFM vs GCR).
+A 8GB hard drive is emulated using the SD memory card. The card is formatted using the FAT filesystem, which allows using it in a Windows or Max computer to transfer files. Note that the SD card must be first reformatted to conform to the INT 13h CHS geometry used by the card. The attached `freedos.zip` file contains an SD card image that can be transferred to a fresh card; it contains a proper boot sector and partition table so that the card can be used immediately.
 
-Additionally, the low-level routines emulate INT 08 and INT 1C using the 500 Hz timer of the CBM-II (this is important for software containing timing loops).
+PC diskette access is also possible with the 8050 or 8250 drive; a script converting IMG files to D80 or D82 images is provided. These images need to be written to the Commodore diskette using software such as `cbmlink` - CBM drives cannot read PC disks directly due to different format (MFM vs GCR).
 
-### What is not emulated?
+### Video memory emulation
 
-PC hardware that doesn't exist in the CBM-II cannot be emulated. The most important part is video memory - if the software accesses video memory directly, it will not work (unfortunately, lots of software does that). Similarly, software that relies on keyboard interrupts, accesses I/O ports, and performs other hardware accesses will not work. 
+A routine copies the contents of MDA video memory from segment 0B000h to Commodore video memory at $D000, with appropriate CP437 to PETSCII conversion. This routine is run periodically so that the changes made to the video memory by the running application are reflected on the screen.
 
-Interrupt routines from IBM AT upwards are not emulated, except for a few functions of INT 13. This should not be needed, as the card has an 8088 processor so could not pass for an AT anyway.
+### Timer interrupts
 
-BIOS data area at segment 0040h is not emulated - this area is used for IPC calls to the 6509 processor.
+The low-level routines emulate INT 08 and INT 1C using CIA timers of the CBM-II  - this is important for software containing timing loops.
 
-### How can it be used?
+### BIOS data area
 
-The easiest way to use the emulation layer is to take an IMG file of a PC diskette, and transform it into a D80 or D82 image using the `imager.pl` utility (described below).
+Several entries of the BIOS data area at segment 0040h are emulated, such as current video mode or Shift key flags, to support software that uses these variables directly.
 
-The utility places all the required files on the Commodore disk, therefore booting the image is as simple as inserting the disk and pressing Shift+Run.
+### Virtual hardware
 
-### What software does work?
-
-Currently I am concentrating on booting PC version of MS-DOS and making it work. Once MS-DOS runs without problems, I plan to start testing various other software. Suggestions are welcome on what to try first.
+A framework for emulating hardware devices in software is present. At the moment the only supported device is PC Speaker, which is emulated using the SID chip.
 
 ## Compiling the software
 
@@ -76,11 +98,11 @@ The following tools are required to successfully build the system:
 
  * GNU make.
  * NASM (Netwide Assembler) - to compile the 8088 code. 
- * XA assembler - to compile the 6509 code.
+ * CA65 assembler - to compile the 6509 code.
  * Perl - to run disk imaging utilities.
  * c1541 (for example, from your VICE distribution) - to place compiled files in D80 and D82 images.
 
-The compiled files are placed in the `dist` directory. The most important subdirectory there is the `disk` folder, where ready-to-run PC-DOS disk images are placed after successful compilation. You will need `cbmlink` or similar utility to transfer these images to your disk drive.
+The compiled files are placed in the `dist` directory.
 
 ## Utilities
 
@@ -103,26 +125,3 @@ The `imager.pl` utility writes appropriate data on the tracks 38 and 39 of the C
 PC diskettes have 512-byte sectors whereas Commodore drives use 256-byte sectors. Therefore, the emulation layer creates "virtual" 512-byte sectors from pairs of physical sectors.
 
 The created D80 or D82 image must be written to the Commodore disk drive using your favorite tool (for example, `cbmlink`).
-
-### Transferring files to the host OS
-
-The native MS-DOS 1.25 host system contains a file `recv.exe` that can be used to transmit files from a PC to the host disk over a RS-232 connection. You can use this tool to transfer recompiled emulation layer files to the launch disk. It is *not intended* to transfer PC disks or other software that must be run under the guest OS.
-
-An appropriate utility `send.pl` is provided that sends a file in the format required by `recv.exe`.
-
-To transfer a file, connect the computers with a serial cable, launch the host OS and on the PC use the command:
-
-```
-send.pl file_to_send
-```
-
-Then on the host OS type the command:
-
-```
-recv file_to_receive
-```
-
-The file will be transferred to the Commodore and saved on the disk. Beware that you *must* launch the send command on the PC first, otherwise `recv.exe` will hang waiting for the first handshake from the sender side.
-
-Note that the host system is on a 8050 diskette; if you have a 8250 drive, you must first switch it to the 8050 mode before booting the host OS; otherwise writing to the diskette will not be possible. Alternatively, you can use the `format` command to format a new MS-DOS disk in the drive 1 (accessed as drive B: under MS-DOS).
-
