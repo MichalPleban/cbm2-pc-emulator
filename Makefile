@@ -1,5 +1,5 @@
 
-PRG = dist/prg/6509.prg dist/prg/screen_nochar.prg dist/prg/screen_char.prg
+PRG = dist/prg/6509.prg dist/prg/screen_nochar.prg dist/prg/screen_char.prg dist/prg/vga.prg
 ROM = dist/rom/payload.bin dist/rom/8088.bin dist/rom/8088_devel.bin
 UPGRADE = dist/upgrade/upgrade.com
 
@@ -27,6 +27,11 @@ dist/prg/screen_char.prg: src/6509/screen.asm
 	ca65 -D CHAR src/6509/screen.asm
 	ld65 src/6509/screen.o -C src/6509/6509.cfg -o dist/prg/screen_char.prg
 	rm src/6509/screen.o
+
+dist/prg/vga.prg: src/6509/vga.asm
+	ca65 src/6509/vga.asm
+	ld65 src/6509/vga.o -C src/6509/6509.cfg -o dist/prg/vga.prg
+	rm src/6509/vga.o
 
 dist/rom/payload.bin: src/8088/payload.asm $(PAYLOAD) $(VIRTUAL) $(PRG)
 	util/incbuild.pl src/8088/build.inc

@@ -277,7 +277,7 @@ Screen_ScrollPerform:
             jmp Screen_ScrollPerform
 Screen_ScrollClear:
             mov cl, bl
-            mov ax, 0020h
+            mov ax, 2020h
             rep stosw
             mov cl, dl
             add di, cx
@@ -360,7 +360,7 @@ Screen_INT_0E:
 			jl Screen_INT_0E_Control			
 Screen_INT_0E_Output:			
 			stosb
-			xor al, al
+			mov al, 20h
 			stosb
 			mov [Data_CursorPhysical], di
 			mov al, [Data_CursorVirtual]
@@ -400,7 +400,7 @@ Screen_INT_0E_BkSp:
             mov [Data_CursorVirtual], ax
 			call Screen_CursorCalc
 			mov di, [Data_CursorPhysical]
-			mov [es:di], word 0020h
+			mov [es:di], word 2020h
             jmp Screen_INT_0E_Finish
 Screen_INT_0E_Not08:
 			cmp al, 13	; CR
@@ -486,7 +486,7 @@ Screen_Clear:
             push ax
             xor ax, ax
    			mov di, ax
-			mov al, 20h
+			mov ax, 2020h
 			mov cx, 2000
 			rep stosw
             mov ah, 03h
@@ -517,7 +517,7 @@ Screen_CursorCheck:
             mov di, 0
             mov cx, 1920
             rep movsw
-            mov ax, 0020h
+            mov ax, 2020h
             mov cx, 80
             rep stosw
             pop di

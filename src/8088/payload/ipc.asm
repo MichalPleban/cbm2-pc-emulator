@@ -371,7 +371,10 @@ IPC_Video_CursorSet:
 			IPC_Enter
 			mov [IPCData], byte 1
 			mov [IPCData+1], dx
-			IPC_Call 14h
+			IPC_Disable_IRQ
+			mov cl, 94h
+			call IPC
+			IPC_Enable_IRQ
 			IPC_Leave
 			ret
 
@@ -411,7 +414,10 @@ IPC_Video_Convert:
 IPC_Video_Clear:
 			IPC_Enter
 			mov [IPCData], byte 3
-			IPC_Call 14h
+			IPC_Disable_IRQ
+			mov cl, 94h
+			call IPC
+			IPC_Enable_IRQ
 			IPC_Leave
 			ret
 
@@ -422,7 +428,10 @@ IPC_Video_Clear:
 IPC_Video_ScrollUp:
 			IPC_Enter
 			mov [IPCData], byte 4
-			IPC_Call 14h
+			IPC_Disable_IRQ
+			mov cl, 94h
+			call IPC
+			IPC_Enable_IRQ
 			IPC_Leave
 			ret
 
@@ -436,7 +445,10 @@ IPC_Video_SetCursor:
 			IPC_Enter
 			mov [IPCData], byte 5
 			mov [IPCData+1], al
-			IPC_Call 14h
+			IPC_Disable_IRQ
+			mov cl, 94h
+			call IPC
+			IPC_Enable_IRQ
 			IPC_Leave
 			ret
 

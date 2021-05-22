@@ -70,7 +70,7 @@ File00End:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
             ; File type, load bank & address
-            db 10h          ; 01 (standard screen driver_
+            db 10h          ; 01 (standard screen driver)
             db 0Fh
             dw 0400h
             ; Link to next file
@@ -88,6 +88,17 @@ File10End:
             dw File11End
 incbin 'dist/prg/screen_char.prg'
 File11End:
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+            ; File type, load bank & address
+            db 12h           ; 12 (VGA interface driver)
+            db 0Fh
+            dw 0400h
+            ; Link to next file
+            dw File12End
+incbin 'dist/prg/vga.prg'
+File12End:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

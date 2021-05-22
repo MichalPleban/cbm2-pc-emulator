@@ -143,11 +143,14 @@ Config_Modify:
             call Output_Line
             mov si, Config_Banner2
             call Output_String
-            mov si, Config_Banner3
+            mov si, Config_Banner_V0
             mov bl, 0
             call Config_Driver
-            mov si, Config_Banner4
+            mov si, Config_Banner_V1
             mov bl, 1
+            call Config_Driver
+            mov si, Config_Banner_V2
+            mov bl, 2
             call Config_Driver
             mov si, Config_Banner5
             call Output_String
@@ -155,10 +158,9 @@ Config_Modify1:
             call INT_16_00
             cmp al, 1Bh
             jz INT_19
-            jb Config_Modify1
             cmp al, 31h
             jb Config_Modify1
-            cmp al, 32h
+            cmp al, 33h
             ja Config_Modify1
             call Config_Segment
             sub al, 21h
@@ -206,10 +208,12 @@ Config_Driver2:
             
 Config_Banner2:
 			db "Select video driver:", 10, 13, 0
-Config_Banner3:
+Config_Banner_V0:
 			db "Inbuilt video (standard char ROM)", 10, 13, 0
-Config_Banner4:
+Config_Banner_V1:
 			db "Inbuilt video (PC char ROM)", 10, 13, 0
+Config_Banner_V2:
+			db "Michau's VGA interface", 10, 13, 0
 Config_Banner5:
 			db "Esc - Return to main menu", 10, 13, 0
 Config_Banner6:
