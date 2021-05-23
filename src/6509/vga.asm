@@ -82,8 +82,8 @@ func_00_screen_init:
     ldy #$00
     lda #$20
 clear_loop:
-    sta $D5A0,y
-    sta $D6A0,y
+    sta $D500,y
+    sta $D600,y
     dey
     bne clear_loop
     rts

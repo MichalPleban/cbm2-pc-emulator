@@ -124,6 +124,7 @@ Config_Segment:
 
 Config_Reset:
             call Config_Zero
+            call Config_Write
             call INT_19_Segments
             mov si, Config_Banner1
             call Output_String
