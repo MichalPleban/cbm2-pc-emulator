@@ -182,7 +182,10 @@ func_03_clear_screen:
 func_04_scroll_up:
     lda #$83
     sta VGA_CMD
-    rts
+    ; TODO: Why is this needed? Delay in the Propeller?
+    lda #$81
+    sta ipc_buffer+2
+    jmp func_02_screen_convert
     
 
 ;--------------------------------------------------------------------

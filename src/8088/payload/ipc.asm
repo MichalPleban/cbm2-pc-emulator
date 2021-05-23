@@ -414,6 +414,7 @@ IPC_Video_Convert:
 IPC_Video_Clear:
 			IPC_Enter
 			mov [IPCData], byte 3
+			mov [IPCData+1], bl
 			IPC_Disable_IRQ
 			mov cl, 94h
 			call IPC
@@ -428,6 +429,7 @@ IPC_Video_Clear:
 IPC_Video_ScrollUp:
 			IPC_Enter
 			mov [IPCData], byte 4
+			mov [IPCData+1], bl
 			IPC_Disable_IRQ
 			mov cl, 94h
 			call IPC
