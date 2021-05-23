@@ -227,7 +227,11 @@ ipc_10_kbd_peek:
     sta ipc_buffer+2
     lda shift_buffer
     sta ipc_buffer+3
+    jmp ipc_22_dummy
 ipc_10_end:
+    lda EditorShift
+    and #$30
+    sta ipc_buffer+3
 ipc_22_dummy:
     clc
     jmp ipc_end
