@@ -560,15 +560,19 @@ INT_16_02:
 
 			; Store shift key state in BIOS data area for Turbo Pascal 7
 INT_16_BIOSFlags:
-			shr ah, 1
-			shr ah, 1
-			shr ah, 1
-			shr ah, 1
-			mov al, ah
-			and ax, 0201h
-			shl ah, 1
-			or al, ah
-			xor al, 05h
+            xor al, al
+            test ah, 10h
+            jnz INT_16_BIOSFlags_NoShift
+            or al, 01h
+INT_16_BIOSFlags_NoShift:
+            test ah, 20h
+            jnz INT_16_BIOSFlags_NoCtrl
+            or al, 04h
+INT_16_BIOSFlags_NoCtrl:
+            test ah, 08h
+            jnz INT_16_BIOSFlags_NoAlt
+            or al, 08h
+INT_16_BIOSFlags_NoAlt:
 			push bx
 			push ds
 			xor bx, bx

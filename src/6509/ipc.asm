@@ -47,6 +47,9 @@ CRTC_RegNo = $d800
 CRTC_RegVal = $d801
 TPI1_ActIntReg = $de07
 ACIA_Command = $DD02
+TPI2_PortA = $df00
+TPI2_PortB = $df01
+TPI2_PortC = $df02
 
 
 ;--------------------------------------------------------------------
@@ -202,7 +205,7 @@ has_key:
     bne irq_end
 clear_buffer:
     lda EditorShift
-    and #$30
+    and #$38
     sta shift_buffer,x
     lda EditorKey
     sta key_buffer,x
@@ -230,7 +233,7 @@ ipc_10_kbd_peek:
     jmp ipc_22_dummy
 ipc_10_end:
     lda EditorShift
-    and #$30
+    and #$38
     sta ipc_buffer+3
 ipc_22_dummy:
     clc
@@ -1096,8 +1099,71 @@ new_irq_3:
 new_irq_4:
     jmp $FC9F
 new_irq_5:
-    jsr $E013
+    jsr new_scnkey
     jsr $F979
     sei
     jsr irq_handler
     jmp $FC9F
+
+;--------------------------------------------------------------------
+; New keyboard scan function
+;--------------------------------------------------------------------
+
+new_scnkey:
+    ldy     #$FF
+    sty     EditorShift
+    sty     EditorKey
+    iny
+    sty     TPI2_PortB
+    sty     TPI2_PortA
+    jsr     $E91E
+    and     #$3F
+    eor     #$3F
+    bne     new_scnkey_process
+new_scnkey_nokey:
+    jmp     $E8F3
+new_scnkey_process:
+    ; Additional code to detect C= press
+    lda     #$FF
+    sta     TPI2_PortB
+    ldx     #$F7
+    stx     TPI2_PortA
+    jsr     $E91E
+    lsr     a
+    ora     #$F7
+    sta     EditorShift
+    lda     #$FF
+    sta     TPI2_PortA
+    asl     a
+    sta     TPI2_PortB
+    jsr     $E91E
+    pha
+    ora     #$07
+    and     EditorShift
+    sta     EditorShift
+    pla
+    pha
+    ora     #$30
+    bne     new_scnkey_process_2
+new_scnkey_process_1:
+    jsr     $E91E
+new_scnkey_process_2:
+    ldx     #$05
+new_scnkey_process_3:
+    lsr     a
+    bcc     new_scnkey_haskey
+new_scnkey_process_4:
+    iny
+    dex
+    bpl     new_scnkey_process_3
+    sec
+    rol     TPI2_PortB
+    rol     TPI2_PortA
+    bcs     new_scnkey_process_1
+    pla
+    bcc     new_scnkey_nokey
+new_scnkey_haskey:
+    ; Ignore C= key
+    cpy     #70
+    beq     new_scnkey_process_4
+    jmp     $E8A9

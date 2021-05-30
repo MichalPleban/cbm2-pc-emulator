@@ -275,7 +275,7 @@ IPC_Reset:
 ; Output:
 ;			ZF - zero flag set if no key in buffer
 ;			AL - code of key pressed
-;			AH - shift status (bit 4 = Shift not pressed, bit 5 = Ctrl not pressed)
+;			AH - shift status (bit 4 = Shift not pressed, bit 5 = Ctrl not pressed, bit 3 = C= not pressed)
 ; --------------------------------------------------------------------------------------
 
 IPC_KbdPeek:
@@ -291,7 +291,7 @@ IPC_KbdPeek:
 ; Clear keyboard buffer.
 ; Output:
 ;			AL - code of key pressed
-;			AH - shift status (bit 4 = Shift not pressed, bit 5 = Ctrl not pressed)
+;			AH - shift status (bit 4 = Shift not pressed, bit 5 = Ctrl not pressed, bit 3 = C= not pressed)
 ; WARNING: 
 ; This function can only be called if there is character in the buffer,
 ; othwerise it will hang forever!
@@ -316,10 +316,19 @@ IPC_KbdClear:
 IPC_KbdConvert:
 			push ds
 			push cx
-			mov ch, ah
-			mov cl, 3
-			xor ch, 30h
-			shr ch, cl
+			mov cx, 3
+			test ah, 10h
+			jnz IPC_KbdConvert_NoShift
+			mov ch, 2
+IPC_KbdConvert_NoShift:
+			test ah, 20h
+			jnz IPC_KbdConvert_NoCtrl
+			mov ch, 4
+IPC_KbdConvert_NoCtrl:
+			test ah, 08h
+			jnz IPC_KbdConvert_NoAlt
+			mov ch, 6
+IPC_KbdConvert_NoAlt:
 			xor ah, ah
 			shl ax, cl
 			or al, ch
