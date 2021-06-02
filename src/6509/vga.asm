@@ -10,6 +10,7 @@ src_addr = $50
 page_count = $52
 dst_page = $53
 
+CursorType = $D4
 jmp_vector = $03FC
 
 ;--------------------------------------------------------------------
@@ -71,13 +72,15 @@ func_table:
 ;--------------------------------------------------------------------
 
 func_00_screen_init:
+    ; Switch on MDA mode
     lda #$81
     sta VGA_CMD
-    ; Disable CRTC cursor
-    lda #$20
+    ; Enable cursor
+    lda #$60
     ldx #$0A
     stx CRTC_RegNo 
     sta CRTC_RegVal
+    sta CursorType
     ; Clear the lower part of the CRTC screen
     ldy #$00
     lda #$20
@@ -193,6 +196,16 @@ func_04_scroll_up:
 ;--------------------------------------------------------------------
 
 func_05_set_cursor:
+    lda ipc_buffer+1
+    bmi set_cursor_off
+    lda #$60
+    .byt $2c
+set_cursor_off:
+    lda #$20
+    ldx #$0A
+    stx CRTC_RegNo 
+    sta CRTC_RegVal
+    sta CursorType
     rts
 
 ;--------------------------------------------------------------------
