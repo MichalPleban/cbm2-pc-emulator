@@ -87,6 +87,7 @@ func_00_screen_init:
 clear_loop:
     sta $D500,y
     sta $D600,y
+    sta $D700,y
     dey
     bne clear_loop
     rts
