@@ -140,7 +140,7 @@ Output_Line1:
 
 Version_Banner:
 			db "PC Compatibility layer build ", SOFTWARE_VERSION, SOFTWARE_BUILDS, " "
-			db "(C) 2017-2020 Micha", 9Ch, " Pleban", 10, 13, 0, '$'
+			db "(C) 2017-2021 Micha", 9Ch, " Pleban", 10, 13, 0, '$'
 
 Version_Output:
    			mov ax, Data_Segment

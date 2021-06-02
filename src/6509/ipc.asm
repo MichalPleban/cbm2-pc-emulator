@@ -611,12 +611,12 @@ ipc_18_init:
     jsr SETST
     lda #$ff
     sta EditorKey
-    jsr reopen_08
-    lda #$00
-    sta ipc_buffer+2
-    jsr reopen_09
-    bcs init_diskno
-    inc ipc_buffer+2
+;    jsr reopen_08
+;    lda #$00
+;    sta ipc_buffer+2
+;    jsr reopen_09
+;    bcs init_diskno
+;    inc ipc_buffer+2
 init_diskno:
     jsr serial_reopen
     lda #$01
