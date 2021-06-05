@@ -75,8 +75,8 @@ func_00_screen_init:
     ; Switch on MDA mode
     lda #$81
     sta VGA_CMD
-    ; Enable cursor
-    lda #$60
+    ; Disable CRTC cursor
+    lda #$20
     ldx #$0A
     stx CRTC_RegNo 
     sta CRTC_RegVal
@@ -199,14 +199,11 @@ func_04_scroll_up:
 func_05_set_cursor:
     lda ipc_buffer+1
     bmi set_cursor_off
-    lda #$60
+    lda #$84
     .byt $2c
 set_cursor_off:
-    lda #$20
-    ldx #$0A
-    stx CRTC_RegNo 
-    sta CRTC_RegVal
-    sta CursorType
+    lda #$85
+    sta VGA_CMD
     rts
 
 ;--------------------------------------------------------------------
