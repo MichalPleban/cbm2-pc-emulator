@@ -81,6 +81,9 @@ func_00_screen_init:
     stx CRTC_RegNo 
     sta CRTC_RegVal
     sta CursorType
+    ; Enable MDA cursor
+    lda #$84
+    sta VGA_CMD
     ; Clear the lower part of the CRTC screen
     ldy #$00
     lda #$20
@@ -186,7 +189,6 @@ func_03_clear_screen:
 func_04_scroll_up:
     lda #$83
     sta VGA_CMD
-    ; TODO: Why is this needed? Delay in the Propeller?
     lda #$81
     sta ipc_buffer+2
     jmp func_02_screen_convert

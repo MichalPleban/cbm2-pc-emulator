@@ -247,8 +247,9 @@ screen_scroll_clear:
     sta $D780,y
     dey
     bpl screen_scroll_clear
-    rts
-    
+    lda #$80
+    sta ipc_buffer+2
+    jmp func_02_screen_convert
 
 ;--------------------------------------------------------------------
 ; Function 05: Set cursor
