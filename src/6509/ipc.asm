@@ -635,6 +635,7 @@ init_diskno:
     sta CursorType
     lda #$40
     sta ScrollFlag
+    jsr kbd_init
     sei
     lda IRQVec
     sta old_irq
@@ -1110,11 +1111,12 @@ new_scnkey:
     iny
     sty     TPI2_PortB
     sty     TPI2_PortA
-    jsr     $E91E
+    jsr     kbd_read
     and     #$3F
     eor     #$3F
     bne     new_scnkey_process
 new_scnkey_nokey:
+vector_1:
     jmp     $E8F3
 new_scnkey_process:
     ; Additional code to detect C= press
@@ -1122,7 +1124,7 @@ new_scnkey_process:
     sta     TPI2_PortB
     ldx     #$F7
     stx     TPI2_PortA
-    jsr     $E91E
+    jsr     kbd_read
     lsr     a
     ora     #$F7
     sta     EditorShift
@@ -1130,7 +1132,7 @@ new_scnkey_process:
     sta     TPI2_PortA
     asl     a
     sta     TPI2_PortB
-    jsr     $E91E
+    jsr     kbd_read
     pha
     ora     #$07
     and     EditorShift
@@ -1140,7 +1142,7 @@ new_scnkey_process:
     ora     #$30
     bne     new_scnkey_process_2
 new_scnkey_process_1:
-    jsr     $E91E
+    jsr     kbd_read
 new_scnkey_process_2:
     ldx     #$05
 new_scnkey_process_3:
@@ -1160,4 +1162,27 @@ new_scnkey_haskey:
     ; Ignore C= key
     cpy     #70
     beq     new_scnkey_process_4
+vector_2:
     jmp     $E8A9
+
+kbd_read:
+    lda     TPI2_PortC
+    cmp     TPI2_PortC
+    bne     kbd_read
+    rts
+
+    ; Change vectors for DIN KERNAL
+kbd_init:
+    bit $E008
+    bmi kbd_init_end
+    lda #$20
+    sta vector_1+1
+    lda #$E9
+    sta vector_1+2
+    lda #$BC
+    sta vector_2+1
+    lda #$E8
+    sta vector_2+2
+kbd_init_end:
+    rts
+    
