@@ -82,7 +82,7 @@ func_00_screen_init:
     sta CRTC_RegVal
     sta CursorType
     ; Enable MDA cursor
-    lda #$84
+    lda #$85
     sta VGA_CMD
     ; Clear the lower part of the CRTC screen
     ldy #$00

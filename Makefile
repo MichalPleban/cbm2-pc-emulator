@@ -35,7 +35,7 @@ dist/prg/vga.prg: src/6509/vga.asm
 
 dist/rom/payload.bin: src/8088/payload.asm $(PAYLOAD) $(VIRTUAL) $(PRG)
 	util/incbuild.pl src/8088/build.inc
-	nasm src/8088/payload.asm -w-lock -w-number-overflow -o dist/rom/payload.bin
+	nasm src/8088/payload.asm -w-lock -w-number-overflow -o dist/rom/payload.bin -l test.lst
 
 dist/rom/8088.bin: src/8088/rom.asm dist/rom/payload.bin $(START)
 	nasm src/8088/rom.asm -w-lock -w-number-overflow -o dist/rom/8088.bin
