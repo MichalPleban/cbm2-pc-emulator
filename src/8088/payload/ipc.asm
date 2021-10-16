@@ -85,6 +85,10 @@ IPC_Init:
 			mov [0020h], word INT_08
 			mov [0022h], word ax
 			
+			; Int 0C vector (COM1 interrupt)
+			mov [0030h], word INT_Iret
+			mov [0032h], word ax
+			
 			; Rebase interrupts to 58h, enable IRQ0 and IRQ7
 			out 0E8h, al
 			mov al, 13h
@@ -147,6 +151,8 @@ INT_08_1:
             pop ds
             pop ax
 			int 1Ch
+			int 0Ch
+INT_Iret:
 			iret
 
 
@@ -477,19 +483,6 @@ IPC_PrinterOut:
 			ret
 
 ; --------------------------------------------------------------------------------------
-; Input character from the serial port.
-; Output:
-;     AL - character code
-; --------------------------------------------------------------------------------------
-
-IPC_SerialIn:
-			IPC_Enter
-			IPC_Call 19h
-			mov al, [IPCData+2]
-			IPC_Leave
-			ret
-
-; --------------------------------------------------------------------------------------
 ; Read and reset 18Hz counter value
 ; Output:
 ;     AL - character code
@@ -503,6 +496,19 @@ IPC_CounterRead:
 			ret
 
 ; --------------------------------------------------------------------------------------
+; Input character from the serial port.
+; Output:
+;     AL - character code
+; --------------------------------------------------------------------------------------
+
+IPC_SerialIn:
+			IPC_Enter
+			IPC_Call 19h
+			mov al, [IPCData+2]
+			IPC_Leave
+			ret
+
+; --------------------------------------------------------------------------------------
 ; Output character to the serial port.
 ; Input:
 ;     AL - character code
@@ -512,6 +518,19 @@ IPC_SerialOut:
 			IPC_Enter
 			mov [IPCData+2], al
 			IPC_Call 1Ah
+			IPC_Leave
+			ret
+
+; --------------------------------------------------------------------------------------
+; Check the serial port status.
+; Output:
+;     AL - 00 = buffer empty
+; --------------------------------------------------------------------------------------
+
+IPC_SerialStatus:
+			IPC_Enter
+			IPC_Call 1Ch
+			mov al, [IPCData+2]
 			IPC_Leave
 			ret
 
@@ -770,7 +789,7 @@ IPC_Params:
 			db 0, 3     ; 19 - serial in
 			db 3, 2     ; 1A - serial out
 			db 5, 2     ; 1B - serial config
-			db 0, 0     ; 1C - exit
+			db 0, 3     ; 1C - serial status
 			db 5, 2     ; 1D - sound output
 			db 0, 0
 			db 0, 0

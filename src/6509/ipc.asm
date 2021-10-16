@@ -38,6 +38,8 @@ RS232Status = $37a
 RvsFlag = $0397
 ScrollFlag = $39b
 WstFlag = $3fa
+rs232head = $037C
+rs232tail = $037D
 
 ;--------------------------------------------------------------------
 ; I/O chip ports
@@ -143,7 +145,7 @@ nesting_flag:
     .word ipc_19_serial_in
     .word ipc_1a_serial_out
     .word ipc_1b_serial_config
-    .word 0
+    .word ipc_1c_serial_status
     .word ipc_1d_sid_control
     .word 0
     .word 0
@@ -277,7 +279,7 @@ ipc_11_loop:
     .byt $00,$01,$02,$03,$04,$05,$06,$07
     .byt $08,$09,$0a,$0b,$0c,$0d,$0e,$0f
     .byt $40,$40,$23,$23,$66,$40,$4b,$4b
-    .byt $40,$30,$23,$25,$00,$25,$00,$00
+    .byt $40,$30,$23,$25,$30,$25,$00,$00
     .byt $00,$4b,$0a
     
     
@@ -334,6 +336,17 @@ ipc_1a_serial_out:
     jsr BSOUT
     jmp serial_checkstatus
     
+;--------------------------------------------------------------------
+; IPC function 1C - check RS-232 buffer.
+;--------------------------------------------------------------------
+    
+ipc_1c_serial_status:
+    sec
+    lda rs232head
+    sbc rs232tail
+    sta ipc_buffer+2
+    clc
+    jmp ipc_end
     
 ;--------------------------------------------------------------------
 ; IPC function 96 - read disk sector.

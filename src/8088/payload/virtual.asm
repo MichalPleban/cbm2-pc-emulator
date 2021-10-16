@@ -41,10 +41,31 @@ Virtual_Init2:
             stosw
             loop Virtual_Init2
             
+            call V_PIC_Init
+            Virtual_IN  021h, V_IN_021
+            Virtual_OUT 020h, V_OUT_020
+            Virtual_OUT 021h, V_OUT_021
+
+            call V_PIT_Init
+            Virtual_OUT 043h, V_OUT_043
+
             call V_Speaker_Init
             Virtual_IN  061h, V_IN_061
             Virtual_OUT 061h, V_OUT_061
             Virtual_OUT 042h, V_OUT_042
+
+            call V_Serial_Init
+            Virtual_IN  3F8h, V_IN_3F8
+            Virtual_IN  3F9h, V_IN_3F9
+            Virtual_IN  3FAh, V_IN_3FA
+            Virtual_IN  3FBh, V_IN_3FB
+            Virtual_IN  3FCh, V_IN_3FC
+            Virtual_IN  3FDh, V_IN_3FD
+            Virtual_IN  3FEh, V_IN_3FE
+            Virtual_OUT 3F8h, V_OUT_3F8
+            Virtual_OUT 3F9h, V_OUT_3F9
+            Virtual_OUT 3FBh, V_OUT_3FB
+            Virtual_OUT 3FCh, V_OUT_3FC
             
             pop ax
             pop cx
@@ -161,7 +182,7 @@ Virtual_Stack:
             jne Virtual_Stack_End
 Virtual_Stack_Twobyte:
             mov al, [ds:bp-2]
-            cmp al, 0A8h             ; TEST AL, xx
+            cmp al, 0A8h            ; TEST AL, xx
             je Virtual_Stack_Twobyte2
             cmp al, 0Ch             ; OR AL, xx
             je Virtual_Stack_Twobyte2
@@ -217,4 +238,7 @@ Virtual_Hex1:
 			call IPC_SerialOut
 			ret
 
+%include "src/8088/virtual/pic.asm"
+%include "src/8088/virtual/pit.asm"
 %include "src/8088/virtual/speaker.asm"
+%include "src/8088/virtual/serial.asm"
