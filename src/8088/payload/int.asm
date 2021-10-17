@@ -773,62 +773,63 @@ INT_1A_00:
             mov ds, cx
             mov dx, [046Ch]
             mov cx, [046Eh]
+            xor al, al
             pop ds
             clc
             retf 2
             
-			push ax
-			push bx
+;			push ax
+;			push bx
 
-            call INT_1A_02_Do
-            mov al, dh
-            call ConvertFromBCD
-            mov ah, al          ; AH = Seconds
-            push ax
-			mov al, cl
-			call ConvertFromBCD
-			mov dl, al          ; DL = Minutes
-			mov al, ch
-			call ConvertFromBCD
-			mov dh, al          ; DH = Hours
-			pop ax
-			xor al, al          ; AL = Microseconds
+;            call INT_1A_02_Do
+;            mov al, dh
+;            call ConvertFromBCD
+;            mov ah, al          ; AH = Seconds
+;            push ax
+;			mov al, cl
+;			call ConvertFromBCD
+;			mov dl, al          ; DL = Minutes
+;			mov al, ch
+;			call ConvertFromBCD
+;			mov dh, al          ; DH = Hours
+;			pop ax
+;			xor al, al          ; AL = Microseconds
 
 			; Calculate number of ticks in whole minutes
-			mov bx, ax
-			mov al, dh
-			mov cl, 60
-			mul cl
-			xor dh, dh
-			add ax, dx
-			mov cx, 1092 ; Ticks per minute
-			mul cx
-			push dx
-			push ax
+;			mov bx, ax
+;			mov al, dh
+;			mov cl, 60
+;			mul cl
+;			xor dh, dh
+;			add ax, dx
+;			mov cx, 1092 ; Ticks per minute
+;			mul cx
+;			push dx
+;			push ax
 			
 			; Calculate number of ticks in seconds
-			mov al, bh
-			mov cl, 10
-			mul cl
-			xor bh, bh
-			add ax, bx
-			mov cx, 182
-			mul cx
-			mov cx, 100
-			div cx
+;			mov al, bh
+;			mov cl, 10
+;			mul cl
+;			xor bh, bh
+;			add ax, bx
+;			mov cx, 182
+;			mul cx
+;			mov cx, 100
+;			div cx
 			
 			; Add them together
-			pop cx
-			add cx, ax
-			pop dx
-			xor ax, ax
-			adc dx, ax
+;			pop cx
+;			add cx, ax
+;			pop dx
+;			xor ax, ax
+;			adc dx, ax
 			
-			pop bx
-			pop ax
-			xor al, al
-			xchg cx, dx
-			iret
+;			pop bx
+;			pop ax
+;			xor al, al
+;			xchg cx, dx
+;			iret
 
 ; -----------------------------------------------------------------
 ; INT 1A function 01 - set system time.
@@ -846,52 +847,52 @@ INT_1A_01:
             clc
             retf 2
             
-			push ax
-			push bx
-			push cx
-			push dx
-			mov ax, dx
-			mov dx, cx
+;			push ax
+;			push bx
+;			push cx
+;			push dx
+;			mov ax, dx
+;			mov dx, cx
 			
 			; Calculate hour and minute
-			mov cx, 1092 ; Ticks per minute
-			div cx
-			mov bx, dx
-			mov cl, 60
-			div cl
-			xchg al, ah
+;			mov cx, 1092 ; Ticks per minute
+;			div cx
+;			mov bx, dx
+;			mov cl, 60
+;			div cl
+;			xchg al, ah
 			
 			; Calculate number of seconds
-			xchg ax, bx
-			xor dx, dx
-			mov cx, 50
-			mul cx
-			mov cx, 91
-			div cx
-			mov cl, 10
-			div cl
-			xchg al, ah
+;			xchg ax, bx
+;			xor dx, dx
+;			mov cx, 50
+;			mul cx
+;			mov cx, 91
+;			div cx
+;			mov cl, 10
+;			div cl
+;			xchg al, ah
 			
-			mov dx, bx
-			push ax
+;			mov dx, bx
+;			push ax
 
-            mov al, dh
-            call ConvertToBCD
-            mov ch, al
-            mov al, dl
-            call ConvertToBCD
-            mov cl, al
-			pop ax
-            mov al, ah
-            call ConvertToBCD
-            mov dh, al
-            call INT_1A_03_Do
+;            mov al, dh
+;            call ConvertToBCD
+;            mov ch, al
+;            mov al, dl
+;            call ConvertToBCD
+;            mov cl, al
+;			pop ax
+;            mov al, ah
+;            call ConvertToBCD
+;            mov dh, al
+;            call INT_1A_03_Do
 			
-			pop dx
-			pop cx
-			pop bx
-			pop ax
-			iret
+;			pop dx
+;			pop cx
+;			pop bx
+;			pop ax
+;			iret
 
 ; -----------------------------------------------------------------
 ; INT 1A function 02 - get RTC time.

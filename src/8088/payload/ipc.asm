@@ -205,6 +205,8 @@ IPC_Install_Loop2:
 			mov [es:0417h], ax            ; Shift flags #1 & #2
 			mov [es:0449h], byte 07       ; Current video mode
 			mov [es:044Ah], word 80       ; Number of screen columns
+			mov [es:044Ch], word 4096     ; Screen size in bytes
+			mov [es:044Eh], word 0        ; Screen page offset
 			mov [es:0463h], word 03B4h    ; CRTC port
 			mov [es:046Ch], ax            ; Tick count low word
 			mov [es:046Eh], ax            ; Tick count high word
