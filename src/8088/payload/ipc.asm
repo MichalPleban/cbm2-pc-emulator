@@ -719,7 +719,7 @@ IPC_KbdConvert_Table:
 			dw 04700h, 04737h, 07700h, 09700h ; 4A - numerical 7    Home
 			dw 04B00h, 04B34h, 07300h, 09B00h ; 4B - numerical 4    cursor left
 			dw 04F00h, 04F31h, 07500h, 09F00h ; 4C - numerical 1    End
-			dw 00B30h, 00B29h, 0FF00h, 08100h ; 4D - numerical 0    0
+			dw 05200h, 05230h, 09200h, 0A200h ; 59 - numerical 0   Insert
 			dw 08600h, 08800h, 08A00h, 08C00h ; 4E - Rvs Off        F12
 			dw 0FF00h, 0FF00h, 0FF00h, 0FF00h ; 4F - numerical CE
 			dw 04800h, 04838h, 08D00h, 09800h ; 50 - numerical 8    cursor up
@@ -731,7 +731,7 @@ IPC_KbdConvert_Table:
 			dw 04900h, 04939h, 08400h, 09900h ; 56 - numerical 9    PageUp
 			dw 04D00h, 04D36h, 07400h, 09D00h ; 57 - numerical 6    cursor right
 			dw 05100h, 05133h, 07600h, 0A100h ; 58 - numerical 3    Page Down
-			dw 05200h, 05230h, 09200h, 0A200h ; 59 - numerical 00   Insert
+			dw 00B30h, 00B29h, 0FF00h, 08100h ; 4D - numerical 00   0
 			dw 02E03h, 02E03h, 02E03h, 02E03h ; 5A - Run Stop       Ctrl+C
 			dw 0352Fh, 0352Fh, 09500h, 0A400h ; 5B - numerical /    /
 			dw 04A2Dh, 04A2Dh, 08E00h, 04A00h ; 5C - numerical -    -
