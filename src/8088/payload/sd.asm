@@ -64,11 +64,16 @@ SD_Dummy:
 ; --------------------------------------------------------------------------------------
 
 SD_Func_08:
+            push cs
+            pop es
+            mov cx, SD_DBT
+            mov di, cx
             mov dh, SD_HEADS-1
             mov dl, 1
             mov cl, SD_SECTORS + (((SD_CYLINDERS-1)>>8)<<6)
             mov ch, (SD_CYLINDERS-1)&255
             xor ah, ah
+            mov bl, 11h
             clc
             ret
             
@@ -596,3 +601,19 @@ SD_CHS:
             pop bx
             ret
             
+; -----------------------------------------------------------------
+; Hard disk parameter table
+; -----------------------------------------------------------------
+
+SD_DBT:
+            db 0
+            db 0
+            db 0
+            db 2
+            db SD_SECTORS
+            db 0
+            db 0
+            db 0
+            db 0AAh
+            db 0
+            db 0

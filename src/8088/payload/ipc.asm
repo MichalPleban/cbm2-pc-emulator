@@ -47,13 +47,7 @@ IPCData		equ 000Ah				; Offset of the data trasfer area (16 bytes)
 IPC:
 			call 0F000h:0F003h
 			ret
-			push cx
-			mov cx, 20
-IPC_No_Handshake2:
-			loop IPC_No_Handshake2
-			pop cx
-			ret
-
+			
 IPC_GetSeg:
 			xor cx, cx
 			mov ds, cx
@@ -207,6 +201,7 @@ IPC_Install_Loop2:
 			mov [es:044Ah], word 80       ; Number of screen columns
 			mov [es:044Ch], word 4096     ; Screen size in bytes
 			mov [es:044Eh], word 0        ; Screen page offset
+			mov [es:0462h], byte 0        ; Display page number
 			mov [es:0463h], word 03B4h    ; CRTC port
 			mov [es:046Ch], ax            ; Tick count low word
 			mov [es:046Eh], ax            ; Tick count high word

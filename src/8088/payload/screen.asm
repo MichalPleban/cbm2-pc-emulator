@@ -41,7 +41,7 @@ Screen_INT_Functions:
 			dw Screen_INT_05
 			dw Screen_INT_06
 			dw Screen_INT_07
-			dw INT_Unimplemented
+			dw Screen_INT_08
 			dw Screen_INT_09
 			dw Screen_INT_0A
 			dw INT_Unimplemented
@@ -148,6 +148,7 @@ Screen_INT_02:
             push ax
             mov ax, Data_Segment
             mov ds, ax
+            push dx
 
 			; MS BASIC Compiler runtime calls this function with DX=FFFF ?
             test dx, 8080h
@@ -163,9 +164,12 @@ Screen_INT_02_RowOK:
 			mov dl, 79
 Screen_INT_02_ColumnOK:
             mov [Data_CursorVirtual], dx
+            
             call Screen_CursorCalc
+            call Screen_CursorSave
             
 Screen_INT_02_Ret:
+            pop dx
             pop ax
             ret
 
@@ -191,6 +195,20 @@ Screen_INT_05:
             mov dl, al
             and dl, 07h
             mov [es:Data_ScreenPage], dl
+            push ds
+            push ax
+            xor ax, ax
+            mov ds, ax
+            mov [0462h], dl
+            mov ah, dl
+            shl ah, 1
+            shl ah, 1
+            shl ah, 1
+            shl ah, 1
+            xor al, al
+            mov [044Eh], ax
+            pop ax
+            pop ds
             pop dx
             ret
             
@@ -318,16 +336,38 @@ Screen_INT_07_Clear:
             jmp Screen_Clear
 
 ; -----------------------------------------------------------------
+; INT 10 function 08 - read character and attribute.
+; -----------------------------------------------------------------
+
+Screen_INT_08:
+            push di
+            call Screen_Segments
+			mov di, [Data_CursorPhysical]
+			lodsw
+			pop di
+            ret
+            
+; -----------------------------------------------------------------
 ; INT 10 function 09 - write character and attribute.
 ; -----------------------------------------------------------------
 
 Screen_INT_09:
             push di
+            push cx
             push ax
             call Screen_Segments
 			mov di, [Data_CursorPhysical]
 			pop ax
+			push ax
+			mov ah, bl
+			test cx, cx
+			jnz Screen_INT_09_Loop
+			inc cx
+Screen_INT_09_Loop:
 			stosw
+			loop Screen_INT_09_Loop
+			pop ax
+			pop cx
 			pop di
             ret
             
@@ -337,11 +377,21 @@ Screen_INT_09:
 
 Screen_INT_0A:
             push di
+            push cx
             push ax
             call Screen_Segments
 			mov di, [Data_CursorPhysical]
 			pop ax
-			stosb
+			push ax
+			mov ah, 20h
+			test cx, cx
+			jnz Screen_INT_0A_Loop
+			inc cx
+Screen_INT_0A_Loop:
+			stosw
+			loop Screen_INT_0A_Loop
+			pop ax
+			pop cx
 			pop di
             ret
 
@@ -373,6 +423,7 @@ Screen_INT_0E_End:
 			mov [Data_CursorVirtual], al
 			call Screen_CursorCheck
 Screen_INT_0E_Finish:
+			call Screen_CursorSave
 			pop ax
 			pop di
             ret
@@ -474,6 +525,27 @@ Screen_CursorCalc1:
             pop dx
             pop ax
             pop cx
+            ret
+
+; -----------------------------------------------------------------
+; Save the cursor position in the BIOS area
+; -----------------------------------------------------------------
+
+Screen_CursorSave:
+            push ax
+            mov ax, [Data_CursorVirtual]
+            push ds
+            push bx
+            xor bx, bx
+            mov ds, bx
+            mov bl, [0462h]
+            xor bh, bh
+            shl bl, 1
+            add bx, 0450h
+            mov [bx], ax
+            pop bx
+            pop ds
+            pop ax
             ret
 
 ; -----------------------------------------------------------------

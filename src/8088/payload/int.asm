@@ -504,14 +504,18 @@ INT_15:
 
 INT_16:
 			INT_Debug 16h
-			and ah, 0EFh
+			and ah, 0CFh    ; Map 1x and 2x functions to 0x
+			cmp ah, 09h
+			je INT_16_09
 			cmp ah, 03h
 			ja INT_16_Ret
 			push bp
 			mov bp, INT_16_Functions
 			call INT_Dispatch
 			pop bp
-			retf 2 		; To retain the ZF flag!
+			retf 2 		    ; To retain the ZF flag!
+INT_16_09:
+			xor al, al
 INT_16_Ret:
 			iret
 
@@ -533,7 +537,9 @@ INT_16_00:
 			call INT_16_BIOSFlags
 			pop ax
 			call IPC_KbdClear
-			jmp IPC_KbdConvert
+			call IPC_KbdConvert
+INT_16_00_Ret:
+			ret
 
 ; -----------------------------------------------------------------
 ; INT 16 function 01 - peek into keyboard buffer.

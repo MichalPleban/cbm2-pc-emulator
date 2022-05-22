@@ -2,14 +2,15 @@
 
 ; Speaker status (corresponding to port 61)
 V_Port_61       equ 02000h
-V_Port_42_LSB   equ 02001h
-V_Port_42_MSB   equ 02002h
+V_Port_42_Write equ 02001h
 V_Port_42_Sel   equ 02003h
+V_Port_42_Read  equ 02004h
         
 ; Initialize port values
 V_Speaker_Init:
         mov [V_Port_61], byte 00h
-        mov [V_Port_42_LSB], word 0000h
+        mov [V_Port_42_Write], word 0000h
+        mov [V_Port_42_Read], word 0000h
         mov [V_Port_42_Sel], byte 00h
         ret
         
@@ -24,24 +25,43 @@ V_OUT_061:
         call V_Speaker_Do
         retf
 
+; IN port 42 - read frequency & fake decrement
+V_IN_042:
+        test [V_Port_42_Sel], byte 01h
+        jnz V_IN_042_MSB
+        mov al, [V_Port_42_Read]
+        dec al
+        mov [V_Port_42_Read], al
+        mov al, [V_Port_42_Read+1]
+        sbb al, 0
+        mov [V_Port_42_Read+1], al
+        mov al, [V_Port_42_Read]
+        mov [V_Port_42_Sel], byte 01h
+        jmp V_IN_042_End
+V_IN_042_MSB:
+        mov al, [V_Port_42_Read+1]
+        mov [V_Port_42_Sel], byte 00h
+V_IN_042_End:
+        retf
+
 ; OUT port 42 - update frequency
 V_OUT_042:
         test [V_Port_42_Sel], byte 01h
         jnz V_OUT_042_MSB
-        mov [V_Port_42_LSB], al
+        mov [V_Port_42_Write], al
         mov [V_Port_42_Sel], byte 01h
         jmp V_OUT_042_End
 V_OUT_042_MSB:
-        mov [V_Port_42_MSB], al
+        mov [V_Port_42_Write+1], al
         mov [V_Port_42_Sel], byte 00h
         call V_Speaker_Do
 V_OUT_042_End:
         retf
         
 V_Speaker_Do:
-        mov ax, [V_Port_42_LSB]
-        cmp ax, 0
-        jz V_Speaker_Do_End
+        mov ax, [V_Port_42_Write]
+        cmp ax, 99h
+        jb V_Speaker_Silent
         push cx
         mov cx, ax
         mov dx, 0098h
@@ -52,6 +72,7 @@ V_Speaker_Do:
         and dl, 03h
         cmp dl, 03h
         jz V_Speaker_Do_1
+V_Speaker_Silent:
         xor dl, dl
 V_Speaker_Do_1:
         call IPC_Sound

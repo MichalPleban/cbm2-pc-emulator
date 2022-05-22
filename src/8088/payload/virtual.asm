@@ -50,9 +50,10 @@ Virtual_Init2:
             Virtual_OUT 043h, V_OUT_043
 
             call V_Speaker_Init
+            Virtual_IN 042h, V_IN_042
             Virtual_IN  061h, V_IN_061
-            Virtual_OUT 061h, V_OUT_061
             Virtual_OUT 042h, V_OUT_042
+            Virtual_OUT 061h, V_OUT_061
 
             call V_Serial_Init
             Virtual_IN  3F8h, V_IN_3F8
@@ -66,7 +67,16 @@ Virtual_Init2:
             Virtual_OUT 3F9h, V_OUT_3F9
             Virtual_OUT 3FBh, V_OUT_3FB
             Virtual_OUT 3FCh, V_OUT_3FC
+
+            call V_MDA_Init
+            Virtual_IN  3B4h, V_IN_3B4
+            Virtual_IN  3B5h, V_IN_3B5
+            Virtual_IN  3BAh, V_IN_3BA
+            Virtual_IN  3DAh, V_IN_3DA
+            Virtual_OUT 3B4h, V_OUT_3B4
+            Virtual_OUT 3B5h, V_OUT_3B5
             
+Virtual_Init_End:
             pop ax
             pop cx
             pop es
@@ -242,3 +252,4 @@ Virtual_Hex1:
 %include "src/8088/virtual/pit.asm"
 %include "src/8088/virtual/speaker.asm"
 %include "src/8088/virtual/serial.asm"
+%include "src/8088/virtual/mda.asm"
