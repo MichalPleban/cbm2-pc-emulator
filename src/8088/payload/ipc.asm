@@ -774,12 +774,12 @@ IPC_Stub_End:
 ; -----------------------------------------------------------------
 
 IPC_Params:
-			db 0, 4     ; 10 - keyboard peek
-			db 0, 4     ; 11 - keyboard get
+			db 1, 4     ; 10 - keyboard peek
+			db 1, 4     ; 11 - keyboard get
 			db 3, 2     ; 12 - screen out
 			db 3, 2     ; 13 - printer out
 			db 6, 6     ; 14 - screen driver
-			db 0, 4     ; 15 - counter read
+			db 1, 4     ; 15 - counter read
 			db 11, 4    ; 96 - disk read
 			db 11, 4    ; 97 - disk write
 			db 0, 4     ; 18 - initialize

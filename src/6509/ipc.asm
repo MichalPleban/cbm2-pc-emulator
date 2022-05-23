@@ -278,7 +278,7 @@ ipc_11_loop:
     
     .byt $00,$01,$02,$03,$04,$05,$06,$07
     .byt $08,$09,$0a,$0b,$0c,$0d,$0e,$0f
-    .byt $40,$40,$23,$23,$66,$40,$4b,$4b
+    .byt $41,$41,$23,$23,$66,$41,$4b,$4b
     .byt $40,$30,$23,$25,$30,$25,$00,$00
     .byt $00,$4b,$0a
     
@@ -1105,12 +1105,14 @@ new_irq_3:
     cmp #1
     bne new_irq_3
 new_irq_4:
+    jsr status_out
     jmp $FC9F
 new_irq_5:
     jsr new_scnkey
     jsr $F979
     sei
     jsr irq_handler
+    jsr status_out
     jmp $FC9F
 
 ;--------------------------------------------------------------------
@@ -1184,7 +1186,10 @@ kbd_read:
     bne     kbd_read
     rts
 
-    ; Change vectors for DIN KERNAL
+;--------------------------------------------------------------------
+; Change vectors for DIN KERNAL
+;--------------------------------------------------------------------
+
 kbd_init:
     bit $E008
     bmi kbd_init_end
@@ -1198,4 +1203,27 @@ kbd_init:
     sta vector_2+2
 kbd_init_end:
     rts
+
+;--------------------------------------------------------------------
+; Output keyboard status to the IPC port
+;--------------------------------------------------------------------
+
+status_out:
+    lda #$FF
+    sta $DB02
+    lda EditorShift
+    and #$38
+    ldx buffer_size
+    bne status_out_1
+    ora #$01
+status_out_1:
+    ldx rs232head
+    cpx rs232tail
+    bne status_out_2
+    ora #$02
+status_out_2:
+;    ora #$C4
+    sta $DB00
+    rts
+
     

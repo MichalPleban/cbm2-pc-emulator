@@ -62,9 +62,9 @@ Screen_Interrupt:
 			mov ds, ax
 			inc byte [Data_Refresh]
             cmp byte [Data_Refresh], 10
-            jb Screen_interrupt_NoRefresh
+            jb Screen_Interrupt_NoRefresh
             call Screen_Refresh
-Screen_interrupt_NoRefresh:
+Screen_Interrupt_NoRefresh:
             pop ax
             pop ds
             ret

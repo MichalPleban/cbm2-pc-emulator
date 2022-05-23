@@ -531,14 +531,19 @@ INT_16_Functions:
 
 INT_16_00:
 			call Screen_Interrupt
-			call IPC_KbdPeek
-			jz INT_16_00
+            out 0E8h, al
+            in al, 21h
+            out 0E9h, al
+            test al, 01h
+            jnz INT_16_00
 			push ax
+			mov ah, al
 			call INT_16_BIOSFlags
 			pop ax
 			call IPC_KbdClear
 			call IPC_KbdConvert
 INT_16_00_Ret:
+			call Screen_Interrupt
 			ret
 
 ; -----------------------------------------------------------------
@@ -547,9 +552,15 @@ INT_16_00_Ret:
 
 INT_16_01:
 			call Screen_Interrupt
+            out 0E8h, al
+            in al, 21h
+            out 0E9h, al
+            test al, 01h
+            jnz INT_16_NoKey            
 			call IPC_KbdPeek
 			jz INT_16_NoKey
 			push ax
+			mov ah, al
 			call INT_16_BIOSFlags
 			pop ax
 			jmp IPC_KbdConvert
@@ -562,7 +573,10 @@ INT_16_NoKey:
 ; -----------------------------------------------------------------
 
 INT_16_02:
-			call IPC_KbdPeek
+            out 0E8h, al
+            in al, 21h
+            out 0E9h, al
+            mov ah, al
 
 			; Store shift key state in BIOS data area for Turbo Pascal 7
 INT_16_BIOSFlags:
