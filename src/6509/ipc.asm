@@ -22,6 +22,8 @@ load_bank = $45
 ;--------------------------------------------------------------------
 
 Status = $9c
+rs232BufPtr = $A6
+rs232BufPtrSeg = $A8
 CursorLine = $ca
 CursorColumn = $cb
 LastIndex = $cd
@@ -773,9 +775,10 @@ serial_reopen:
     jsr my_CLOSE
     lda #$ff
     sta SysMemTop
+    lda #$07
+    sta SysMemTop+1
     lda #$0f
     sta SysMemTop+2
-    sta SysMemTop+1
     lda #$02
     tax
     ldy #$03
@@ -1077,6 +1080,9 @@ new_irq:
     sta $DE07
     jmp $FCA2
 new_irq_1:
+;    cmp #$10
+;    beq new_irq_acia
+    
     ; IRQ from the 8088? If yes, redirect to our handler.
     cmp #$08
     beq new_irq_2
@@ -1222,7 +1228,7 @@ status_out_1:
     bne status_out_2
     ora #$02
 status_out_2:
-;    ora #$C4
+    ora #$C4
     sta $DB00
     rts
 

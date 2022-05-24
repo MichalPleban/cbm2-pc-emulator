@@ -486,7 +486,12 @@ INT_14_02:
 INT_14_03:
 			test dx, dx
 			jnz INT_14_NoPort
-			mov ax, 6110h	
+            call IPC_SerialStatus
+            cmp al, 00h
+			mov ax, 6010h
+			jz INT_14_03_NoData
+			or ah, 01h
+INT_14_03_NoData:
 			ret
 
 ; -----------------------------------------------------------------
