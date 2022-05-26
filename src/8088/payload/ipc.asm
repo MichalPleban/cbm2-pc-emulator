@@ -83,6 +83,10 @@ IPC_Init:
 			mov [0030h], word INT_Iret
 			mov [0032h], word ax
 			
+			; Int 09 vector (keyboard interrupt)
+			mov [0024h], word INT_Iret
+			mov [0026h], word ax
+			
 			; Rebase interrupts to 58h, enable IRQ0 and IRQ7
 			out 0E8h, al
 			mov al, 13h

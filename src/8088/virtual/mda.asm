@@ -3,10 +3,12 @@
 V_MDA_Data      equ 02030h     ; Buffer length 18 bytes
 V_Port_03BA     equ 02042h
 V_Port_03B4     equ 02043h
+V_Port_03DA     equ 02044h
 
 V_MDA_Init:
             mov [V_Port_03BA], byte 0
             mov [V_Port_03B4], byte 0
+            mov [V_Port_03DA], byte 9
             ret
 
 V_IN_3B4:
@@ -47,5 +49,8 @@ V_IN_3BA:
             retf
 
 V_IN_3DA:
-            mov al, 09h
+            mov al, [V_Port_03DA]
+            xor al, 08h
+            mov [V_Port_03DA], al
+            xor al, 08h
             retf

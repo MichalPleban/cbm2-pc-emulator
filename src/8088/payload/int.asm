@@ -547,6 +547,11 @@ INT_16_00:
 			pop ax
 			call IPC_KbdClear
 			call IPC_KbdConvert
+;			cmp ax, 2100h
+;			jne INT_16_00_Ret
+;			int 3
+;			nop
+;            int 09h
 INT_16_00_Ret:
 			call Screen_Interrupt
 			ret
