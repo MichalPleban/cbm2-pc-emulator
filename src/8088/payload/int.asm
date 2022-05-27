@@ -543,7 +543,6 @@ INT_16_00:
             jnz INT_16_00
 			push ax
 			mov ah, al
-;			call INT_16_BIOSFlags
 			pop ax
 			call IPC_KbdClear
 			call IPC_KbdConvert
@@ -553,7 +552,15 @@ INT_16_00:
 			mov ds, ax
 			test [Data_Boot], byte 80h
 			jz INT_16_00_NoBoot
-;			int 09h
+			; Simulate keypress with INT 09
+            mov ax, Virtual_Segment
+            mov ds, ax
+            pop ax
+            push ax
+			mov [V_Port_60], al
+			int 09h
+			or [V_Port_60], byte 80h
+			int 09h
 INT_16_00_NoBoot:
 			pop ax
 			pop ds
@@ -571,7 +578,6 @@ INT_16_01:
             out 0E9h, al
 			push ax
 			mov ah, al
-;			call INT_16_BIOSFlags
 			pop ax
             test al, 01h
             jnz INT_16_NoKey            

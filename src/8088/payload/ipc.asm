@@ -202,6 +202,7 @@ IPC_Install_Loop2:
 			
 			; Install some fake BIOS variables
 			
+			mov [es:0410h], word 037Dh    ; Equipment flags
 			mov [es:0417h], ax            ; Shift flags #1 & #2
 			mov [es:0449h], byte 07       ; Current video mode
 			mov [es:044Ah], word 80       ; Number of screen columns
