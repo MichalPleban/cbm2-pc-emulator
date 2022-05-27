@@ -121,7 +121,9 @@ IPC_IRQ7:
 			mov al, 20h
 			out 00h, al
 			out 0E9h, al
-			
+			call Screen_Interrupt
+			call INT_16_02	
+
 			int 08h
 
 			pop ax
@@ -150,7 +152,6 @@ INT_08_1:
             pop ax
 			int 1Ch
 			int 0Ch
-			int 09h
 INT_Iret:
 			iret
 

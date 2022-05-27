@@ -543,7 +543,7 @@ INT_16_00:
             jnz INT_16_00
 			push ax
 			mov ah, al
-			call INT_16_BIOSFlags
+;			call INT_16_BIOSFlags
 			pop ax
 			call IPC_KbdClear
 			call IPC_KbdConvert
@@ -553,7 +553,7 @@ INT_16_00:
 			mov ds, ax
 			test [Data_Boot], byte 80h
 			jz INT_16_00_NoBoot
-			int 09h
+;			int 09h
 INT_16_00_NoBoot:
 			pop ax
 			pop ds
@@ -571,7 +571,7 @@ INT_16_01:
             out 0E9h, al
 			push ax
 			mov ah, al
-			call INT_16_BIOSFlags
+;			call INT_16_BIOSFlags
 			pop ax
             test al, 01h
             jnz INT_16_NoKey            
@@ -594,6 +594,7 @@ INT_16_02:
 			; Store shift key state in BIOS data area for Turbo Pascal 7
 INT_16_BIOSFlags:
             xor al, al
+            ;jmp INT_16_BIOSFlags_NoAlt ;;;;;;;;;;;;;;;;
             test ah, 10h
             jnz INT_16_BIOSFlags_NoShift
             or al, 01h
