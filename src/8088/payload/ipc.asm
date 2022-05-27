@@ -150,6 +150,7 @@ INT_08_1:
             pop ax
 			int 1Ch
 			int 0Ch
+			int 09h
 INT_Iret:
 			iret
 

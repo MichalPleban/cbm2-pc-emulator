@@ -3,8 +3,8 @@
 %define SOFTWARE_VERSION "A"
 
 ; Software build (starting with 1)
-%define SOFTWARE_BUILD 652
-%define SOFTWARE_BUILDS "652"
+%define SOFTWARE_BUILD 678
+%define SOFTWARE_BUILDS "678"
 
 db SOFTWARE_VERSION
 dw SOFTWARE_BUILD

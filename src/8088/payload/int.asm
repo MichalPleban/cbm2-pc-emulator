@@ -547,13 +547,17 @@ INT_16_00:
 			pop ax
 			call IPC_KbdClear
 			call IPC_KbdConvert
-;			cmp ax, 2100h
-;			jne INT_16_00_Ret
-;			int 3
-;			nop
-;            int 09h
+            push ds
+			push ax
+			mov ax, Data_Segment
+			mov ds, ax
+			test [Data_Boot], byte 80h
+			jz INT_16_00_NoBoot
+			int 09h
+INT_16_00_NoBoot:
+			pop ax
+			pop ds
 INT_16_00_Ret:
-			call Screen_Interrupt
 			ret
 
 ; -----------------------------------------------------------------
@@ -565,14 +569,13 @@ INT_16_01:
             out 0E8h, al
             in al, 21h
             out 0E9h, al
-            test al, 01h
-            jnz INT_16_NoKey            
-			call IPC_KbdPeek
-			jz INT_16_NoKey
 			push ax
 			mov ah, al
 			call INT_16_BIOSFlags
 			pop ax
+            test al, 01h
+            jnz INT_16_NoKey            
+			call IPC_KbdPeek
 			jmp IPC_KbdConvert
 INT_16_NoKey:
 			xor ax, ax
@@ -610,6 +613,7 @@ INT_16_BIOSFlags_NoAlt:
 			mov [0417h], al
 			pop ds
 			pop bx
+			mov ah, 02h
 			ret
 
 
