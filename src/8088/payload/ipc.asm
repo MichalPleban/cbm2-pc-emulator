@@ -471,6 +471,21 @@ IPC_Video_SetCursor:
 			IPC_Enable_IRQ
 			IPC_Leave
 			ret
+			
+; --------------------------------------------------------------------------------------
+; Set video display options
+; Input:
+;           AL = 80 - enable MDA blink, 00 - disable blink
+; --------------------------------------------------------------------------------------
+
+IPC_Video_SetOptions:
+			IPC_Enter
+			mov [IPCData], byte 6
+			mov [IPCData+1], al
+			mov cl, 14h
+			call IPC
+			IPC_Leave
+			ret
 
 ; --------------------------------------------------------------------------------------
 ; Output character to the printer.

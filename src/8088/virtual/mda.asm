@@ -41,6 +41,14 @@ V_OUT_3B5:
             pop bx
             retf
             
+V_OUT_3B8:
+            shl al, 1
+            shl al, 1
+            shl al, 1
+            or al, 7Fh
+            call IPC_Video_SetOptions
+            retf
+            
 V_IN_3BA:
             mov al, [V_Port_03BA]
             xor al, 80h

@@ -83,6 +83,7 @@ Virtual_Init2:
             Virtual_IN  3DAh, V_IN_3DA
             Virtual_OUT 3B4h, V_OUT_3B4
             Virtual_OUT 3B5h, V_OUT_3B5
+            Virtual_OUT 3B8h, V_OUT_3B8
             
             call V_KBD_Init
             Virtual_IN  060h, V_IN_060

@@ -63,6 +63,7 @@ func_table:
     .word func_03_clear_screen
     .word func_04_scroll_up
     .word func_05_set_cursor
+    .word func_06_set_options
 
 ;--------------------------------------------------------------------
 ; Function 00: Initialize screen.
@@ -268,6 +269,14 @@ set_cursor_off:
     sta CursorType
     rts
 
+;--------------------------------------------------------------------
+; Function 06: Screenoptions.
+;--------------------------------------------------------------------
+
+func_06_set_options:
+    rts
+
+    
 .ifdef NOCHAR
 
 ;--------------------------------------------------------------------

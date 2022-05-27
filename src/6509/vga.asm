@@ -57,7 +57,9 @@ ipc_14_video:
     lda func_table+1,x
     sta jmp_vector+1
     jmp (jmp_vector)
-    
+
+attrib_mask:
+    .byte $FF
 
 func_table:
     .word func_00_screen_init
@@ -66,6 +68,7 @@ func_table:
     .word func_03_clear_screen
     .word func_04_scroll_up
     .word func_05_set_cursor
+    .word func_06_set_options
 
 ;--------------------------------------------------------------------
 ; Function 00: Initialize screen.
@@ -159,6 +162,7 @@ screen_convert_do:
     inc src_addr+1
 screen_proc_page:
     lda (src_addr),y
+    and attrib_mask
     sta VGA_DATA
     iny
     bne screen_convert_do
@@ -208,3 +212,14 @@ set_cursor_off:
     sta VGA_CMD
     rts
 
+;--------------------------------------------------------------------
+; Function 06: Set screen options
+;--------------------------------------------------------------------
+
+func_06_set_options:
+    lda ipc_buffer+1
+    and #$80
+    ora #$7F
+    sta attrib_mask
+    rts
+    
