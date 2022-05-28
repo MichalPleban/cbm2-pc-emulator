@@ -71,23 +71,27 @@ IPC_Init:
 			mov [0160h], word 0F1E2h
 			mov [0162h], word 0F000h
 
+			; Int 5A vector (60 Hz timer)
+			mov [0168h], word IPC_IRQ2
+			mov [016Ah], ax
+			
 			; Int 5F vector (18.2 Hz timer) -> Timer handler routine
 			mov [017Ch], word IPC_IRQ7
-			mov [017Eh], word ax
+			mov [017Eh], ax
 
 			; Int 08 vector -> Our own handler
 			mov [0020h], word INT_08
-			mov [0022h], word ax
+			mov [0022h], ax
 			
 			; Int 0C vector (COM1 interrupt)
 			mov [0030h], word INT_Iret
-			mov [0032h], word ax
+			mov [0032h], ax
 			
 			; Int 09 vector (keyboard interrupt)
 			mov [0024h], word INT_Iret
-			mov [0026h], word ax
+			mov [0026h], ax
 			
-			; Rebase interrupts to 58h, enable IRQ0 and IRQ7
+			; Rebase interrupts to 58h, enable IRQ0, IRQ2 and IRQ7
 			out 0E8h, al
 			mov al, 13h
 			out 00h, al
@@ -95,7 +99,7 @@ IPC_Init:
 			out 01h, al
 			mov al, 1
 			out 01h, al
-			mov al, 07Eh
+			mov al, 07Ah
 			out 01h, al
 			out 0E9h, al
 			
@@ -112,6 +116,30 @@ IPC_IRQ7:
 			push ax
 			push ds
 			
+			; EOI to the PIC chip
+			out 0E8h, al
+			mov al, 20h
+			out 00h, al
+			out 0E9h, al
+			
+			; Refresh screen
+			call Screen_Interrupt
+			
+			; Call periodic interrupt
+			int 08h
+			
+			pop ds
+			pop ax
+			iret
+
+; --------------------------------------------------------------------------------------
+; IRQ2 - 60 Hz timer interrupt routine.
+; --------------------------------------------------------------------------------------
+
+IPC_IRQ2:
+			push ax
+			push ds
+			
 			; Restore NMI vector
 			xor ax, ax
 			mov ds, ax
@@ -125,20 +153,14 @@ IPC_IRQ7:
 			out 00h, al
 			out 0E9h, al
 			
-			; Refresh screen
-			call Screen_Interrupt
-			
 			; Set Shift/Ctrl/Alt key flags
 			call INT_16_02	
 
-			; Call periodic interrupt
-			int 08h
-			
 			; Fake INT 09
 			mov ax, Virtual_Segment
 			mov ds, ax
 			mov [V_Port_60], byte 0AAh          ; Left Shift depressed
-;			int 09h
+			int 09h
 
 			pop ds
 			pop ax

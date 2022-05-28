@@ -518,6 +518,7 @@ INT_16:
 			mov bp, INT_16_Functions
 			call INT_Dispatch
 			pop bp
+			sti
 			retf 2 		    ; To retain the ZF flag!
 INT_16_09:
 			xor al, al
