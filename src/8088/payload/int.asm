@@ -536,15 +536,17 @@ INT_16_Functions:
 
 INT_16_00:
 			call Screen_Interrupt
+			
+			; Get 6509 status
             out 0E8h, al
             in al, 21h
             out 0E9h, al
             test al, 01h
             jnz INT_16_00
-			push ax
-			mov ah, al
-			pop ax
+            
 			call IPC_KbdClear
+			push bx
+			mov bx, ax
 			call IPC_KbdConvert
             push ds
 			push ax
@@ -552,6 +554,12 @@ INT_16_00:
 			mov ds, ax
 			test [Data_Boot], byte 80h
 			jz INT_16_00_NoBoot
+			
+			; Get key scancode in AL
+			mov ax, bx
+			xor ah, ah
+			call IPC_KbdConvert
+			
 			; Simulate keypress with INT 09
             mov ax, Virtual_Segment
             mov ds, ax
@@ -561,10 +569,12 @@ INT_16_00:
 			int 09h
 			or [V_Port_60], byte 80h
 			int 09h
+			
 INT_16_00_NoBoot:
 			pop ax
 			pop ds
 INT_16_00_Ret:
+            pop bx
 			ret
 
 ; -----------------------------------------------------------------
@@ -576,9 +586,17 @@ INT_16_01:
             out 0E8h, al
             in al, 21h
             out 0E9h, al
-			push ax
-			mov ah, al
-			pop ax
+            
+			; Fake INT 09
+            push ax
+            push ds
+            mov ax, Virtual_Segment
+            mov ds, ax
+			mov [V_Port_60], byte 0AAh          ; Left Shift depressed
+			int 09h
+            pop ds
+            pop ax
+            
             test al, 01h
             jnz INT_16_NoKey            
 			call IPC_KbdPeek

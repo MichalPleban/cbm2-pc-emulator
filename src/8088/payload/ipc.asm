@@ -111,21 +111,36 @@ IPC_Init:
 IPC_IRQ7:
 			push ax
 			push ds
+			
+			; Restore NMI vector
 			xor ax, ax
 			mov ds, ax
 			mov [0008h], word Virtual_Handle
 			mov ax, cs
 			mov [000Ah], ax
-			pop ds
+			
+			; EOI to the PIC chip
 			out 0E8h, al
 			mov al, 20h
 			out 00h, al
 			out 0E9h, al
+			
+			; Refresh screen
 			call Screen_Interrupt
+			
+			; Set Shift/Ctrl/Alt key flags
 			call INT_16_02	
 
+			; Call periodic interrupt
 			int 08h
+			
+			; Fake INT 09
+			mov ax, Virtual_Segment
+			mov ds, ax
+			mov [V_Port_60], byte 0AAh          ; Left Shift depressed
+;			int 09h
 
+			pop ds
 			pop ax
 			iret
 
