@@ -538,13 +538,18 @@ INT_16_Functions:
 INT_16_00:
 			call Screen_Interrupt
 			
+INT_16_00_Loop:
 			; Get 6509 status
             out 0E8h, al
             in al, 21h
             out 0E9h, al
             test al, 01h
-            jnz INT_16_00
+            jnz INT_16_00_Loop
             
+			call IPC_KbdPeek
+			test al, al
+			jz INT_16_00_Loop
+			
 			call IPC_KbdClear
 			push bx
 			mov bx, ax
@@ -601,6 +606,8 @@ INT_16_01:
             test al, 01h
             jnz INT_16_NoKey            
 			call IPC_KbdPeek
+			test al, al
+			jz INT_16_NoKey            
 			jmp IPC_KbdConvert
 INT_16_NoKey:
 			xor ax, ax

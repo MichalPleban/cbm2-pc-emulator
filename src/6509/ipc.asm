@@ -1,5 +1,8 @@
 
 
+.include "src/6509/io.inc"
+
+
 CPU_ACCESS_BANK = $1
 
 ;--------------------------------------------------------------------
@@ -95,7 +98,7 @@ ipc_buffer = $0805
 ; Filename to open RS-232 channel.
 rs232_param:
     .byt $1e,$00
-        
+    
 ; Filename used to open the data channel.
 filename_08:
     .byt "#"
@@ -129,7 +132,7 @@ nesting_flag:
     .byt 1
 	
     .res ($0830-*), $FF
-        
+    
 ;--------------------------------------------------------------------
 ; Jump table to IPC functions (only for function called from 8088).
 ; The location of this table is hardcoded to $0830 in the KERNAL.
@@ -188,12 +191,12 @@ irq_handler:
     sei
     ldx buffer_size
     cpx #$0e
-    bcs irq_end             ; End interrupt if buffer full
+    bcs irq_end     ; End interrupt if buffer full
     lda KeybufIndex
-    bne clear_buffer        ; Read keys from the buffer
+    bne clear_buffer    ; Read keys from the buffer
     lda EditorKey
     cmp #$ff
-    bne has_key             ; 
+    bne has_key     ; 
     lda LastIndex
     cmp #$ff
     bne irq_end
@@ -262,7 +265,10 @@ ipc_11_kbd_in:
     jsr CHKIN
 ipc_11_loop:
     jsr GETIN
-    beq ipc_11_loop
+    bne ipc_11_key
+    lda #47
+    ldy #$FF
+ipc_11_key:
     sta ipc_buffer+2
     sty ipc_buffer+3
     jsr CLRCH
@@ -274,7 +280,7 @@ ipc_11_loop:
 ;  * low nibble = number of input parameters.
 ;  * hight nibble = number of output parameters.
 ; The location of this table is hardcoded to $0910 in the KERNAL.
-;--------------------------------------------------------------------        
+;--------------------------------------------------------------------    
 
     .res ($0910-*), $FF
     
@@ -665,32 +671,40 @@ init_diskno:
     sta GETINVec
     lda #>my_getin
     sta GETINVec+1
+    
     ; Initialize 18.2 Hz counter
     lda #$D6
-    sta $db07
+    sta IPCcia+TimBHi
     lda #$93
-    sta $db06
+    sta IPCcia+TimBLo
     lda #$17
-    sta $db0f
+    sta IPCcia+CtrlB
     lda #$FF
-    sta $db05
-    sta $db04
+    sta IPCcia+TimAHi
+    sta IPCcia+TimALo
     lda #$B1
-    sta $db0e
+    sta IPCcia+CtrlA
+    
     ; Initialize SID second voice
     lda #$0F
-    sta $DA18
+    sta sid+Volume
     lda #$00
-    sta $DA07
-    sta $DA08
-    sta $DA09
-    sta $DA0C
+    sta sid+Osc2+FreqLo
+    sta sid+Osc2+FreqHi
+    sta sid+Osc2+PulseF
+    sta sid+Osc2+AtkDcy
     lda #$08
-    sta $DA0A
+    sta sid+Osc2+PulseC
     lda #$F0
-    sta $DA0D
+    sta sid+Osc2+SusRel
     lda #$20
-    sta $DA0B
+    sta sid+Osc2+OscCtl
+    
+    ; Set port B pin 4 to output
+    lda IPCcia+DDRB
+    ora #$10
+    sta IPCcia+DDRB
+    
     jmp ipc_end
     
 ;--------------------------------------------------------------------
@@ -1037,14 +1051,14 @@ ipc_14_screen_driver:
 ;--------------------------------------------------------------------
     
 ipc_15_counter_read:
-    lda $db04
+    lda IPCcia+TimALo
     eor #$FF
     sta ipc_buffer+2
-    lda $db05
+    lda IPCcia+TimBLo
     eor #$FF
     sta ipc_buffer+3
     lda #$B1
-    sta $db0e
+    sta IPCcia+CtrlA
     clc
     jmp ipc_end
 
@@ -1054,15 +1068,13 @@ ipc_15_counter_read:
     
 ipc_1d_sid_control:
     lda ipc_buffer+2
-    sta $0FFD
-    sta $DA07
+    sta sid+Osc2+FreqLo
     lda ipc_buffer+3
-    sta $0FFE
-    sta $DA08
+    sta sid+Osc2+FreqHi
     lda ipc_buffer+4
     and #$01
     ora #$20
-    sta $DA0B
+    sta sid+Osc2+OscCtl
     clc
     jmp ipc_end
 
@@ -1085,35 +1097,45 @@ new_irq_1:
     
     ; IRQ from the 8088? If yes, redirect to our handler.
     cmp #$08
-    beq new_irq_2
-    ; IRQ from 50Hz timer? If yes, redirect to our handler.
+    beq new_irq_ipc
+    
+    ; IRQ from 60Hz timer? If yes, redirect to our handler.
     cmp #$01
-    beq new_irq_5
+    beq new_irq_60hz
+    
     ; Redirect to normal IRQ handler.
     jmp $FBF5
-new_irq_2:
+    
+new_irq_ipc:
+    ; Set IPC busy flag
+    lda IPCcia+PortB
+    and #$EF
+    sta IPCcia+PortB
+    
+    ; Disable /FLAG interrupt
+    lda #$10
+    sta IPCcia+IntCtrReg
+    
     ; Clear IRQ flag at the CIA
-    lda $DB0D
-    ; Decrease nesting level
-    dec nesting_flag
-    ; Nested interrupt? If yes then exit.
-    bit nesting_flag
-    bmi new_irq_4
-new_irq_3:
+    lda IPCcia+IntCtrReg
+        
+    ; Execute KERNAL IRQ handler
     cli
-    lda #$00
-    sta $DB02
-    lda $DB00
     jsr $FD48
-    inc nesting_flag
-    ; Nested interrupt arrived in the meantime? If yes then repeat.
-    lda nesting_flag
-    cmp #1
-    bne new_irq_3
-new_irq_4:
+    
+    ; Re-enable /FLAG interrupt
+    lda #$90
+    sta IPCcia+IntCtrReg
+    
+    ; Clear IPC busy flag
+    lda IPCcia+PortB
+    ora #$10
+    sta IPCcia+PortB
+    
     jsr status_out
     jmp $FC9F
-new_irq_5:
+
+new_irq_60hz:
     jsr new_scnkey
     jsr $F979
     sei
@@ -1126,70 +1148,70 @@ new_irq_5:
 ;--------------------------------------------------------------------
 
 new_scnkey:
-    ldy     #$FF
-    sty     EditorShift
-    sty     EditorKey
+    ldy #$FF
+    sty EditorShift
+    sty EditorKey
     iny
-    sty     TPI2_PortB
-    sty     TPI2_PortA
-    jsr     kbd_read
-    and     #$3F
-    eor     #$3F
-    bne     new_scnkey_process
+    sty TPI2_PortB
+    sty TPI2_PortA
+    jsr kbd_read
+    and #$3F
+    eor #$3F
+    bne new_scnkey_process
 new_scnkey_nokey:
 vector_1:
-    jmp     $E8F3
+    jmp $E8F3
 new_scnkey_process:
     ; Additional code to detect C= press
-    lda     #$FF
-    sta     TPI2_PortB
-    ldx     #$F7
-    stx     TPI2_PortA
-    jsr     kbd_read
-    lsr     a
-    ora     #$F7
-    sta     EditorShift
-    lda     #$FF
-    sta     TPI2_PortA
-    asl     a
-    sta     TPI2_PortB
-    jsr     kbd_read
+    lda #$FF
+    sta TPI2_PortB
+    ldx #$F7
+    stx TPI2_PortA
+    jsr kbd_read
+    lsr a
+    ora #$F7
+    sta EditorShift
+    lda #$FF
+    sta TPI2_PortA
+    asl a
+    sta TPI2_PortB
+    jsr kbd_read
     pha
-    ora     #$07
-    and     EditorShift
-    sta     EditorShift
+    ora #$07
+    and EditorShift
+    sta EditorShift
     pla
     pha
-    ora     #$30
-    bne     new_scnkey_process_2
+    ora #$30
+    bne new_scnkey_process_2
 new_scnkey_process_1:
-    jsr     kbd_read
+    jsr kbd_read
 new_scnkey_process_2:
-    ldx     #$05
+    ldx #$05
 new_scnkey_process_3:
-    lsr     a
-    bcc     new_scnkey_haskey
+    lsr a
+    bcc new_scnkey_haskey
 new_scnkey_process_4:
     iny
     dex
-    bpl     new_scnkey_process_3
+    bpl new_scnkey_process_3
     sec
-    rol     TPI2_PortB
-    rol     TPI2_PortA
-    bcs     new_scnkey_process_1
+    rol TPI2_PortB
+    rol TPI2_PortA
+    bcs new_scnkey_process_1
     pla
-    bcc     new_scnkey_nokey
+    bcc new_scnkey_nokey
 new_scnkey_haskey:
     ; Ignore C= key
-    cpy     #70
-    beq     new_scnkey_process_4
+    cpy #70
+    beq new_scnkey_process_4
 vector_2:
-    jmp     $E8A9
+    jmp $E8A9
 
 kbd_read:
-    lda     TPI2_PortC
-    cmp     TPI2_PortC
-    bne     kbd_read
+    lda TPI2_PortC
+    cmp TPI2_PortC
+    bne kbd_read
     rts
 
 ;--------------------------------------------------------------------
@@ -1216,7 +1238,7 @@ kbd_init_end:
 
 status_out:
     lda #$FF
-    sta $DB02
+    sta IPCcia+DDRA
     lda EditorShift
     and #$38
     ldx buffer_size
@@ -1229,7 +1251,7 @@ status_out_1:
     ora #$02
 status_out_2:
     ora #$C4
-    sta $DB00
+    sta IPCcia+PortA
     rts
 
     

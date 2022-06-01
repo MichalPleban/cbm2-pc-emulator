@@ -9,6 +9,8 @@ IPCData		equ 000Ah				; Offset of the data trasfer area (16 bytes)
 %endmacro
 
 %macro		IPC_Enter	0
+            pushf
+            cli
 			push cx
 			push ds
 			out 0E8h, al
@@ -19,11 +21,10 @@ IPCData		equ 000Ah				; Offset of the data trasfer area (16 bytes)
 			out 0E9h, al
 			pop ds
 			pop cx
+			popf
 %endmacro
 
 %macro		IPC_Disable_IRQ	0
-			pushf
-			cli
 			push ax
 			in al, 01h
 			push ax
@@ -37,7 +38,6 @@ IPCData		equ 000Ah				; Offset of the data trasfer area (16 bytes)
 			pop ax
 			out 01h, al
 			pop ax
-			popf
 %endmacro
 
 ; --------------------------------------------------------------------------------------
@@ -45,6 +45,12 @@ IPCData		equ 000Ah				; Offset of the data trasfer area (16 bytes)
 ; --------------------------------------------------------------------------------------
 
 IPC:
+            push ax
+IPC_Busy:
+            in al, 20h
+            test al, 10h
+            jz IPC_Busy
+            pop ax
 			call 0F000h:0F003h
 			ret
 			
@@ -157,10 +163,10 @@ IPC_IRQ2:
 			call INT_16_02	
 
 			; Fake INT 09
-			mov ax, Virtual_Segment
-			mov ds, ax
-			mov [V_Port_60], byte 0AAh          ; Left Shift depressed
-			int 09h
+;			mov ax, Virtual_Segment
+;			mov ds, ax
+;			mov [V_Port_60], byte 0AAh          ; Left Shift depressed
+;			int 09h
 
 			pop ds
 			pop ax
@@ -320,8 +326,7 @@ IPC_Reset:
 ; --------------------------------------------------------------------------------------
 ; Peek into keyboard buffer.
 ; Output:
-;			ZF - zero flag set if no key in buffer
-;			AL - code of key pressed
+;			AL - code of key pressed (zero if none)
 ;			AH - shift status (bit 4 = Shift not pressed, bit 5 = Ctrl not pressed, bit 3 = C= not pressed)
 ; --------------------------------------------------------------------------------------
 
@@ -329,8 +334,7 @@ IPC_KbdPeek:
 			IPC_Enter
 			IPC_Call 10h
 			mov al, [IPCData+1]
-			test al, 01
-			mov ax, [IPCData+2]
+			mov ah, [IPCData+2]
 			IPC_Leave
 			ret
 
