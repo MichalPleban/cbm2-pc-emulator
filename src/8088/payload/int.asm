@@ -547,7 +547,7 @@ INT_16_00_Loop:
             jnz INT_16_00_Loop
             
 			call IPC_KbdPeek
-			test al, al
+			test ah, 01h
 			jz INT_16_00_Loop
 			
 			call IPC_KbdClear
@@ -606,7 +606,7 @@ INT_16_01:
             test al, 01h
             jnz INT_16_NoKey            
 			call IPC_KbdPeek
-			test al, al
+			test ah, 01h
 			jz INT_16_NoKey            
 			jmp IPC_KbdConvert
 INT_16_NoKey:
