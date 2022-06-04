@@ -7,13 +7,13 @@ TRACK = util/360_d80.trk util/360_d82.trk util/720_d82.trk
 ONDISK = dist/prg/boot.prg $(PRG)
 
 PAYLOAD = src/8088/payload/data.asm src/8088/payload/init.asm src/8088/payload/int.asm src/8088/payload/ipc.asm src/8088/payload/sd.asm src/8088/payload/i2c.asm src/8088/payload/screen.asm src/8088/payload/config.asm src/8088/payload/hardware.asm src/8088/payload/virtual.asm
-VIRTUAL = src/8088/virtual/speaker.asm src/8088/virtual/serial.asm src/8088/virtual/pic.asm src/8088/virtual/pit.asm src/8088/virtual/mda.asm
+VIRTUAL = src/8088/virtual/speaker.asm src/8088/virtual/serial.asm src/8088/virtual/pic.asm src/8088/virtual/pit.asm src/8088/virtual/mda.asm src/8088/virtual/kbd.asm
 START = src/8088/rom/ipc.asm src/8088/rom/bootstrap.asm
 DEBUG = src/8088/include/debug.asm
 
 all: $(PRG) $(ROM) $(TRACK) $(DISK) $(EMPTY) $(UPGRADE)
 
-dist/prg/6509.prg: src/6509/ipc.asm
+dist/prg/6509.prg: src/6509/ipc.asm src/6509/io.inc
 	ca65 src/6509/ipc.asm
 	ld65 src/6509/ipc.o -C src/6509/6509.cfg -o dist/prg/6509.prg
 	rm src/6509/ipc.o
