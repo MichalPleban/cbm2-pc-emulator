@@ -162,12 +162,6 @@ IPC_IRQ2:
             ; Set Shift/Ctrl/Alt key flags
             call INT_16_02    
 
-            ; Fake INT 09
-;            mov ax, Virtual_Segment
-;            mov ds, ax
-;            mov [V_Port_60], byte 0AAh          ; Left Shift depressed
-;            int 09h
-
             pop ds
             pop ax
             iret

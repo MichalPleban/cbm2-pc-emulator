@@ -289,7 +289,7 @@ EEPROM_Read2:
 ; -----------------------------------------------------------------
 
 Bootstrap_String_Init:
-            db CHAR_CLRSCR, 13, 0
+            db 147, 13, 0       ; Clear screen
 
 Bootstrap_String_LoadROM:
             db "loading the payload from rom...", 13, 0

@@ -313,7 +313,8 @@ Screen_INT_07:
             xchg si, di
             mov cl, bh
             sub cl, dh
-            dec cl
+            sub si, 160
+            sub di, 160
             test cl, cl
             jz Screen_INT_07_Doit
 Screen_INT_07_Loop:

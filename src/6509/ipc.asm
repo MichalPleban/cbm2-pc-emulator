@@ -1054,7 +1054,7 @@ ipc_15_counter_read:
     lda IPCcia+TimALo
     eor #$FF
     sta ipc_buffer+2
-    lda IPCcia+TimALo
+    lda IPCcia+TimAHi
     eor #$FF
     sta ipc_buffer+3
     lda #$B1
