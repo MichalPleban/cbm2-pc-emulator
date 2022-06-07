@@ -24,8 +24,6 @@
         Random          =       $1B
         Env3            =       $1C
 
-
-
 ; I/O  $db00: CIA 6526 Inter Process Communication
 
         IPCcia          =       $db00
@@ -47,3 +45,11 @@
         CtrlA           =       $0E
         CtrlB           =       $0F
 
+; I/O $dd00: ACIA 6551
+
+        acia            =       $dd00
+
+        ADataReg        =       $00
+        AStatusReg      =       $01
+        ACmdReg         =       $02
+        ACtrlReg        =       $03

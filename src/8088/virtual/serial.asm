@@ -6,17 +6,20 @@ V_Port_3FC      equ 02012h
 V_Divisor_LSB   equ 02013h
 V_Divisor_MSB   equ 02014h
 V_Port_3F8      equ 02015h
+V_Serial_Sent   equ 02016h
+V_Serial_Received equ 02017h
 
 
 V_Serial_Init:
             mov [V_Port_3F9], byte 00h
             mov [V_Port_3FB], byte 03h
-            mov [V_Port_3FC], byte 00h
+            mov [V_Port_3FC], byte 03h
+            mov [V_Serial_Sent], byte 00h
+            mov [V_Serial_Received], byte 00h
             ret
-
-
+            
 V_IN_3F8:
-;            call Debug_In
+            call Debug_In
             test [V_Port_3FB], byte 80h
             jnz V_IN_3F8_DLAB
             push ax
@@ -31,13 +34,14 @@ V_IN_3F8_Read:
             mov [V_Port_3F8], al
             pop ax
             mov al, [V_Port_3F8]
+            mov [V_Serial_Received], byte 00h
             retf
 V_IN_3F8_DLAB:
             mov al, [V_Divisor_LSB]
             retf
 
 V_IN_3F9:
-;            call Debug_In
+            call Debug_In
             test [V_Port_3FB], byte 80h
             jnz V_IN_3F9_DLAB
             mov al, [V_Port_3F9]
@@ -47,42 +51,58 @@ V_IN_3F9_DLAB:
             retf
             
 V_IN_3FA:
-;            call Debug_In
-            call IPC_SerialStatus
-            cmp al, 00h
+            call Debug_In
+;            call IPC_SerialStatus
+;            cmp al, 00h
+;            je V_IN_3FA_Empty
+            cmp [V_Serial_Received], byte 00h
             je V_IN_3FA_Empty
             mov al, 04h
             retf
 V_IN_3FA_Empty:
+            cmp [V_Serial_Sent], byte 80h
+            jnz V_IN_3FA_None
+            mov [V_Serial_Sent], byte 00h
+            mov al, 02h
+            retf
+V_IN_3FA_None:
             mov al, 01h
             retf
 
 V_IN_3FB:
-;            call Debug_In
+            call Debug_In
             mov al, [V_Port_3FB]
             retf
 
 V_IN_3FC:
-;            call Debug_In
+            call Debug_In
             mov al, [V_Port_3FC]
             retf
 
 V_IN_3FD:
-;            call Debug_In
-            mov al, 60h
+            call Debug_In
+            call IPC_SerialStatus
+            cmp al, 00h
+            je V_IN_3FD_Empty
+            mov al, 01h
+V_IN_3FD_Empty:
+            or al, 60h
             retf
 
 V_IN_3FE:
-;            call Debug_In
+            call Debug_In
             mov al, 0B0h
             retf
 
 V_OUT_3F8:
-;            call Debug_Out
+            call Debug_Out
             test [V_Port_3FB], byte 80h
             jnz V_OUT_3F8_DLAB
             push ax
             call IPC_SerialOut
+            ; Fake interrupt on finished data transmission
+            mov [V_Serial_Sent], byte 80h
+            int 0Ch
             pop ax
             retf
 V_OUT_3F8_DLAB:
@@ -90,7 +110,7 @@ V_OUT_3F8_DLAB:
             retf
 
 V_OUT_3F9:
-;            call Debug_Out
+            call Debug_Out
             test [V_Port_3FB], byte 80h
             jnz V_OUT_3F9_DLAB
             mov [V_Port_3F9], al
@@ -100,17 +120,18 @@ V_OUT_3F9_DLAB:
             retf
 
 V_OUT_3FB:
-;            call Debug_Out
+            call Debug_Out
             mov [V_Port_3FB], al
             retf
 
 V_OUT_3FC:
-;            call Debug_Out
+            call Debug_Out
             mov [V_Port_3FC], al
             retf
             
             
 Debug_In:
+            ret
             push ax
             mov al, 'I'
             call IPC_SerialOut
@@ -130,6 +151,7 @@ Debug_In:
             ret
 
 Debug_Out:
+            ret
             push ax
             mov al, 'O'
             call IPC_SerialOut

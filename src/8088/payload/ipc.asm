@@ -1,14 +1,14 @@
 
 
-IPCData        equ 000Ah                ; Offset of the data trasfer area (16 bytes)
+IPCData     equ 000Ah                ; Offset of the data trasfer area (16 bytes)
 
 
-%macro        IPC_Call     1
+%macro      IPC_Call     1
             mov cl, %1
             call IPC
 %endmacro
 
-%macro        IPC_Enter    0
+%macro      IPC_Enter    0
             pushf
             cli
             push cx
@@ -17,14 +17,14 @@ IPCData        equ 000Ah                ; Offset of the data trasfer area (16 by
             call IPC_GetSeg
 %endmacro
 
-%macro        IPC_Leave    0
+%macro      IPC_Leave    0
             out 0E9h, al
             pop ds
             pop cx
             popf
 %endmacro
 
-%macro        IPC_Disable_IRQ    0
+%macro      IPC_Disable_IRQ    0
             push ax
             in al, 01h
             push ax
@@ -33,7 +33,7 @@ IPCData        equ 000Ah                ; Offset of the data trasfer area (16 by
             sti
 %endmacro
 
-%macro        IPC_Enable_IRQ    0
+%macro      IPC_Enable_IRQ    0
             cli
             pop ax
             out 01h, al
@@ -158,9 +158,24 @@ IPC_IRQ2:
             mov al, 20h
             out 00h, al
             out 0E9h, al
-            
+
             ; Set Shift/Ctrl/Alt key flags
             call INT_16_02    
+
+            ; Interrupt on serial data received (DS destroyed)
+            mov ax, Virtual_Segment
+            mov ds, ax
+IPC_IRQ2_CheckSerial:
+            out 0E8h, al
+            in al, 21h
+            out 0E9h, al
+            test al, 02h
+            jnz IPC_IRQ2_NoSerial
+            mov [V_Serial_Received], byte 80h
+            int 0Ch
+            cmp [V_Serial_Received], byte 80h
+;            jnz IPC_IRQ2_CheckSerial
+IPC_IRQ2_NoSerial:
 
             pop ds
             pop ax
@@ -188,7 +203,6 @@ INT_08_1:
             pop ds
             pop ax
             int 1Ch
-            int 0Ch
 INT_Iret:
             iret
 

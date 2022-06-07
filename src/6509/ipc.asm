@@ -315,7 +315,6 @@ ipc_12_screen_out:
 ipc_19_serial_in:
     ldx #$02
     jsr CHKIN
-    ; Release the RTS line so that serial data can arrive
 serial_read:
     jsr DO_GETIN
     sta ipc_buffer+2
@@ -324,7 +323,8 @@ serial_read:
     bne serial_read
 serial_checkstatus:
     jsr CLRCH
-    ; Assert the RTS line again
+    ; Assert the RTS line
+    jsr set_rts
     lda RS232Status
     clc
     and #$77
@@ -342,6 +342,8 @@ ipc_1a_serial_out:
     jsr CHKOUT
     lda ipc_buffer+2
     jsr BSOUT
+    ; Assert the RTS line
+    jsr set_rts
     jmp serial_checkstatus
     
 ;--------------------------------------------------------------------
@@ -350,9 +352,11 @@ ipc_1a_serial_out:
     
 ipc_1c_serial_status:
     sec
-    lda rs232head
-    sbc rs232tail
+    lda rs232tail
+    sbc rs232head
     sta ipc_buffer+2
+    ; Assert the RTS line
+    jsr set_rts
     clc
     jmp ipc_end
     
@@ -985,8 +989,9 @@ ipc_1b_serial_config:
     lda ipc_buffer+3
     sta rs232_param+1
     jsr serial_reopen
+    ; Assert the RTS line
+    jsr set_rts
     jmp ipc_end
-
 
 ;--------------------------------------------------------------------
 ; Replacement function for GETIN.
@@ -1092,8 +1097,8 @@ new_irq:
     sta $DE07
     jmp $FCA2
 new_irq_1:
-;    cmp #$10
-;    beq new_irq_acia
+    cmp #$10
+    beq new_irq_acia
     
     ; IRQ from the 8088? If yes, redirect to our handler.
     cmp #$08
@@ -1133,6 +1138,7 @@ new_irq_ipc:
     sta IPCcia+PortB
     
     jsr status_out
+    jsr set_rts
     jmp $FC9F
 
 new_irq_60hz:
@@ -1141,7 +1147,13 @@ new_irq_60hz:
     sei
     jsr irq_handler
     jsr status_out
+    jsr set_rts
     jmp $FC9F
+
+new_irq_acia:
+    jsr set_rts
+    jmp $FBFC
+
 
 ;--------------------------------------------------------------------
 ; New keyboard scan function
@@ -1254,4 +1266,25 @@ status_out_2:
     sta IPCcia+PortA
     rts
 
+;--------------------------------------------------------------------
+; Set the status of the serial RTS line
+;--------------------------------------------------------------------
+
+set_rts:
+    sec
+    lda rs232tail
+    sbc rs232head
+    cmp #240
+    bcs set_rts_disable
+    ; Enable RTS if less than 240 characters in buffer
+    lda acia+ACmdReg
+    ora #$08
+    sta acia+ACmdReg
+    rts
+set_rts_disable:
+    ; Disable RTS if more 240 characters in buffer
+    lda acia+ACmdReg
+    and #$F7
+    sta acia+ACmdReg
+    rts
     

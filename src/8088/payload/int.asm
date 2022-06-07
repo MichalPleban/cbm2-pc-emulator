@@ -573,8 +573,7 @@ INT_16_00_Loop:
             mov [V_Port_60], al
             int 09h
             or [V_Port_60], byte 80h
-            int 09h
-            
+            int 09h            
 INT_16_00_NoBoot:
             pop ax
             pop ds
