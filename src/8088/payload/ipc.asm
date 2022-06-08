@@ -153,8 +153,13 @@ IPC_IRQ2:
             mov ax, cs
             mov [000Ah], ax
             
-            ; EOI to the PIC chip
             out 0E8h, al
+            ; Disable futher interrupts
+            in al, 01h
+            push ax
+            mov al, 0FEh
+            out 01h, al
+            ; EOI to the PIC chip
             mov al, 20h
             out 00h, al
             out 0E9h, al
@@ -162,7 +167,7 @@ IPC_IRQ2:
             ; Set Shift/Ctrl/Alt key flags
             call INT_16_02    
 
-            ; Interrupt on serial data received (DS destroyed)
+            ; Interrupt on serial data received
             mov ax, Virtual_Segment
             mov ds, ax
 IPC_IRQ2_CheckSerial:
@@ -174,8 +179,14 @@ IPC_IRQ2_CheckSerial:
             mov [V_Serial_Received], byte 80h
             int 0Ch
             cmp [V_Serial_Received], byte 80h
-;            jnz IPC_IRQ2_CheckSerial
+            jnz IPC_IRQ2_CheckSerial
 IPC_IRQ2_NoSerial:
+
+            ; Restore interrupts
+            out 0E8h, al
+            pop ax
+            out 01h, al
+            out 0E9h, al
 
             pop ds
             pop ax
