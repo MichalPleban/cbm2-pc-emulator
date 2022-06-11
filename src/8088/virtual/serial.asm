@@ -17,9 +17,30 @@ V_Serial_Init:
             mov [V_Serial_Sent], byte 00h
             mov [V_Serial_Received], byte 00h
             ret
+
+V_Serial_Do:
+            mov ax, [V_Divisor_LSB]
+            mov bp, IPC_Serial_Divisor
+            mov dl, 15
+V_Serial_Do1:
+            cmp ax, [cs:bp]
+            jbe V_Serial_Do2
+            add bp, 2
+            dec dl
+            jnz V_Serial_Do1
+V_Serial_Do2:            
+            mov al, [V_Port_3FB]
+            and al, 1Fh
+            call IPC_SerialConvert
+            and al, 0F0h
+            or al, dl
+            call IPC_SerialParams
+            ret
             
 V_IN_3F8:
+%ifdef SERIAL_DEBUG
             call Debug_In
+%endif
             test [V_Port_3FB], byte 80h
             jnz V_IN_3F8_DLAB
             push ax
@@ -41,7 +62,9 @@ V_IN_3F8_DLAB:
             retf
 
 V_IN_3F9:
+%ifdef SERIAL_DEBUG
             call Debug_In
+%endif
             test [V_Port_3FB], byte 80h
             jnz V_IN_3F9_DLAB
             mov al, [V_Port_3F9]
@@ -51,7 +74,9 @@ V_IN_3F9_DLAB:
             retf
             
 V_IN_3FA:
+%ifdef SERIAL_DEBUG
             call Debug_In
+%endif
 ;            call IPC_SerialStatus
 ;            cmp al, 00h
 ;            je V_IN_3FA_Empty
@@ -70,17 +95,23 @@ V_IN_3FA_None:
             retf
 
 V_IN_3FB:
+%ifdef SERIAL_DEBUG
             call Debug_In
+%endif
             mov al, [V_Port_3FB]
             retf
 
 V_IN_3FC:
+%ifdef SERIAL_DEBUG
             call Debug_In
+%endif
             mov al, [V_Port_3FC]
             retf
 
 V_IN_3FD:
+%ifdef SERIAL_DEBUG
             call Debug_In
+%endif
             call IPC_SerialStatus
             cmp al, 00h
             je V_IN_3FD_Empty
@@ -90,12 +121,16 @@ V_IN_3FD_Empty:
             retf
 
 V_IN_3FE:
+%ifdef SERIAL_DEBUG
             call Debug_In
+%endif
             mov al, 0B0h
             retf
 
 V_OUT_3F8:
+%ifdef SERIAL_DEBUG
             call Debug_Out
+%endif
             test [V_Port_3FB], byte 80h
             jnz V_OUT_3F8_DLAB
             push ax
@@ -107,28 +142,39 @@ V_OUT_3F8:
             retf
 V_OUT_3F8_DLAB:
             mov [V_Divisor_LSB], al
+            call V_Serial_Do
             retf
 
 V_OUT_3F9:
+%ifdef SERIAL_DEBUG
             call Debug_Out
+%endif
             test [V_Port_3FB], byte 80h
             jnz V_OUT_3F9_DLAB
             mov [V_Port_3F9], al
             retf
 V_OUT_3F9_DLAB:
             mov [V_Divisor_MSB], al
+            call V_Serial_Do
             retf
 
 V_OUT_3FB:
+%ifdef SERIAL_DEBUG
             call Debug_Out
+%endif
             mov [V_Port_3FB], al
+            call V_Serial_Do
             retf
 
 V_OUT_3FC:
+%ifdef SERIAL_DEBUG
             call Debug_Out
+%endif
             mov [V_Port_3FC], al
             retf
             
+
+%ifdef SERIAL_DEBUG
             
 Debug_In:
             ret
@@ -176,3 +222,5 @@ Debug_Out:
             call IPC_SerialOut
             pop ax
             ret
+
+%endif
